@@ -39,15 +39,10 @@ class Avaliacao(models.Model):
 
 
 class Questao(models.Model):
-    """Questão objetiva de uma avaliação (corrigida pelo gabarito).
-
-    O tipo DISSERTATIVA é LEGADO: novas avaliações só geram objetivas. O enum e
-    os campos de texto seguem existindo apenas para renderizar avaliações
-    históricas já corrigidas (ver templates/avaliacoes/resultado.html)."""
+    """Questão objetiva de uma avaliação (corrigida pelo gabarito)."""
 
     class Tipo(models.TextChoices):
         OBJETIVA = 'objetiva', 'Objetiva'
-        DISSERTATIVA = 'dissertativa', 'Dissertativa'  # legado (linhas antigas)
 
     avaliacao = models.ForeignKey(
         Avaliacao, on_delete=models.CASCADE, related_name='questoes'
@@ -77,7 +72,6 @@ class Resposta(models.Model):
         Questao, on_delete=models.CASCADE, related_name='resposta'
     )
     alternativa_escolhida = models.CharField(max_length=5, blank=True)
-    resposta_texto = models.TextField(blank=True)
     nota = models.FloatField(null=True, blank=True)  # 0–10
     feedback_md = models.TextField(blank=True)
     corrigida_em = models.DateTimeField(null=True, blank=True)
@@ -130,14 +124,10 @@ class ListaExercicios(models.Model):
 
 
 class Exercicio(models.Model):
-    """Exercício de prática objetivo, com feedback imediato (sem nota).
-
-    DISSERTATIVA é legado: nenhum exercício dissertativo existe mais (0 linhas);
-    o membro segue no enum só para não exigir migração de metadados."""
+    """Exercício de prática objetivo, com feedback imediato (sem nota)."""
 
     class Tipo(models.TextChoices):
         OBJETIVA = 'objetiva', 'Objetiva'
-        DISSERTATIVA = 'dissertativa', 'Dissertativa'  # legado (sem uso)
 
     lista = models.ForeignKey(
         ListaExercicios, on_delete=models.CASCADE, related_name='exercicios'
@@ -150,7 +140,6 @@ class Exercicio(models.Model):
     explicacao_md = models.TextField(blank=True)
 
     # Última tentativa do usuário (prática livre — pode refazer).
-    resposta_texto = models.TextField(blank=True)
     alternativa_escolhida = models.CharField(max_length=5, blank=True)
     nota = models.FloatField(null=True, blank=True)
     feedback_md = models.TextField(blank=True)

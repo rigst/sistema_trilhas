@@ -38,15 +38,11 @@
       <div class="correcao-item {% if item.resposta.nota >= 6 %}ok{% elif item.resposta.nota is not None %}bad{% endif %}">
         <div class="correcao-top">
           <span class="correcao-num">{{ item.questao.ordem }}</span>
-          <span class="correcao-tipo">{{ item.questao.get_tipo_display }}</span>
           {% if item.resposta.nota is not None %}<span class="correcao-nota">{{ item.resposta.nota|floatformat:1 }}/10</span>{% endif %}
         </div>
         <div class="markdown-body" style="font-size:.95rem">{{ item.enunciado_html }}</div>
         {% if item.resposta %}
-          <div class="correcao-sua"><b>Sua resposta:</b>
-            {% if item.questao.tipo == 'objetiva' %}{{ item.resposta.alternativa_escolhida|default:"—" }}
-            {% else %}{{ item.resposta.resposta_texto|default:"—"|linebreaksbr }}{% endif %}
-          </div>
+          <div class="correcao-sua"><b>Sua resposta:</b> {{ item.resposta.alternativa_escolhida|default:"—" }}</div>
           {% if item.feedback_html %}<div class="correcao-fb markdown-body">{{ item.feedback_html }}</div>{% endif %}
         {% endif %}
       </div>
