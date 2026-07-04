@@ -9,3 +9,8 @@ staticfiles/
 media/
 *.log
 *.sock
+# Runtime do Celery beat
+celerybeat-schedule
+celerybeat-schedule.*
+celerybeat.pid
+logs/
