@@ -1,11 +1,7 @@
 # Nginx — Trilhas de Estudo (trilhas.stolben.com)
-# HTTP-only. Rode `certbot --nginx -d trilhas.stolben.com` para adicionar o HTTPS.
 
 server {
-    listen 80;
     server_name trilhas.stolben.com;
-
-    location /.well-known/acme-challenge/ { root /var/www/certbot; }
 
     client_max_body_size 20M;
 
@@ -24,4 +20,20 @@ server {
         proxy_redirect off;
         proxy_read_timeout 300s;
     }
+
+    listen 443 ssl;
+    listen [::]:443 ssl;
+    ssl_certificate /etc/letsencrypt/live/trilhas.stolben.com/fullchain.pem;
+    ssl_certificate_key /etc/letsencrypt/live/trilhas.stolben.com/privkey.pem;
+    include /etc/letsencrypt/options-ssl-nginx.conf;
+    ssl_dhparam /etc/letsencrypt/ssl-dhparams.pem;
+}
+
+server {
+    listen 80;
+    listen [::]:80;
+    server_name trilhas.stolben.com;
+
+    location /.well-known/acme-challenge/ { root /var/www/certbot; }
+    location / { return 301 https://$host$request_uri; }
 }
