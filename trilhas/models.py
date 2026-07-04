@@ -273,3 +273,61 @@ class Subtopico(models.Model):
             .order_by('-ordem').first()
         )
         return anterior is None or anterior.lido
+
+
+class Percurso(models.Model):
+    """Percurso personalizado do Mentor: uma sequência de passos (aprender/
+    revisar/avaliar) equilibrada entre as trilhas do usuário."""
+
+    class Status(models.TextChoices):
+        GERANDO = 'gerando', 'Gerando'
+        PRONTO = 'pronto', 'Pronto'
+        ERRO = 'erro', 'Erro'
+
+    user = models.ForeignKey(
+        settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name='percursos'
+    )
+    status = models.CharField(
+        max_length=15, choices=Status.choices, default=Status.GERANDO, db_index=True
+    )
+    resumo = models.TextField('recado do mentor', blank=True)
+    erro = models.TextField(blank=True)
+    criado_em = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        verbose_name = 'percurso'
+        verbose_name_plural = 'percursos'
+        ordering = ['-criado_em']
+
+    def __str__(self):
+        return f'Percurso {self.pk} de {self.user_id}'
+
+
+class PassoPercurso(models.Model):
+    """Um passo recomendado pelo Mentor, com o motivo e o alvo da ação."""
+
+    class Tipo(models.TextChoices):
+        APRENDER = 'aprender', 'Aprender'
+        REVISAR = 'revisar', 'Revisar'
+        AVALIAR = 'avaliar', 'Avaliar'
+        REVISAR_GLOBAL = 'revisar_global', 'Revisão geral'
+
+    percurso = models.ForeignKey(
+        Percurso, on_delete=models.CASCADE, related_name='passos'
+    )
+    ordem = models.PositiveIntegerField(default=0)
+    tipo = models.CharField(max_length=15, choices=Tipo.choices)
+    titulo = models.CharField(max_length=200)
+    motivo = models.TextField(blank=True)
+    nivel = models.ForeignKey(
+        Nivel, on_delete=models.SET_NULL, null=True, blank=True, related_name='+'
+    )
+    subtopico_ordem = models.PositiveIntegerField(null=True, blank=True)
+
+    class Meta:
+        verbose_name = 'passo do percurso'
+        verbose_name_plural = 'passos do percurso'
+        ordering = ['ordem']
+
+    def __str__(self):
+        return f'{self.get_tipo_display()}: {self.titulo}'

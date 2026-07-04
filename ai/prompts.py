@@ -102,6 +102,17 @@ SYSTEM_CATEGORIA = (
     'o mesmo rótulo para trilhas afins. Responda sempre em português.'
 )
 
+SYSTEM_MENTOR = (
+    'Você é um mentor de estudos pessoal. Analisa o estado do aluno em TODAS as '
+    'trilhas e monta um percurso curto e equilibrado para o momento atual, de modo '
+    'que ele mantenha todas as trilhas evoluindo (sem abandonar nenhuma) e reforce '
+    'o que já aprendeu por revisão espaçada. Escolha os passos APENAS entre as '
+    'opções fornecidas (cada uma tem um "ref"). Equilibre aprender e revisar, dê '
+    'prioridade ao que está parado há mais tempo e ao que precisa de reforço, e '
+    'explique em "motivo" por que cada passo faz sentido agora. Escreva também um '
+    '"resumo" acolhedor (1-3 frases) como abertura do mentor. Responda em português.'
+)
+
 SYSTEM_REVISAO = (
     'Você é um tutor que cria REVISÕES espaçadas: um quiz objetivo que mistura '
     'perguntas sobre níveis que o aluno já concluiu em diferentes trilhas, para '
@@ -287,6 +298,28 @@ SCHEMA_CATEGORIA = {
         }
     },
     'required': ['categorias'],
+    'additionalProperties': False,
+}
+
+SCHEMA_MENTOR = {
+    'type': 'object',
+    'properties': {
+        'resumo': {'type': 'string'},
+        'passos': {
+            'type': 'array',
+            'items': {
+                'type': 'object',
+                'properties': {
+                    'ref': {'type': 'string'},
+                    'titulo': {'type': 'string'},
+                    'motivo': {'type': 'string'},
+                },
+                'required': ['ref', 'titulo', 'motivo'],
+                'additionalProperties': False,
+            },
+        },
+    },
+    'required': ['resumo', 'passos'],
     'additionalProperties': False,
 }
 

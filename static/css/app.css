@@ -441,6 +441,34 @@ a.node:not(.lock):hover .nm{color:var(--teal)}
   border:1px solid var(--line);border-radius:99px;padding:.12rem .55rem}
 .folder .trilha-grid{margin:0 1.15rem 1.2rem}
 
+/* ---- mentor / percurso ------------------------------------------------- */
+.btn-mentor{background:linear-gradient(135deg,var(--violet),#6E5AC7);color:#fff;box-shadow:0 0 22px rgba(139,124,246,.4)}
+.btn-mentor:hover{filter:brightness(1.08);transform:translateY(-1px)}
+.mentor-fala{display:flex;gap:.9rem;align-items:flex-start;margin-bottom:1.5rem;
+  border-color:rgba(139,124,246,.35);background:linear-gradient(180deg,rgba(139,124,246,.09),transparent)}
+.mentor-av{font-size:1.7rem;line-height:1}
+.mentor-fala p{margin:0;color:var(--text);font-size:1.02rem;line-height:1.6}
+.percurso{list-style:none;margin:0;padding:0;position:relative}
+.percurso::before{content:"";position:absolute;left:17px;top:16px;bottom:16px;width:2px;background:linear-gradient(var(--teal),var(--violet))}
+.passo{position:relative;display:flex;gap:1rem;align-items:flex-start;margin-bottom:1.1rem}
+.passo-num{flex:none;width:36px;height:36px;border-radius:50%;display:grid;place-items:center;font-family:var(--disp);
+  font-weight:700;background:var(--panel-2);color:var(--text);border:2px solid var(--line-2);z-index:1}
+.passo--aprender .passo-num{border-color:var(--teal);color:var(--teal)}
+.passo--avaliar .passo-num{border-color:var(--amber);color:var(--amber)}
+.passo--revisar .passo-num,.passo--revisar_global .passo-num{border-color:var(--violet);color:var(--violet)}
+.passo-card{flex:1;margin:0;min-width:0}
+.passo-tag{font-size:.72rem;font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:var(--muted);
+  margin-bottom:.35rem;display:flex;gap:.4rem;flex-wrap:wrap;align-items:center}
+.passo-trilha{color:var(--dim);font-weight:500;text-transform:none;letter-spacing:0}
+.passo-titulo{font-family:var(--disp);font-size:1.12rem;margin:0 0 .35rem}
+.passo-motivo{color:var(--muted);margin:0 0 .9rem;line-height:1.55}
+.passo-cta form{margin:0}
+
+/* ---- alternativa descartada (duplo-clique) ----------------------------- */
+.opt{user-select:none}
+.opt.descartada{opacity:.5;background:var(--panel-2);border-color:var(--line);cursor:default}
+.opt.descartada span{text-decoration:line-through;color:var(--dim)}
+
 /* ---- tópicos bloqueados (leitura em ordem) ----------------------------- */
 .topico-item.locked{opacity:.6;cursor:not-allowed;background:var(--glass-b)}
 .topico-item.locked .ti-num{background:var(--panel);color:var(--dim)}

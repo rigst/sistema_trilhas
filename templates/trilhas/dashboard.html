@@ -13,6 +13,9 @@
       {% if pode_estudar %}
         <a class="btn btn-primary" href="{% url 'trilhas:estudar_agora' %}">▶ Estudar agora</a>
       {% endif %}
+      {% if trilhas %}
+        <a class="btn btn-mentor" href="{% url 'trilhas:mentor' %}">🧭 Mentor</a>
+      {% endif %}
       {% if pode_revisar %}
         <form method="post" action="{% url 'avaliacoes:revisar' %}">{% csrf_token %}
           <button type="submit" class="btn btn-ghost">🔁 Revisar</button>

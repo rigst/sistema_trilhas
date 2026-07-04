@@ -144,6 +144,26 @@
         if (form) form.addEventListener("submit", () => { try { localStorage.removeItem(key); } catch (e) {} });
       });
 
+      // Duplo-clique numa alternativa: descarta (risca/acinzenta) como eliminada.
+      document.addEventListener("dblclick", (e) => {
+        const opt = e.target.closest(".opt");
+        if (!opt) return;
+        const input = opt.querySelector("input[type=radio]");
+        if (!input) return;
+        const jaDescartada = opt.classList.contains("descartada");
+        // Ignora se o input está travado por outro motivo (questão já respondida).
+        if (input.disabled && !jaDescartada) return;
+        e.preventDefault();
+        if (jaDescartada) {
+          opt.classList.remove("descartada");
+          input.disabled = false;
+        } else {
+          opt.classList.add("descartada");
+          input.checked = false;
+          input.disabled = true;
+        }
+      });
+
       // Painel de leitura: tema (escuro/claro/papel/preto) + tamanho da fonte.
       const root = document.documentElement;
       const fab = document.getElementById("reader-fab");

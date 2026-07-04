@@ -494,6 +494,120 @@ def categorizar_trilhas(trilhas, profile=None):
 
 
 # ---------------------------------------------------------------------------
+# 8. Mentor — percurso personalizado entre as trilhas (Opus — planejamento)
+# ---------------------------------------------------------------------------
+
+def _catalogo_percurso(user):
+    """Levanta as ações possíveis agora, cada uma com um 'ref' estável."""
+    from trilhas.models import Nivel, Trilha
+
+    prontas = (
+        Trilha.objects.filter(user=user)
+        .exclude(status__in=[
+            Trilha.Status.RASCUNHO, Trilha.Status.GERANDO_PERGUNTAS,
+            Trilha.Status.AGUARDANDO_RESPOSTAS, Trilha.Status.GERANDO_SUMARIO,
+            Trilha.Status.ERRO,
+        ])
+        .prefetch_related('niveis')
+    )
+    agora = timezone.now()
+    catalogo = {}   # ref -> dict(descricao, tipo, nivel_id, sub_ordem)
+    linhas = []
+    tem_aprovado = False
+
+    for t in prontas:
+        dias = max((agora - t.atualizada_em).days, 0)
+        cat = t.categoria_display
+
+        alvo = t.proximo_topico
+        if alvo:
+            nivel, sub = alvo
+            ref = f'aprender:{nivel.pk}:{sub.ordem}'
+            catalogo[ref] = {'tipo': 'aprender', 'nivel_id': nivel.pk, 'sub_ordem': sub.ordem}
+            linhas.append(
+                f'- ref "{ref}" [APRENDER] trilha "{t.titulo}" ({cat}), nível '
+                f'"{nivel.titulo}", próximo tópico "{sub.titulo}". Parada há {dias} dia(s).'
+            )
+
+        nv = t.nivel_atual
+        if nv and nv.conteudo_lido:
+            lista = getattr(nv, 'lista_exercicios', None)
+            if lista and lista.concluida:
+                ref = f'avaliar:{nv.pk}'
+                catalogo[ref] = {'tipo': 'avaliar', 'nivel_id': nv.pk, 'sub_ordem': None}
+                linhas.append(
+                    f'- ref "{ref}" [AVALIAR] trilha "{t.titulo}" ({cat}): nível '
+                    f'"{nv.titulo}" lido e praticado, pronto para a avaliação do título.'
+                )
+
+        for nivel in t.niveis.all():
+            if nivel.status == Nivel.Status.APROVADO:
+                tem_aprovado = True
+                ref = f'revisar:{nivel.pk}'
+                catalogo[ref] = {'tipo': 'revisar', 'nivel_id': nivel.pk, 'sub_ordem': None}
+                linhas.append(
+                    f'- ref "{ref}" [REVISAR] trilha "{t.titulo}" ({cat}): revisar o '
+                    f'nível concluído "{nivel.titulo}" (faixa {nivel.get_faixa_display()}).'
+                )
+
+    if tem_aprovado:
+        catalogo['revisar_global'] = {'tipo': 'revisar_global', 'nivel_id': None, 'sub_ordem': None}
+        linhas.append(
+            '- ref "revisar_global" [REVISAR] revisão espaçada única misturando '
+            'perguntas de vários níveis já concluídos.'
+        )
+
+    return catalogo, '\n'.join(linhas)
+
+
+def gerar_percurso(percurso, profile=None):
+    from trilhas.models import Nivel, PassoPercurso
+
+    catalogo, texto = _catalogo_percurso(percurso.user)
+    if not catalogo:
+        raise IAError('Ainda não há trilhas suficientes para o mentor planejar.')
+
+    user = (
+        'Estado atual do aluno — ações possíveis agora (escolha os passos apenas '
+        'entre estes "ref"):\n\n'
+        f'{texto}\n\n'
+        'Monte um percurso de 3 a 6 passos para este momento, equilibrando as '
+        'trilhas (não concentre tudo em uma só), misturando aprender e revisar, e '
+        'priorizando o que está parado há mais tempo ou precisa de reforço. Para '
+        'cada passo devolva o "ref" exato, um "titulo" curto e o "motivo". Inclua '
+        'também um "resumo" de abertura.'
+    )
+    data = _gerar_json(
+        prompts.SYSTEM_MENTOR, user, prompts.SCHEMA_MENTOR, profile,
+        model=_model_planejamento(), effort=getattr(settings, 'AI_EFFORT', 'high'),
+    )
+
+    percurso.resumo = (data.get('resumo') or '').strip()
+    percurso.save(update_fields=['resumo'])
+
+    percurso.passos.all().delete()
+    objs = []
+    ordem = 0
+    for p in data.get('passos', []):
+        ref = (p.get('ref') or '').strip()
+        info = catalogo.get(ref)
+        if info is None:
+            continue
+        ordem += 1
+        objs.append(PassoPercurso(
+            percurso=percurso,
+            ordem=ordem,
+            tipo=info['tipo'],
+            titulo=(p.get('titulo') or '').strip()[:200],
+            motivo=(p.get('motivo') or '').strip(),
+            nivel_id=info['nivel_id'],
+            subtopico_ordem=info['sub_ordem'],
+        ))
+    PassoPercurso.objects.bulk_create(objs)
+    return percurso
+
+
+# ---------------------------------------------------------------------------
 # 7. Revisão espaçada (Sonnet — quiz misto sobre níveis já concluídos)
 # ---------------------------------------------------------------------------
 

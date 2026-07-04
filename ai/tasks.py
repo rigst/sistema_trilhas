@@ -137,6 +137,27 @@ def task_gerar_exercicios(lista_id):
 
 
 @shared_task
+def task_gerar_percurso(percurso_id):
+    from trilhas.models import Percurso
+
+    try:
+        percurso = Percurso.objects.select_related('user').get(pk=percurso_id)
+    except Percurso.DoesNotExist:
+        return 'percurso inexistente'
+    try:
+        services.gerar_percurso(percurso, _profile(percurso.user))
+        percurso.status = Percurso.Status.PRONTO
+        percurso.erro = ''
+        percurso.save(update_fields=['status', 'erro'])
+    except Exception as exc:  # noqa: BLE001
+        percurso.status = Percurso.Status.ERRO
+        percurso.erro = str(exc)[:2000]
+        percurso.save(update_fields=['status', 'erro'])
+        raise
+    return f'percurso gerado {percurso_id}'
+
+
+@shared_task
 def task_gerar_revisao(revisao_id):
     from avaliacoes.models import Revisao
 

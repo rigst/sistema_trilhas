@@ -9,7 +9,7 @@ from django.views.decorators.http import require_POST
 from ai import tasks as ai_tasks
 
 from .mdrender import render_md
-from .models import Nivel, PerguntaDirecionadora, Subtopico, Trilha
+from .models import Nivel, Percurso, PerguntaDirecionadora, Subtopico, Trilha
 
 
 def _pre_gerar_exercicios(nivel):
@@ -88,6 +88,40 @@ def estudar_agora(request):
             return redirect('trilhas:topico', nivel_pk=nivel.pk, ordem=sub.ordem)
     messages.info(request, 'Você não tem tópicos em andamento. Comece uma nova trilha!')
     return redirect('dashboard')
+
+
+# ---------------------------------------------------------------------------
+# Mentor — percurso personalizado entre as trilhas
+# ---------------------------------------------------------------------------
+
+@login_required
+def mentor(request):
+    percurso = request.user.percursos.first()
+    if percurso is None:
+        percurso = Percurso.objects.create(
+            user=request.user, status=Percurso.Status.GERANDO
+        )
+        ai_tasks.task_gerar_percurso.delay(percurso.pk)
+    return render(request, 'trilhas/mentor.html', {
+        'percurso': percurso,
+        'passos': percurso.passos.select_related('nivel__trilha').all(),
+    })
+
+
+@login_required
+@require_POST
+def mentor_atualizar(request):
+    percurso = Percurso.objects.create(
+        user=request.user, status=Percurso.Status.GERANDO
+    )
+    ai_tasks.task_gerar_percurso.delay(percurso.pk)
+    return redirect('trilhas:mentor')
+
+
+@login_required
+def percurso_status(request, pk):
+    percurso = get_object_or_404(Percurso, pk=pk, user=request.user)
+    return JsonResponse({'status': percurso.status, 'erro': percurso.erro})
 
 
 # ---------------------------------------------------------------------------
