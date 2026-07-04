@@ -19,9 +19,16 @@ _md = render_md
 @require_POST
 def avaliacao_iniciar(request, nivel_pk):
     nivel = get_object_or_404(Nivel, pk=nivel_pk, trilha__user=request.user)
-    if nivel.status not in (Nivel.Status.CONTEUDO_PRONTO, Nivel.Status.APROVADO):
-        messages.info(request, 'Estude o conteúdo do nível antes de fazer a avaliação.')
+    if nivel.status == Nivel.Status.BLOQUEADO:
+        return redirect('trilhas:detalhe', pk=nivel.trilha_id)
+    # Pré-requisitos: ler todos os tópicos e concluir os exercícios de prática.
+    if not nivel.conteudo_lido:
+        messages.info(request, 'Leia todos os tópicos do nível antes de fazer a avaliação.')
         return redirect('trilhas:nivel', pk=nivel.pk)
+    lista = getattr(nivel, 'lista_exercicios', None)
+    if not (lista and lista.concluida):
+        messages.info(request, 'Responda todos os exercícios de prática antes de liberar a avaliação.')
+        return redirect('avaliacoes:exercicios', nivel_pk=nivel.pk)
 
     ultima = nivel.avaliacoes.order_by('-criada_em').first()
     if ultima and ultima.status in (
@@ -160,6 +167,11 @@ def exercicio_verificar(request, pk):
         pk=pk, lista__nivel__trilha__user=request.user,
     )
     profile = getattr(request.user, 'profile', None)
+    primeira_vez = ex.respondido_em is None
+
+    def _xp():
+        if primeira_vez and profile is not None:
+            profile.registrar_atividade(profile.XP_EXERCICIO)
 
     if ex.tipo == Exercicio.Tipo.OBJETIVA:
         escolhida = (request.POST.get('alternativa') or '').strip().upper()
@@ -170,9 +182,12 @@ def exercicio_verificar(request, pk):
         ex.feedback_md = ex.explicacao_md
         ex.respondido_em = timezone.now()
         ex.save(update_fields=['alternativa_escolhida', 'nota', 'feedback_md', 'respondido_em'])
+        _xp()
+        lista = ex.lista
         return JsonResponse({
             'tipo': 'objetiva', 'correto': acertou, 'gabarito': correta,
             'feedback_html': _md(ex.explicacao_md),
+            'concluida': lista.concluida,
         })
 
     # Dissertativa: feedback da IA (Sonnet), sem impacto em progressão.
@@ -186,8 +201,10 @@ def exercicio_verificar(request, pk):
     ex.feedback_md = feedback
     ex.respondido_em = timezone.now()
     ex.save(update_fields=['resposta_texto', 'nota', 'feedback_md', 'respondido_em'])
+    _xp()
     return JsonResponse({
         'tipo': 'dissertativa', 'nota': nota,
         'feedback_html': _md(feedback),
         'gabarito_html': _md(ex.gabarito),
+        'concluida': ex.lista.concluida,
     })

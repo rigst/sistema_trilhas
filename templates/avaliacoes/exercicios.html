@@ -5,9 +5,9 @@
 <section class="page narrow" id="ex-page">
   <div class="page-head">
     <a class="back-link" href="{% url 'trilhas:nivel' nivel.pk %}">← {{ nivel.titulo }}</a>
-    <div class="badges"><span class="faixa faixa--{{ nivel.faixa }}">{{ nivel.get_faixa_display }}</span><span class="pill">Prática livre · sem nota</span></div>
+    <div class="badges"><span class="faixa faixa--{{ nivel.faixa }}">{{ nivel.get_faixa_display }}</span><span class="pill">Prática · obrigatória antes da avaliação</span></div>
     <h1 class="h1">Exercícios do nível</h1>
-    <p class="sub">Responda e receba feedback na hora. Erre à vontade — isto não afeta seu progresso.</p>
+    <p class="sub">Responda todos para liberar a avaliação. Erre à vontade — isto não vale nota, só te prepara.</p>
   </div>
 
 {% if lista.status == 'gerando' %}
@@ -27,10 +27,18 @@
 
 {% else %}
   {% csrf_token %}
+  <div class="card pad-sm" style="margin-bottom:1.2rem">
+    <div class="spread" style="align-items:center">
+      <span class="muted" style="font-size:.9rem">Respondidos <strong id="ex-count" style="color:var(--teal)">{{ lista.respondidos }}</strong>/{{ lista.total }}</span>
+      <span id="ex-hint" class="muted" style="font-size:.85rem">{% if lista.concluida %}Prática concluída ✓{% else %}responda todos para liberar a avaliação{% endif %}</span>
+    </div>
+    <div class="progress-bar" style="margin-top:.5rem"><span id="ex-progress" style="width: {% widthratio lista.respondidos lista.total 100 %}%"></span></div>
+  </div>
+
   <div class="stack">
     {% for item in itens %}
       {% with ex=item.ex %}
-      <div class="card pad exercise" data-id="{{ ex.pk }}" data-tipo="{{ ex.tipo }}" data-url="{% url 'avaliacoes:exercicio_verificar' ex.pk %}">
+      <div class="card pad exercise" data-id="{{ ex.pk }}" data-tipo="{{ ex.tipo }}" data-answered="{% if ex.respondido_em %}1{% else %}0{% endif %}" data-url="{% url 'avaliacoes:exercicio_verificar' ex.pk %}">
         <div class="ex-tag"><span class="spark">✎</span> Exercício {{ ex.ordem }} · {{ ex.get_tipo_display }}</div>
         <div class="q-enun markdown-body">{{ item.enunciado_html }}</div>
 
@@ -44,7 +52,7 @@
             {% endfor %}
           </div>
         {% else %}
-          <textarea class="js-resp" rows="4" placeholder="Sua resposta…">{{ ex.resposta_texto }}</textarea>
+          <textarea class="js-resp" rows="4" data-autosave="ex-{{ ex.pk }}" placeholder="Sua resposta…">{{ ex.resposta_texto }}</textarea>
         {% endif %}
 
         <div class="ex-actions">
@@ -58,8 +66,10 @@
   </div>
 
   <div class="form-actions" style="justify-content:center;margin-top:2rem">
-    <a class="btn btn-ghost" href="{% url 'trilhas:nivel' nivel.pk %}">Voltar ao conteúdo</a>
-    <form method="post" action="{% url 'avaliacoes:iniciar' nivel.pk %}">{% csrf_token %}<button class="btn btn-primary">Pronto? Fazer a avaliação ⚔</button></form>
+    <a class="btn btn-ghost" href="{% url 'trilhas:nivel' nivel.pk %}">Voltar ao nível</a>
+    <form method="post" action="{% url 'avaliacoes:iniciar' nivel.pk %}">{% csrf_token %}
+      <button id="btn-aval" class="btn btn-primary" {% if not lista.concluida %}disabled{% endif %}>Fazer a avaliação ⚔</button>
+    </form>
   </div>
 {% endif %}
 </section>
@@ -73,6 +83,17 @@
 <script>
 (() => {
   const csrf = document.querySelector('#ex-page [name=csrfmiddlewaretoken]').value;
+  const total = {{ lista.total }};
+  const countEl = document.getElementById('ex-count');
+  const progEl = document.getElementById('ex-progress');
+  const hintEl = document.getElementById('ex-hint');
+  const btnAval = document.getElementById('btn-aval');
+  const refreshProgress = (concluida) => {
+    const done = document.querySelectorAll('.exercise[data-answered="1"]').length;
+    countEl.textContent = done;
+    progEl.style.width = (total ? Math.round(done/total*100) : 0) + '%';
+    if (concluida) { btnAval.disabled = false; hintEl.textContent = 'Prática concluída ✓ — avaliação liberada!'; }
+  };
   document.querySelectorAll('.exercise').forEach(card => {
     const btn = card.querySelector('.js-verify');
     const fb = card.querySelector('.js-fb');
@@ -97,6 +118,7 @@
         });
         const d = await r.json();
         if (d.erro) { fb.className = 'fb js-fb show no'; fb.textContent = d.erro; return; }
+        card.dataset.answered = '1';
         if (tipo === 'objetiva') {
           card.querySelectorAll('.opt').forEach(o => o.classList.remove('correct','wrong'));
           card.querySelectorAll('.opt').forEach(o => {
@@ -111,6 +133,7 @@
           fb.className = 'fb js-fb show ' + (d.nota >= 6 ? 'ok' : 'no');
           fb.innerHTML = '<strong>Nota: ' + d.nota.toFixed(1) + '/10</strong><br>' + d.feedback_html;
         }
+        refreshProgress(d.concluida);
       } catch(e) {
         fb.className = 'fb js-fb show no'; fb.textContent = 'Falha ao verificar. Tente de novo.';
       } finally {

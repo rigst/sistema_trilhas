@@ -10,6 +10,8 @@ urlpatterns = [
     path('<int:pk>/perguntas/', views.perguntas, name='perguntas'),
     path('<int:pk>/status/', views.trilha_status, name='status'),
     path('<int:pk>/excluir/', views.trilha_excluir, name='excluir'),
+    path('<int:pk>/certificado/', views.certificado, name='certificado'),
     path('nivel/<int:pk>/', views.nivel_detalhe, name='nivel'),
-    path('nivel/<int:pk>/status/', views.nivel_status, name='nivel_status'),
+    path('nivel/<int:nivel_pk>/topico/<int:ordem>/', views.topico, name='topico'),
+    path('topico/<int:pk>/status/', views.topico_status, name='topico_status'),
 ]

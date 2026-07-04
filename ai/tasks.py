@@ -53,26 +53,29 @@ def task_gerar_sumario(trilha_id):
 
 
 @shared_task
-def task_gerar_conteudo_nivel(nivel_id):
-    from trilhas.models import Nivel
+def task_gerar_subtopico(subtopico_id):
+    from trilhas.models import Subtopico
 
     try:
-        nivel = Nivel.objects.select_related('trilha__user').get(pk=nivel_id)
-    except Nivel.DoesNotExist:
-        return 'nível inexistente'
+        sub = Subtopico.objects.select_related('nivel__trilha__user').get(pk=subtopico_id)
+    except Subtopico.DoesNotExist:
+        return 'subtópico inexistente'
+    # Evita retrabalho (ex.: pré-geração já disparada e concluída).
+    if sub.status == Subtopico.Status.PRONTO and sub.conteudo_md:
+        return f'subtópico {subtopico_id} já pronto'
     try:
-        texto = services.gerar_conteudo_nivel(nivel, _profile(nivel.trilha.user))
-        nivel.conteudo_md = texto
-        nivel.status = Nivel.Status.CONTEUDO_PRONTO
-        nivel.gerado_em = timezone.now()
-        nivel.erro = ''
-        nivel.save(update_fields=['conteudo_md', 'status', 'gerado_em', 'erro', 'atualizado_em'])
+        texto = services.gerar_conteudo_subtopico(sub, _profile(sub.nivel.trilha.user))
+        sub.conteudo_md = texto
+        sub.status = Subtopico.Status.PRONTO
+        sub.gerado_em = timezone.now()
+        sub.erro = ''
+        sub.save(update_fields=['conteudo_md', 'status', 'gerado_em', 'erro'])
     except Exception as exc:  # noqa: BLE001
-        nivel.status = Nivel.Status.ERRO
-        nivel.erro = str(exc)[:2000]
-        nivel.save(update_fields=['status', 'erro', 'atualizado_em'])
+        sub.status = Subtopico.Status.ERRO
+        sub.erro = str(exc)[:2000]
+        sub.save(update_fields=['status', 'erro'])
         raise
-    return f'conteúdo gerado para nível {nivel_id}'
+    return f'subtópico {subtopico_id} gerado'
 
 
 @shared_task

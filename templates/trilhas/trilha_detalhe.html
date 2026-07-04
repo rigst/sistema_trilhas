@@ -26,10 +26,21 @@
       <h1 class="h1">{{ trilha.titulo }}</h1>
       {% if trilha.descricao %}<p class="sub">{{ trilha.descricao }}</p>{% endif %}
     </div>
-    <form method="post" action="{% url 'trilhas:excluir' trilha.pk %}" onsubmit="return confirm('Excluir esta trilha e todo o progresso?');">
-      {% csrf_token %}<button type="submit" class="btn btn-danger">Excluir</button>
-    </form>
+    <div class="inline-actions" style="display:flex;gap:.5rem;align-items:center">
+      {% if trilha.status == 'concluida' %}
+        <a class="btn btn-primary" href="{% url 'trilhas:certificado' trilha.pk %}" target="_blank">🎓 Certificado</a>
+      {% endif %}
+      <form method="post" action="{% url 'trilhas:excluir' trilha.pk %}" onsubmit="return confirm('Excluir esta trilha e todo o progresso?');">
+        {% csrf_token %}<button type="submit" class="btn btn-danger">Excluir</button>
+      </form>
+    </div>
   </div>
+
+  {% if trilha.status == 'concluida' %}
+    <div class="card pad" style="border-color:rgba(52,211,153,.35);background:rgba(52,211,153,.06);margin-bottom:1.4rem">
+      <strong>🎉 Trilha concluída!</strong> <span class="muted">Você dominou todos os níveis. Baixe seu certificado acima.</span>
+    </div>
+  {% endif %}
 
   <div class="two-col">
     <div>

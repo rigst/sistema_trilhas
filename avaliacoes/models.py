@@ -109,6 +109,20 @@ class ListaExercicios(models.Model):
     def __str__(self):
         return f'Exercícios do nível {self.nivel_id}'
 
+    @property
+    def total(self):
+        return self.exercicios.count()
+
+    @property
+    def respondidos(self):
+        return self.exercicios.filter(respondido_em__isnull=False).count()
+
+    @property
+    def concluida(self):
+        """Prática concluída quando todos os exercícios foram respondidos ao menos uma vez."""
+        return self.status == self.Status.PRONTA and self.total > 0 \
+            and self.respondidos == self.total
+
 
 class Exercicio(models.Model):
     """Exercício de prática com feedback imediato (sem impacto na progressão)."""

@@ -1,0 +1,62 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<title>Certificado · {{ trilha.titulo }}</title>
+<style>
+  @page { size: A4 landscape; margin: 0; }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: Georgia, "Times New Roman", serif; color: #16223a; }
+  .sheet {
+    width: 297mm; height: 210mm; padding: 22mm 26mm; position: relative;
+    background: #fbfcff;
+    background-image: radial-gradient(1200px 400px at 85% -10%, #e9f7f4, transparent),
+                      radial-gradient(900px 400px at 0% 110%, #eef0ff, transparent);
+  }
+  .frame { position: absolute; inset: 12mm; border: 2px solid #2DD4BF; border-radius: 8mm; }
+  .frame::before { content:""; position:absolute; inset:3mm; border:1px solid #cfe8e3; border-radius:6mm; }
+  .inner { position: relative; height: 100%; display: flex; flex-direction: column;
+           align-items: center; justify-content: center; text-align: center; padding: 0 20mm; }
+  .brand { display:flex; align-items:center; gap:10px; margin-bottom: 10mm; }
+  .logo { width: 34px; height: 34px; border-radius: 9px; background: linear-gradient(135deg,#2DD4BF,#8B7CF6);
+          color:#062820; font-weight:800; font-family: Arial, sans-serif; display:flex; align-items:center; justify-content:center; }
+  .brand span { font-family: Arial, sans-serif; font-weight: 700; letter-spacing: .04em; color:#16223a; }
+  .eyebrow { font-family: Arial, sans-serif; letter-spacing: .35em; text-transform: uppercase;
+             font-size: 11px; color: #2b9e8c; margin-bottom: 6mm; }
+  h1 { font-size: 40px; letter-spacing: .01em; margin-bottom: 4mm; }
+  .to { font-family: Arial, sans-serif; color:#5a667e; font-size: 13px; margin-bottom: 3mm; }
+  .aluno { font-size: 30px; color:#0f1a30; border-bottom: 2px solid #2DD4BF; display:inline-block; padding: 0 6mm 2mm; margin-bottom: 6mm; }
+  .desc { font-size: 15px; color:#3a4763; max-width: 180mm; line-height: 1.6; margin-bottom: 7mm; }
+  .desc b { color:#0f1a30; }
+  .titulos { display:flex; flex-wrap:wrap; gap: 6px; justify-content:center; margin-bottom: 10mm; }
+  .chip { font-family: Arial, sans-serif; font-size: 11px; padding: 4px 10px; border-radius: 999px;
+          background: #eef6f5; color:#1f7d6e; border:1px solid #cfe8e3; }
+  .foot { display:flex; justify-content: space-between; align-items:flex-end; width: 100%;
+          font-family: Arial, sans-serif; font-size: 12px; color:#5a667e; margin-top: auto; }
+  .sig { text-align:center; }
+  .sig .line { width: 60mm; border-top: 1px solid #9aa7bf; margin-bottom: 2mm; }
+  .sig b { color:#16223a; }
+</style>
+</head>
+<body>
+  <div class="sheet">
+    <div class="frame"></div>
+    <div class="inner">
+      <div class="brand"><span class="logo">T</span><span>Trilhas de Estudo</span></div>
+      <div class="eyebrow">Certificado de Conclusão</div>
+      <h1>Domínio concluído</h1>
+      <p class="to">Certificamos que</p>
+      <div class="aluno">{{ aluno }}</div>
+      <p class="desc">concluiu integralmente a trilha de estudos <b>“{{ trilha.titulo }}”</b>,
+        percorrendo todos os {{ trilha.total_niveis }} níveis, do básico ao avançado, com aproveitamento nas avaliações.</p>
+      {% if titulos %}
+        <div class="titulos">{% for t in titulos %}<span class="chip">🏅 {{ t.nome }}</span>{% endfor %}</div>
+      {% endif %}
+      <div class="foot">
+        <div class="sig"><div class="line"></div><b>{{ data|date:"d/m/Y" }}</b><br>Data de conclusão</div>
+        <div class="sig"><div class="line"></div><b>Trilhas de Estudo</b><br>por Stölben</div>
+      </div>
+    </div>
+  </div>
+</body>
+</html>

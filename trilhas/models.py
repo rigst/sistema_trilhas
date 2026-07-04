@@ -139,14 +139,52 @@ class Nivel(models.Model):
     def __str__(self):
         return f'{self.trilha_id} · {self.ordem}. {self.titulo}'
 
+    # -- Progresso de leitura -------------------------------------------
+    @property
+    def total_subtopicos(self):
+        return self.subtopicos.count()
+
+    @property
+    def subtopicos_lidos(self):
+        return self.subtopicos.filter(lido=True).count()
+
+    @property
+    def leitura_pct(self):
+        t = self.total_subtopicos
+        return round(self.subtopicos_lidos / t * 100) if t else 0
+
+    @property
+    def conteudo_lido(self):
+        t = self.total_subtopicos
+        return t > 0 and self.subtopicos_lidos == t
+
+    @property
+    def primeiro_nao_lido(self):
+        return self.subtopicos.filter(lido=False).order_by('ordem').first() \
+            or self.subtopicos.order_by('ordem').first()
+
 
 class Subtopico(models.Model):
-    """Subtópico de um nível — guia a geração do conteúdo e das questões."""
+    """Subtópico de um nível — cada um é uma página de leitura, gerada sob demanda."""
+
+    class Status(models.TextChoices):
+        PENDENTE = 'pendente', 'Pendente'
+        GERANDO = 'gerando', 'Gerando'
+        PRONTO = 'pronto', 'Pronto'
+        ERRO = 'erro', 'Erro'
 
     nivel = models.ForeignKey(Nivel, on_delete=models.CASCADE, related_name='subtopicos')
     ordem = models.PositiveIntegerField(default=0)
     titulo = models.CharField(max_length=200)
     descricao_curta = models.TextField(blank=True)
+
+    conteudo_md = models.TextField('conteúdo (Markdown)', blank=True)
+    status = models.CharField(
+        max_length=15, choices=Status.choices, default=Status.PENDENTE, db_index=True
+    )
+    lido = models.BooleanField('lido', default=False)
+    erro = models.TextField(blank=True)
+    gerado_em = models.DateTimeField(null=True, blank=True)
 
     class Meta:
         verbose_name = 'subtópico'
@@ -155,3 +193,7 @@ class Subtopico(models.Model):
 
     def __str__(self):
         return self.titulo
+
+    @property
+    def eh_ultimo(self):
+        return not self.nivel.subtopicos.filter(ordem__gt=self.ordem).exists()

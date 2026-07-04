@@ -10,4 +10,8 @@ def profile_context(request):
         'profile': profile,
         'quota_restante': profile.tokens_restantes,
         'quota_total': profile.quota_tokens_mes,
+        'xp': profile.xp,
+        'xp_no_nivel': profile.xp_no_nivel,
+        'nivel_xp': profile.nivel_xp,
+        'streak_dias': profile.streak_dias,
     }

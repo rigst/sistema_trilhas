@@ -23,6 +23,11 @@ class Profile(models.Model):
         'custo acumulado (USD)', max_digits=12, decimal_places=4, default=0
     )
 
+    # Gamificação
+    xp = models.BigIntegerField('XP', default=0)
+    streak_dias = models.PositiveIntegerField('sequência de dias', default=0)
+    ultimo_estudo = models.DateField('último dia de estudo', null=True, blank=True)
+
     criado_em = models.DateTimeField(auto_now_add=True)
     atualizado_em = models.DateTimeField(auto_now=True)
 
@@ -57,6 +62,34 @@ class Profile(models.Model):
         self.save(update_fields=[
             'tokens_usados_mes', 'custo_acumulado', 'atualizado_em',
         ])
+
+    # -- Gamificação -----------------------------------------------------
+    # Faixa de XP por atividade
+    XP_TOPICO = 10        # ler um tópico (primeira vez)
+    XP_EXERCICIO = 5      # responder um exercício (primeira vez)
+    XP_APROVACAO = 50     # ser aprovado num nível
+
+    @property
+    def nivel_xp(self):
+        """Nível de jogador derivado do XP (100 XP por nível)."""
+        return self.xp // 100 + 1
+
+    @property
+    def xp_no_nivel(self):
+        return self.xp % 100
+
+    def registrar_atividade(self, xp=0):
+        """Soma XP e atualiza a sequência (streak) de dias de estudo."""
+        hoje = timezone.localdate()
+        if self.ultimo_estudo == hoje:
+            pass
+        elif self.ultimo_estudo == hoje - timezone.timedelta(days=1):
+            self.streak_dias += 1
+        else:
+            self.streak_dias = 1
+        self.ultimo_estudo = hoje
+        self.xp = (self.xp or 0) + int(xp)
+        self.save(update_fields=['xp', 'streak_dias', 'ultimo_estudo', 'atualizado_em'])
 
     # -- Visitante -------------------------------------------------------
     @property

@@ -1,0 +1,64 @@
+{% extends "base.html" %}
+{% block title %}{{ subtopico.titulo }} · {{ nivel.titulo }}{% endblock %}
+
+{% block content %}
+<section class="page narrow" id="topico-root">
+  <!-- Barra de progresso do nível (topo) -->
+  <div class="topico-progress">
+    <a class="back-link" href="{% url 'trilhas:nivel' nivel.pk %}" style="margin:0">☰ {{ nivel.titulo }}</a>
+    <div class="tp-bar-wrap">
+      <div class="tp-steps">
+        {% for s in subtopicos %}
+          <a class="tp-step {% if s.ordem == subtopico.ordem %}cur{% elif s.lido %}done{% endif %}"
+             href="{% url 'trilhas:topico' nivel.pk s.ordem %}" title="{{ s.titulo }}"></a>
+        {% endfor %}
+      </div>
+      <span class="tp-label">Tópico {{ passo }} de {{ total }}</span>
+    </div>
+  </div>
+
+  <div class="page-head" style="margin-top:1.4rem">
+    <span class="faixa faixa--{{ nivel.faixa }}">{{ nivel.get_faixa_display }}</span>
+    <h1 class="h1" style="margin-top:.5rem">{{ subtopico.titulo }}</h1>
+    {% if subtopico.descricao_curta %}<p class="sub">{{ subtopico.descricao_curta }}</p>{% endif %}
+  </div>
+
+{% if subtopico.status == 'pendente' or subtopico.status == 'gerando' %}
+  <div class="card pad">
+    <div class="gen-h"><span class="orb"></span> Escrevendo este tópico…</div>
+    <div class="pbar"><i></i></div>
+    <div style="margin-top:1.1rem"><div class="sk" style="width:92%"></div><div class="sk" style="width:100%"></div><div class="sk" style="width:70%"></div><div class="sk" style="width:85%"></div></div>
+    <p class="muted" style="font-size:.85rem;margin-top:1rem">Leva alguns segundos. O próximo tópico já começa a ser preparado enquanto você lê.</p>
+  </div>
+
+{% elif subtopico.status == 'erro' %}
+  <div class="card pad gen-center">
+    <h2 class="h2">Não foi possível gerar este tópico</h2>
+    <p class="sub" style="margin:.4rem auto 1.3rem">{{ subtopico.erro }}</p>
+    <a class="btn btn-primary" href="{% url 'trilhas:topico' nivel.pk subtopico.ordem %}">Tentar novamente</a>
+  </div>
+
+{% else %}
+  <article class="markdown-body">{{ conteudo_html }}</article>
+
+  <nav class="topico-nav">
+    {% if anterior %}
+      <a class="btn btn-ghost" href="{% url 'trilhas:topico' nivel.pk anterior.ordem %}">← Anterior</a>
+    {% else %}<span></span>{% endif %}
+
+    {% if proximo %}
+      <a class="btn btn-primary" href="{% url 'trilhas:topico' nivel.pk proximo.ordem %}">Próximo tópico →</a>
+    {% else %}
+      <a class="btn btn-primary" href="{% url 'avaliacoes:exercicios' nivel.pk %}">Concluir e praticar ⚔</a>
+    {% endif %}
+  </nav>
+{% endif %}
+</section>
+{% endblock %}
+
+{% block scripts %}
+{% if subtopico.status == 'pendente' or subtopico.status == 'gerando' %}
+  {% url 'trilhas:topico_status' subtopico.pk as poll_url %}
+  {% include 'partials/poll.html' with poll_url=poll_url poll_status=subtopico.status %}
+{% endif %}
+{% endblock %}

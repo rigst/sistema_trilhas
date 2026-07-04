@@ -8,7 +8,7 @@ Divisão de modelos por tarefa (configurável em settings):
 Fluxo:
   1. gerar_perguntas_direcionadoras
   2. gerar_sumario
-  3. gerar_conteudo_nivel (streaming)
+  3. gerar_conteudo_subtopico (streaming, um tópico por vez)
   4. gerar_avaliacao / corrigir_avaliacao (com progressão e título)
   5. gerar_exercicios / verificar_exercicio_dissertativa (prática, sem nota)
 
@@ -195,24 +195,33 @@ def gerar_sumario(trilha, profile=None):
 
 
 # ---------------------------------------------------------------------------
-# 3. Conteúdo de um nível (Sonnet — texto longo via streaming)
+# 3. Conteúdo de UM subtópico (Sonnet — sob demanda, via streaming)
 # ---------------------------------------------------------------------------
 
-def gerar_conteudo_nivel(nivel, profile=None):
+def gerar_conteudo_subtopico(subtopico, profile=None):
+    """Gera o texto didático de um único subtópico (uma página de leitura)."""
+    nivel = subtopico.nivel
     trilha = nivel.trilha
-    subs = '\n'.join(
-        f'- {s.titulo}: {s.descricao_curta}' for s in nivel.subtopicos.all()
-    ) or '- (defina os subtópicos a partir do título do nível)'
+    outros = ', '.join(s.titulo for s in nivel.subtopicos.all())
+
+    fechamento = ''
+    if subtopico.eh_ultimo:
+        fechamento = (
+            '\n\nComo este é o ÚLTIMO subtópico do nível, ao final do texto acrescente '
+            'duas seções que fecham o nível inteiro: "## Bibliografia e referências" e '
+            '"## Vídeos e materiais" (descreva o que procurar, canais e autores de '
+            'referência, sem inventar URLs específicas).'
+        )
 
     user = (
         f'Trilha: {trilha.titulo}\n'
         f'Tema geral: {trilha.tema_livre.strip()}\n'
         f'Nível {nivel.ordem} — {nivel.titulo} (faixa: {nivel.get_faixa_display()})\n'
-        f'Resumo do nível: {nivel.resumo}\n\n'
-        f'Subtópicos a cobrir:\n{subs}\n\n'
-        'Escreva o material completo deste nível em Markdown, seguindo à risca as '
-        'regras de formatação (subtítulos, caixas de destaque !!! e blocos de código '
-        'com a linguagem declarada). Cubra todos os subtópicos.'
+        f'Subtópicos do nível (contexto): {outros}\n\n'
+        f'Escreva o material APENAS do subtópico "{subtopico.titulo}"'
+        f'{f" — {subtopico.descricao_curta}" if subtopico.descricao_curta else ""}. '
+        'Aprofunde só este subtópico, sem invadir os outros.'
+        f'{fechamento}'
     )
 
     client = get_client()
@@ -221,7 +230,7 @@ def gerar_conteudo_nivel(nivel, profile=None):
     with client.messages.stream(
         model=model,
         max_tokens=max_tokens,
-        system=prompts.SYSTEM_CONTEUDO,
+        system=prompts.SYSTEM_SUBTOPICO,
         messages=[{'role': 'user', 'content': user}],
         thinking={'type': 'adaptive'},
         output_config={'effort': getattr(settings, 'AI_EFFORT_GERAL', 'medium')},
@@ -342,6 +351,8 @@ def corrigir_avaliacao(avaliacao, profile=None):
 
     if aprovado:
         _aprovar_nivel(avaliacao.nivel)
+        if profile is not None:
+            profile.registrar_atividade(profile.XP_APROVACAO)
     return avaliacao
 
 
