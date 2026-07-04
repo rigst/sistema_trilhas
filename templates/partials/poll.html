@@ -1,0 +1,14 @@
+<script>
+(() => {
+  const url = "{{ poll_url }}", initial = "{{ poll_status }}";
+  const tick = async () => {
+    try {
+      const r = await fetch(url, { headers: { "X-Requested-With": "XMLHttpRequest" } });
+      const d = await r.json();
+      if (d.status !== initial) { location.reload(); return; }
+    } catch (e) {}
+    setTimeout(tick, 3000);
+  };
+  setTimeout(tick, 3000);
+})();
+</script>

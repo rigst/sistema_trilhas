@@ -1,0 +1,59 @@
+{% extends "base.html" %}
+{% block title %}Perguntas · {{ trilha.titulo|default:"Nova trilha" }}{% endblock %}
+
+{% block content %}
+<section class="page narrow">
+{% if trilha.status == 'gerando_perguntas' %}
+  <div class="card pad gen-center">
+    <span class="orb"></span>
+    <h2 class="h2">Preparando algumas perguntas…</h2>
+    <p class="sub" style="margin:.4rem auto 1.3rem">A IA está montando perguntas para entender seu ponto de partida e seus objetivos.</p>
+    <div class="pbar"><i></i></div>
+    <div class="steps" style="justify-content:center"><span class="now">Analisando o tema</span><span>Formulando perguntas</span></div>
+  </div>
+
+{% elif trilha.status == 'erro' %}
+  <div class="card pad gen-center">
+    <h2 class="h2">Algo deu errado</h2>
+    <p class="sub" style="margin:.4rem auto 1.3rem">{{ trilha.erro|default:"Não foi possível gerar as perguntas." }}</p>
+    <a class="btn btn-primary" href="{% url 'trilhas:criar' %}">Tentar de novo</a>
+  </div>
+
+{% else %}
+  <div class="page-head">
+    <div class="eyebrow">Passo 2 de 3</div>
+    <h1 class="h1">Vamos afinar seu plano</h1>
+    <p class="sub">Responda o que puder — quanto melhores as respostas, melhor a trilha.</p>
+  </div>
+  <div class="card pad-sm" style="margin-bottom:1.2rem"><strong>Tema:</strong> <span class="muted">{{ trilha.tema_livre }}</span></div>
+
+  <form method="post" action="{% url 'trilhas:perguntas' trilha.pk %}" class="card pad">
+    {% csrf_token %}
+    {% for p in trilha.perguntas.all %}
+      <div class="field">
+        <label for="pergunta_{{ p.pk }}"><span class="muted" style="color:var(--teal)">{{ p.ordem }}.</span> {{ p.pergunta }}</label>
+        {% if p.tipo == 'escolha_unica' and p.opcoes %}
+          <select id="pergunta_{{ p.pk }}" name="pergunta_{{ p.pk }}">
+            <option value="">Selecione…</option>
+            {% for op in p.opcoes %}<option value="{{ op }}">{{ op }}</option>{% endfor %}
+          </select>
+        {% else %}
+          <textarea id="pergunta_{{ p.pk }}" name="pergunta_{{ p.pk }}" rows="2"></textarea>
+        {% endif %}
+      </div>
+    {% endfor %}
+    <div class="form-actions">
+      <a class="btn btn-ghost" href="{% url 'dashboard' %}">Depois</a>
+      <button type="submit" class="btn btn-primary">Gerar meu plano →</button>
+    </div>
+  </form>
+{% endif %}
+</section>
+{% endblock %}
+
+{% block scripts %}
+{% if trilha.status == 'gerando_perguntas' %}
+  {% url 'trilhas:status' trilha.pk as poll_url %}
+  {% include 'partials/poll.html' with poll_url=poll_url poll_status='gerando_perguntas' %}
+{% endif %}
+{% endblock %}

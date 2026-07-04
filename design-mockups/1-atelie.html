@@ -1,0 +1,228 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Direção 1 · Ateliê</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,500;9..144,600;9..144,700&family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet">
+<style>
+:root{
+  --paper:#EDEFEA; --surface:#FBFCF9; --ink:#16302B; --ink-2:#2C4640;
+  --text:#26322F; --muted:#63706C; --line:#DBDDD4; --line-2:#CACfc2;
+  --crimson:#A63A46; --crimson-soft:#f3e3e4; --ochre:#B67A28; --ochre-soft:#f6ecd8;
+  --pine:#1F5B49; --pine-soft:#e0eee7; --sky:#2f6d86; --sky-soft:#e0edf1;
+  --serif:"Fraunces",Georgia,serif; --sans:"Inter",system-ui,sans-serif; --mono:"JetBrains Mono",monospace;
+}
+*{box-sizing:border-box}
+body{margin:0;background:var(--paper);color:var(--text);font-family:var(--sans);line-height:1.65;
+  background-image:radial-gradient(var(--line-2) 0.5px,transparent 0.5px);background-size:22px 22px;}
+a{color:inherit}
+.wrap{max-width:1080px;margin:0 auto;padding:0 24px}
+
+/* nav */
+.nav{position:sticky;top:0;z-index:10;background:rgba(237,239,234,.82);backdrop-filter:blur(10px);border-bottom:1px solid var(--line)}
+.nav-in{display:flex;align-items:center;justify-content:space-between;height:66px}
+.brand{font-family:var(--serif);font-weight:600;font-size:1.35rem;letter-spacing:-.01em;display:flex;align-items:center;gap:.55rem}
+.brand .seal{width:26px;height:26px;border:1.5px solid var(--ink);border-radius:50%;display:grid;place-items:center;font-size:.7rem;font-family:var(--serif);color:var(--ink)}
+.nav-links{display:flex;gap:1.6rem;font-size:.9rem;font-weight:500;color:var(--muted)}
+.nav-links a.on{color:var(--ink)}
+.nav-user{display:flex;align-items:center;gap:.8rem;font-size:.85rem;color:var(--muted)}
+.chip-token{border:1px solid var(--line-2);border-radius:999px;padding:.2rem .7rem;font-variant-numeric:tabular-nums}
+
+/* content layout with chapter spine */
+.lesson{display:grid;grid-template-columns:96px 1fr;gap:0;margin:40px 0 60px;position:relative}
+.spine{position:relative}
+.spine-num{font-family:var(--serif);font-size:4.2rem;line-height:.9;color:var(--ink);font-weight:600}
+.spine-rail{position:absolute;left:15px;top:96px;bottom:0;width:2px;background:linear-gradient(var(--ink),var(--line-2))}
+.spine-dot{position:absolute;left:9px;width:14px;height:14px;border-radius:50%;background:var(--surface);border:2px solid var(--ink)}
+.body{max-width:660px}
+.eyebrow{font-size:.72rem;letter-spacing:.16em;text-transform:uppercase;color:var(--crimson);font-weight:600;margin-bottom:.6rem}
+.back{font-size:.85rem;color:var(--muted);text-decoration:none;display:inline-block;margin-bottom:1.2rem}
+.back:hover{color:var(--ink)}
+h1.title{font-family:var(--serif);font-weight:600;font-size:2.7rem;line-height:1.08;letter-spacing:-.02em;margin:.2rem 0 .5rem;color:var(--ink)}
+.subtitle{font-size:1.12rem;color:var(--muted);font-family:var(--serif);font-style:italic}
+.meta{display:flex;gap:1rem;font-size:.82rem;color:var(--muted);margin:1.1rem 0 0}
+.faixa{display:inline-block;font-size:.7rem;font-weight:600;letter-spacing:.08em;text-transform:uppercase;
+  padding:.22rem .6rem;border-radius:4px;background:var(--pine-soft);color:var(--pine)}
+
+.prose h2{font-family:var(--serif);font-weight:600;font-size:1.7rem;color:var(--ink);margin:2.4rem 0 .4rem;letter-spacing:-.01em}
+.prose h2 .kicker{display:block;font-family:var(--sans);font-size:.72rem;letter-spacing:.16em;text-transform:uppercase;color:var(--ochre);font-weight:600;margin-bottom:.2rem}
+.prose h3{font-family:var(--sans);font-weight:700;font-size:1.05rem;margin:1.6rem 0 .3rem;color:var(--ink-2)}
+.prose p{margin:.85rem 0}
+.prose ul{padding-left:1.2rem} .prose li{margin:.35rem 0}
+.lead{font-size:1.12rem}
+
+/* callouts as marginalia cards */
+.callout{border-radius:10px;padding:1rem 1.15rem 1rem 1.15rem;margin:1.4rem 0;border:1px solid var(--line);position:relative;background:var(--surface)}
+.callout .tag{font-size:.68rem;font-weight:700;letter-spacing:.1em;text-transform:uppercase;display:inline-flex;align-items:center;gap:.4rem;margin-bottom:.35rem}
+.callout p{margin:.2rem 0}
+.callout.conceito{background:var(--sky-soft);border-color:#cfe1e8} .callout.conceito .tag{color:var(--sky)}
+.callout.atencao{background:var(--ochre-soft);border-color:#ecdcba} .callout.atencao .tag{color:var(--ochre)}
+.callout.dica{background:var(--pine-soft);border-color:#c9e3d6} .callout.dica .tag{color:var(--pine)}
+.callout .tag::before{content:"";width:7px;height:7px;border-radius:50%;background:currentColor}
+
+/* code with syntax colors — book/manuscript feel */
+.code{background:#182b26;border-radius:12px;margin:1.5rem 0;overflow:hidden;border:1px solid #0e1c19;box-shadow:0 14px 30px rgba(22,48,43,.18)}
+.code-bar{display:flex;align-items:center;gap:.5rem;padding:.6rem .9rem;background:#12211d;border-bottom:1px solid #0d1815}
+.code-bar .fname{font-family:var(--mono);font-size:.75rem;color:#8fb3a8;margin-left:.2rem}
+.code-bar .dot{width:10px;height:10px;border-radius:50%}
+.code pre{margin:0;padding:1.1rem 1.2rem;overflow-x:auto;font-family:var(--mono);font-size:.86rem;line-height:1.7;color:#dbe8e3}
+.tok-kw{color:#e5879a} .tok-fn{color:#7fd0b8} .tok-str{color:#e6c584} .tok-num{color:#c8a2f0}
+.tok-com{color:#5c7a72;font-style:italic} .tok-bi{color:#79c0e8}
+
+/* interactive exercise */
+.exercise{border:1.5px solid var(--ink);border-radius:14px;padding:1.4rem 1.5rem;margin:2rem 0;background:var(--surface);position:relative}
+.exercise::before{content:"EXERCÍCIO";position:absolute;top:-9px;left:20px;background:var(--ink);color:var(--paper);
+  font-size:.64rem;font-weight:700;letter-spacing:.14em;padding:.2rem .6rem;border-radius:4px}
+.exercise .q{font-weight:600;font-size:1.05rem;color:var(--ink);margin:.3rem 0 1rem}
+.opt{display:flex;gap:.7rem;align-items:flex-start;padding:.7rem .9rem;border:1px solid var(--line-2);border-radius:9px;margin:.5rem 0;cursor:pointer;transition:.15s;background:#fff}
+.opt:hover{border-color:var(--ink)}
+.opt.sel{border-color:var(--ink);background:var(--crimson-soft)}
+.opt.correct{border-color:var(--pine);background:var(--pine-soft)}
+.opt.wrong{border-color:var(--crimson);background:var(--crimson-soft)}
+.opt input{margin-top:.2rem}
+.ex-actions{margin-top:1rem;display:flex;gap:.7rem;align-items:center}
+.fb{margin-top:1rem;border-radius:9px;padding:.85rem 1rem;font-size:.92rem;display:none}
+.fb.show{display:block}
+.fb.ok{background:var(--pine-soft);color:#144534;border:1px solid #bfe0d1}
+.fb.no{background:var(--crimson-soft);color:#742129;border:1px solid #e6c6c9}
+
+/* buttons */
+.btn{font-family:var(--sans);font-weight:600;font-size:.92rem;border-radius:9px;padding:.6rem 1.15rem;cursor:pointer;border:1px solid transparent;transition:.18s}
+.btn-primary{background:var(--ink);color:var(--paper)} .btn-primary:hover{background:#0e211c}
+.btn-ghost{background:transparent;border-color:var(--line-2);color:var(--ink)} .btn-ghost:hover{border-color:var(--ink)}
+
+/* generation / loading state */
+.gen{border:1px dashed var(--line-2);border-radius:14px;padding:1.4rem 1.5rem;background:var(--surface);margin:1.5rem 0}
+.gen-h{display:flex;align-items:center;gap:.7rem;font-family:var(--serif);font-size:1.15rem;color:var(--ink)}
+.quill{width:20px;height:20px;border:2px solid var(--crimson);border-top-color:transparent;border-radius:50%;animation:spin .8s linear infinite}
+@keyframes spin{to{transform:rotate(360deg)}}
+.pbar{height:7px;background:var(--line);border-radius:99px;margin:1rem 0 .6rem;overflow:hidden}
+.pbar > i{display:block;height:100%;width:40%;background:linear-gradient(90deg,var(--crimson),var(--ochre));border-radius:99px;animation:slide 1.6s ease-in-out infinite}
+@keyframes slide{0%{margin-left:-40%}100%{margin-left:100%}}
+.steps{display:flex;gap:1.2rem;font-size:.8rem;color:var(--muted);flex-wrap:wrap}
+.steps .done{color:var(--pine)} .steps .now{color:var(--ink);font-weight:600}
+.sk{height:12px;background:linear-gradient(90deg,var(--line) 25%,#e9ebe4 37%,var(--line) 63%);background-size:400% 100%;border-radius:6px;margin:.55rem 0;animation:sh 1.4s infinite}
+@keyframes sh{0%{background-position:100% 0}100%{background-position:0 0}}
+
+/* progress footer / titles */
+.foot{margin:50px 0 70px;padding:1.6rem;border:1px solid var(--line);border-radius:16px;background:var(--surface)}
+.foot h4{font-family:var(--serif);font-size:1.2rem;margin:0 0 1rem;color:var(--ink)}
+.mastery{display:flex;gap:6px;margin:.6rem 0 1.1rem}
+.mastery span{flex:1;height:10px;border-radius:3px;background:var(--line)}
+.mastery span.f{background:var(--pine)} .mastery span.cur{background:var(--crimson)}
+.titles{display:flex;gap:.5rem;flex-wrap:wrap}
+.title-chip{font-size:.8rem;padding:.35rem .75rem;border-radius:6px;background:var(--ochre-soft);color:var(--ochre);font-weight:600;border:1px solid #ecdcba}
+.banner{background:var(--ink);color:var(--paper);text-align:center;font-size:.8rem;padding:.5rem}
+</style>
+</head>
+<body>
+<div class="banner">Direção 1 de 3 — <strong>“Ateliê”</strong> · estudo como um belo compêndio: serifada Fraunces, tons de porcelana e pinho, coluna-capítulo</div>
+<nav class="nav"><div class="wrap nav-in">
+  <div class="brand"><span class="seal">T</span> Trilhas</div>
+  <div class="nav-links"><a class="on">Meu ateliê</a><a>Nova trilha</a><a>Conquistas</a></div>
+  <div class="nav-user"><span class="chip-token">◈ 2.4M tokens</span><span>Rodrigo</span></div>
+</div></nav>
+
+<div class="wrap">
+  <div class="lesson">
+    <div class="spine">
+      <div class="spine-num">01</div>
+      <div class="spine-rail"></div>
+      <div class="spine-dot" style="top:120px"></div>
+      <div class="spine-dot" style="top:420px"></div>
+      <div class="spine-dot" style="top:760px"></div>
+    </div>
+    <div class="body">
+      <a class="back" href="#">← Python para análise de dados</a>
+      <div class="eyebrow">Capítulo do seu percurso</div>
+      <h1 class="title">Fundamentos da linguagem</h1>
+      <p class="subtitle">variáveis, tipos e repetição — o alfabeto antes das palavras</p>
+      <div class="meta"><span class="faixa">Iniciante</span><span>◷ 14 min de leitura</span><span>3 subtópicos</span></div>
+
+      <!-- generation state -->
+      <div class="gen">
+        <div class="gen-h"><span class="quill"></span> Escrevendo o material deste nível…</div>
+        <div class="pbar"><i></i></div>
+        <div class="steps"><span class="done">✓ Conceitos</span><span class="now">▸ Exemplos e código</span><span>Exercícios</span><span>Bibliografia</span></div>
+        <div style="margin-top:1rem">
+          <div class="sk" style="width:90%"></div><div class="sk" style="width:100%"></div><div class="sk" style="width:70%"></div>
+        </div>
+      </div>
+
+      <div class="prose">
+        <p class="lead">Uma variável é um nome que aponta para um valor guardado na memória. Em Python você não declara o tipo — ele é inferido no momento da atribuição, o que torna a linguagem rápida de escrever e ótima para explorar dados.</p>
+
+        <div class="callout conceito"><div class="tag">Conceito</div>
+          <p>Atribuição é <em>ligação de nome a objeto</em>. <code>x = 42</code> não copia 42 para uma caixa; cria um inteiro e faz <code>x</code> apontar para ele.</p></div>
+
+        <h2><span class="kicker">Subtópico 1</span>Tipos primitivos</h2>
+        <p>Os quatro tipos que você usará o tempo todo: <code>int</code>, <code>float</code>, <code>str</code> e <code>bool</code>. Repare como o mesmo nome pode passar a apontar para tipos diferentes:</p>
+
+        <div class="code">
+          <div class="code-bar"><span class="dot" style="background:#e57a86"></span><span class="dot" style="background:#e6c584"></span><span class="dot" style="background:#7fd0b8"></span><span class="fname">tipos.py</span></div>
+<pre><span class="tok-com"># o tipo é inferido na atribuição</span>
+idade <span class="tok-kw">=</span> <span class="tok-num">31</span>              <span class="tok-com"># int</span>
+altura <span class="tok-kw">=</span> <span class="tok-num">1.78</span>          <span class="tok-com"># float</span>
+nome <span class="tok-kw">=</span> <span class="tok-str">"Ada Lovelace"</span>   <span class="tok-com"># str</span>
+ativo <span class="tok-kw">=</span> <span class="tok-bi">True</span>            <span class="tok-com"># bool</span>
+
+<span class="tok-kw">print</span>(<span class="tok-fn">type</span>(idade), <span class="tok-fn">type</span>(nome))
+<span class="tok-com"># &lt;class 'int'&gt; &lt;class 'str'&gt;</span></pre>
+        </div>
+
+        <div class="callout dica"><div class="tag">Dica de prática</div>
+          <p>Use <code>type(x)</code> no console sempre que uma conta der errado — quase todo bug de iniciante é um <code>str</code> onde você esperava <code>int</code>.</p></div>
+
+        <h2><span class="kicker">Subtópico 2</span>Repetição com <code>for</code></h2>
+        <p>Laços percorrem sequências. Some os quadrados de 1 a 5:</p>
+        <div class="code">
+          <div class="code-bar"><span class="dot" style="background:#e57a86"></span><span class="dot" style="background:#e6c584"></span><span class="dot" style="background:#7fd0b8"></span><span class="fname">loop.py</span></div>
+<pre>total <span class="tok-kw">=</span> <span class="tok-num">0</span>
+<span class="tok-kw">for</span> n <span class="tok-kw">in</span> <span class="tok-fn">range</span>(<span class="tok-num">1</span>, <span class="tok-num">6</span>):
+    total <span class="tok-kw">+=</span> n <span class="tok-kw">*</span> n
+<span class="tok-kw">print</span>(total)  <span class="tok-com"># 55</span></pre>
+        </div>
+
+        <div class="callout atencao"><div class="tag">Atenção</div>
+          <p><code>range(1, 6)</code> vai de 1 a <strong>5</strong> — o limite superior é exclusivo. É a pegadinha nº 1 de quem começa.</p></div>
+
+        <!-- interactive exercise -->
+        <div class="exercise" id="ex">
+          <div class="q">Qual valor <code>print(total)</code> imprime no laço acima se trocarmos <code>range(1, 6)</code> por <code>range(1, 4)</code>?</div>
+          <label class="opt"><input type="radio" name="q"><span><strong>A)</strong> 14 — soma de 1², 2² e 3²</span></label>
+          <label class="opt"><input type="radio" name="q"><span><strong>B)</strong> 30 — soma de 1² a 4²</span></label>
+          <label class="opt"><input type="radio" name="q"><span><strong>C)</strong> 9 — apenas 3²</span></label>
+          <div class="ex-actions"><button class="btn btn-primary" onclick="check('ex',0)">Verificar</button><span style="font-size:.82rem;color:var(--muted)">1 tentativa · feedback imediato</span></div>
+          <div class="fb ok" id="ex-ok">✔ <strong>Correto.</strong> 1² + 2² + 3² = 1 + 4 + 9 = 14. Você entendeu o limite exclusivo do <code>range</code>.</div>
+          <div class="fb no" id="ex-no">✘ <strong>Ainda não.</strong> Lembre que <code>range(1, 4)</code> percorre 1, 2 e 3. Some os quadrados desses três.</div>
+        </div>
+      </div>
+
+      <div class="foot">
+        <h4>Seu percurso em Python para dados</h4>
+        <div class="mastery"><span class="cur"></span><span></span><span></span><span></span><span></span></div>
+        <p style="font-size:.85rem;color:var(--muted);margin:.2rem 0 1rem">1 de 5 níveis · faça a avaliação deste capítulo para conquistar o título.</p>
+        <div class="titles"><span class="title-chip">🏅 A conquistar: Iniciante em Python</span></div>
+        <div style="margin-top:1.2rem;display:flex;gap:.7rem"><button class="btn btn-primary">Fazer a avaliação do nível</button><button class="btn btn-ghost">Marcar como lido</button></div>
+      </div>
+    </div>
+  </div>
+</div>
+<script>
+function check(id, correctIdx){
+  const box=document.getElementById(id);
+  const opts=[...box.querySelectorAll('.opt')];
+  let sel=-1; opts.forEach((o,i)=>{if(o.querySelector('input').checked)sel=i;});
+  if(sel<0)return;
+  opts.forEach(o=>o.classList.remove('sel','correct','wrong'));
+  opts[correctIdx].classList.add('correct');
+  if(sel!==correctIdx)opts[sel].classList.add('wrong');
+  document.getElementById(id+'-ok').classList.toggle('show',sel===correctIdx);
+  document.getElementById(id+'-no').classList.toggle('show',sel!==correctIdx);
+}
+</script>
+</body>
+</html>

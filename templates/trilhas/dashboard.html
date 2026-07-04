@@ -1,0 +1,45 @@
+{% extends "base.html" %}
+{% block title %}Minhas trilhas · Trilhas de Estudo{% endblock %}
+
+{% block content %}
+<section class="page">
+  <div class="spread page-head">
+    <div>
+      <div class="eyebrow">Seu ateliê de conhecimento</div>
+      <h1 class="h1">Minhas trilhas</h1>
+      <p class="sub">Continue de onde parou ou comece a dominar algo novo.</p>
+    </div>
+    <a class="btn btn-primary" href="{% url 'trilhas:criar' %}">+ Nova trilha</a>
+  </div>
+
+  {% if trilhas %}
+    <div class="trilha-grid">
+      {% for trilha in trilhas %}
+        <article class="card trilha-card">
+          <a href="{% url 'trilhas:detalhe' trilha.pk %}">
+            <div class="tc-top">
+              <span class="status-badge status-badge--{{ trilha.status }}">{{ trilha.get_status_display }}</span>
+              {% if trilha.total_niveis %}<span class="tc-frac">{{ trilha.niveis_aprovados }}/{{ trilha.total_niveis }}</span>{% endif %}
+            </div>
+            <h3 class="tc-title">{{ trilha.titulo|default:trilha.tema_livre|truncatechars:64 }}</h3>
+            {% if trilha.descricao %}<p class="tc-desc">{{ trilha.descricao|truncatechars:120 }}</p>{% endif %}
+            {% if trilha.total_niveis %}
+              <div class="progress-bar"><span style="width: {{ trilha.progresso_pct }}%"></span></div>
+              <p class="progress-label">{{ trilha.progresso_pct }}% concluído</p>
+            {% endif %}
+            {% with titulos=trilha.titulos.all %}
+              {% if titulos %}<div class="title-chips" style="margin-top:.7rem">{% for t in titulos %}<span class="title-chip">🏅 {{ t.nome }}</span>{% endfor %}</div>{% endif %}
+            {% endwith %}
+          </a>
+        </article>
+      {% endfor %}
+    </div>
+  {% else %}
+    <div class="empty">
+      <h3>Você ainda não tem trilhas</h3>
+      <p>Descreva um tema que queira dominar e deixe a IA montar o plano de estudos.</p>
+      <a class="btn btn-primary" href="{% url 'trilhas:criar' %}">Criar minha primeira trilha</a>
+    </div>
+  {% endif %}
+</section>
+{% endblock %}

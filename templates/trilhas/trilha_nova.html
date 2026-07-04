@@ -1,0 +1,25 @@
+{% extends "base.html" %}
+{% block title %}Nova trilha · Trilhas de Estudo{% endblock %}
+
+{% block content %}
+<section class="page narrow">
+  <div class="page-head">
+    <div class="eyebrow">Passo 1 de 3</div>
+    <h1 class="h1">O que você quer aprender?</h1>
+    <p class="sub">Descreva livremente — pode ser amplo. A IA vai fazer algumas perguntas para afinar o plano.</p>
+  </div>
+
+  <form method="post" action="{% url 'trilhas:criar' %}" class="card pad">
+    {% csrf_token %}
+    <div class="field">
+      <label for="tema_livre">Tema</label>
+      <textarea id="tema_livre" name="tema_livre" rows="5" required
+        placeholder="Ex.: quero aprender programação em Python voltada para análise de dados, do zero até conseguir fazer projetos práticos."></textarea>
+    </div>
+    <div class="form-actions">
+      <a class="btn btn-ghost" href="{% url 'dashboard' %}">Cancelar</a>
+      <button type="submit" class="btn btn-primary">Gerar perguntas →</button>
+    </div>
+  </form>
+</section>
+{% endblock %}

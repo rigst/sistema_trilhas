@@ -1,0 +1,41 @@
+{% extends "base.html" %}
+{% block title %}Entrar · Trilhas de Estudo{% endblock %}
+
+{% block content %}
+<div class="auth-wrap">
+  <div class="auth-card card">
+    <div class="pad">
+      <div class="auth-head">
+        <div class="logo-lg">T</div>
+        <h1>Trilhas de Estudo</h1>
+        <p>Diga o que quer aprender e a IA monta um plano completo — do básico ao avançado, com avaliações e títulos a cada nível.</p>
+      </div>
+
+      <form method="post" action="{% url 'login' %}">
+        {% csrf_token %}
+        {% if form.non_field_errors %}<div class="form-errors">{{ form.non_field_errors }}</div>{% endif %}
+        <div class="field">
+          <label for="{{ form.username.id_for_label }}">Usuário</label>
+          {{ form.username }}
+          {{ form.username.errors }}
+        </div>
+        <div class="field">
+          <label for="{{ form.password.id_for_label }}">Senha</label>
+          {{ form.password }}
+          {{ form.password.errors }}
+        </div>
+        <input type="hidden" name="next" value="{{ next }}">
+        <button type="submit" class="btn btn-primary btn-block">Entrar</button>
+      </form>
+
+      <div class="auth-sep">ou</div>
+
+      <form method="post" action="{% url 'accounts:entrar_visitante' %}">
+        {% csrf_token %}
+        <button type="submit" class="btn btn-ghost btn-block">Entrar como visitante</button>
+        <p class="auth-note">Acesso temporário para experimentar. Suas trilhas expiram por inatividade.</p>
+      </form>
+    </div>
+  </div>
+</div>
+{% endblock %}

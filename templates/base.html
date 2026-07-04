@@ -1,0 +1,89 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="color-scheme" content="dark">
+    <title>{% block title %}Trilhas de Estudo{% endblock %}</title>
+    <link rel="icon" type="image/x-icon" href="{% static 'favicon.ico' %}">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Sora:wght@500;600;700;800&family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="{% static 'css/app.css' %}">
+    <link rel="stylesheet" href="{% static 'css/pygments.css' %}">
+</head>
+<body>
+    <header class="site-header">
+        <div class="container">
+            <nav class="nav">
+                <div class="nav-top">
+                    <a href="{% url 'dashboard' %}" class="brand"><span class="logo">T</span> Trilhas</a>
+                    {% if user.is_authenticated %}
+                    <button class="nav-toggle js-nav-toggle" type="button" aria-expanded="false" aria-controls="nav-links nav-hud">
+                        <span class="visually-hidden">Abrir menu</span>
+                        <span class="nav-toggle-bar"></span><span class="nav-toggle-bar"></span><span class="nav-toggle-bar"></span>
+                    </button>
+                    {% endif %}
+                </div>
+                {% if user.is_authenticated %}
+                    <ul class="nav-links" id="nav-links">
+                        <li><a href="{% url 'dashboard' %}" {% if request.resolver_match.url_name == 'dashboard' %}class="active"{% endif %}>Minhas trilhas</a></li>
+                        <li><a href="{% url 'trilhas:criar' %}" {% if request.resolver_match.url_name == 'criar' %}class="active"{% endif %}>Nova trilha</a></li>
+                    </ul>
+                    <div class="hud" id="nav-hud">
+                        {% if quota_total %}<span class="token-pill">⚡ {{ quota_restante }} tokens</span>{% endif %}
+                        <span class="av">{{ user.get_short_name|default:user.username|slice:":1"|upper }}</span>
+                        <form action="{% url 'logout' %}" method="post">{% csrf_token %}<button class="nav-logout" type="submit">Sair</button></form>
+                    </div>
+                {% endif %}
+            </nav>
+        </div>
+    </header>
+
+    <main class="container">
+        {% if messages %}
+            <div class="flash-stack" role="status" aria-live="polite">
+                <ul class="flash-list">
+                    {% for message in messages %}
+                        <li class="flash-message {% if message.tags %}flash-{{ message.tags }}{% endif %}">{{ message }}</li>
+                    {% endfor %}
+                </ul>
+            </div>
+        {% endif %}
+        {% block content %}{% endblock %}
+    </main>
+
+    <footer class="site-footer">
+        <div class="container footer-in">
+            <div>
+                <p class="footer-brand">Trilhas de Estudo</p>
+                <p class="footer-copy">Um app <a href="https://stolben.com/" target="_blank" rel="noopener" style="color:var(--teal)">Stölben</a> · &copy; 2026</p>
+            </div>
+            <ul class="footer-points">
+                <li>Planejamento por IA</li><li>Do básico ao avançado</li><li>Títulos por nível</li>
+            </ul>
+        </div>
+    </footer>
+
+    <script>
+    (() => {
+      const toggle = document.querySelector(".js-nav-toggle");
+      const links = document.getElementById("nav-links");
+      const hud = document.getElementById("nav-hud");
+      const media = window.matchMedia("(max-width: 820px)");
+      const sync = () => {
+        const open = document.body.classList.contains("nav-open");
+        if (!media.matches) { if (links) links.style.display=""; if (hud) hud.style.display=""; return; }
+        if (links) links.style.display = open ? "flex" : "none";
+        if (hud) hud.style.display = open ? "flex" : "none";
+        if (toggle) toggle.setAttribute("aria-expanded", open ? "true":"false");
+      };
+      if (toggle) toggle.addEventListener("click", () => { document.body.classList.toggle("nav-open"); sync(); });
+      if (media.addEventListener) media.addEventListener("change", () => { document.body.classList.remove("nav-open"); sync(); });
+      sync();
+    })();
+    </script>
+    {% block scripts %}{% endblock %}
+</body>
+</html>

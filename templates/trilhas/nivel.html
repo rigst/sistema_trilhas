@@ -1,0 +1,61 @@
+{% extends "base.html" %}
+{% block title %}{{ nivel.titulo }} · {{ trilha.titulo }}{% endblock %}
+
+{% block content %}
+<section class="page narrow">
+  <div class="page-head">
+    <a class="back-link" href="{% url 'trilhas:detalhe' trilha.pk %}">← {{ trilha.titulo }}</a>
+    <div class="badges"><span class="faixa faixa--{{ nivel.faixa }}">{{ nivel.get_faixa_display }}</span><span class="pill">Nível {{ nivel.ordem }}</span></div>
+    <h1 class="h1">{{ nivel.titulo }}</h1>
+    {% if nivel.resumo %}<p class="sub">{{ nivel.resumo }}</p>{% endif %}
+  </div>
+
+{% if nivel.status == 'conteudo_gerando' %}
+  <div class="card pad">
+    <div class="gen-h"><span class="orb"></span> Escrevendo o material deste nível…</div>
+    <div class="pbar"><i></i></div>
+    <div class="steps"><span class="done">✓ Conceitos</span><span class="now">Exemplos & código</span><span>Exercícios resolvidos</span><span>Bibliografia</span></div>
+    <div style="margin-top:1.1rem"><div class="sk" style="width:92%"></div><div class="sk" style="width:100%"></div><div class="sk" style="width:70%"></div><div class="sk" style="width:85%"></div></div>
+    <p class="muted" style="font-size:.85rem;margin-top:1rem">Conteúdo denso leva até um minuto. Você pode sair e voltar — ele continua sendo escrito.</p>
+  </div>
+
+{% elif nivel.status == 'erro' %}
+  <div class="card pad gen-center">
+    <h2 class="h2">Não foi possível gerar o conteúdo</h2>
+    <p class="sub" style="margin:.4rem auto 1.3rem">{{ nivel.erro }}</p>
+    <a class="btn btn-primary" href="{% url 'trilhas:nivel' nivel.pk %}">Tentar novamente</a>
+  </div>
+
+{% else %}
+  {% if nivel.subtopicos.all %}
+    <div class="card pad-sm subtopicos-box">
+      <strong style="color:var(--teal)">Neste nível</strong>
+      <ul>{% for s in nivel.subtopicos.all %}<li>{{ s.titulo }}</li>{% endfor %}</ul>
+    </div>
+  {% endif %}
+
+  <article class="markdown-body">{{ conteudo_html }}</article>
+
+  <div class="nivel-cta">
+    {% if nivel.status == 'aprovado' %}
+      <div class="aprovado-note">✅ Nível concluído — título conquistado: <strong>{{ nivel.titulo_concedido }}</strong>.</div>
+    {% endif %}
+    <a class="btn btn-ghost" href="{% url 'avaliacoes:exercicios' nivel.pk %}">✎ Praticar exercícios</a>
+    <form method="post" action="{% url 'avaliacoes:iniciar' nivel.pk %}">
+      {% csrf_token %}
+      <button type="submit" class="btn btn-primary">⚔ {% if nivel.status == 'aprovado' %}Refazer avaliação{% else %}Fazer avaliação do nível{% endif %}</button>
+    </form>
+  </div>
+  {% if nivel.status != 'aprovado' %}
+    <p class="muted" style="font-size:.85rem;margin-top:.8rem">A avaliação vale o título <strong>{{ nivel.titulo_concedido }}</strong>. Os exercícios são prática livre, sem nota.</p>
+  {% endif %}
+{% endif %}
+</section>
+{% endblock %}
+
+{% block scripts %}
+{% if nivel.status == 'conteudo_gerando' %}
+  {% url 'trilhas:nivel_status' nivel.pk as poll_url %}
+  {% include 'partials/poll.html' with poll_url=poll_url poll_status='conteudo_gerando' %}
+{% endif %}
+{% endblock %}

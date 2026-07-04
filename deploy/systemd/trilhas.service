@@ -1,0 +1,18 @@
+[Unit]
+Description=Gunicorn daemon — Trilhas de Estudo
+After=network.target
+
+[Service]
+User=rod
+Group=www-data
+WorkingDirectory=/var/www/sistema_trilhas
+EnvironmentFile=/var/www/sistema_trilhas/.env
+Environment=DJANGO_SETTINGS_MODULE=config.settings.production
+ExecStart=/var/www/sistema_trilhas/venv/bin/gunicorn \
+          --config /var/www/sistema_trilhas/deploy/gunicorn.conf.py \
+          config.wsgi:application
+Restart=always
+RestartSec=5
+
+[Install]
+WantedBy=multi-user.target

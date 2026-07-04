@@ -1,0 +1,110 @@
+{% extends "base.html" %}
+{% block title %}{{ trilha.titulo|default:"Trilha" }} · Trilhas de Estudo{% endblock %}
+
+{% block content %}
+<section class="page">
+{% if trilha.status == 'gerando_sumario' %}
+  <div class="card pad gen-center">
+    <span class="orb"></span>
+    <h2 class="h2">Montando sua trilha…</h2>
+    <p class="sub" style="margin:.4rem auto 1.3rem">A IA está desenhando os níveis, do básico ao avançado, com base no seu tema e nas suas respostas.</p>
+    <div class="pbar"><i></i></div>
+    <div class="steps" style="justify-content:center"><span class="done">✓ Respostas analisadas</span><span class="now">Estruturando níveis</span><span>Definindo títulos</span></div>
+  </div>
+
+{% elif trilha.status == 'erro' %}
+  <div class="card pad gen-center">
+    <h2 class="h2">Algo deu errado</h2>
+    <p class="sub" style="margin:.4rem auto 1.3rem">{{ trilha.erro|default:"Não foi possível gerar a trilha." }}</p>
+    <a class="btn btn-ghost" href="{% url 'dashboard' %}">Voltar</a>
+  </div>
+
+{% else %}
+  <div class="spread page-head">
+    <div>
+      <div class="badges"><span class="status-badge status-badge--{{ trilha.status }}">{{ trilha.get_status_display }}</span></div>
+      <h1 class="h1">{{ trilha.titulo }}</h1>
+      {% if trilha.descricao %}<p class="sub">{{ trilha.descricao }}</p>{% endif %}
+    </div>
+    <form method="post" action="{% url 'trilhas:excluir' trilha.pk %}" onsubmit="return confirm('Excluir esta trilha e todo o progresso?');">
+      {% csrf_token %}<button type="submit" class="btn btn-danger">Excluir</button>
+    </form>
+  </div>
+
+  <div class="two-col">
+    <div>
+      <ol class="nivel-list">
+        {% for nivel in trilha.niveis.all %}
+          {% if nivel.status == 'bloqueado' %}
+            <li class="card nivel-row lock">
+              <span class="nivel-num">{{ nivel.ordem }}</span>
+              <div class="nivel-main">
+                <span class="faixa faixa--{{ nivel.faixa }}">{{ nivel.get_faixa_display }}</span>
+                <span class="nivel-name">{{ nivel.titulo }}</span>
+                <span class="nivel-hint">🔒 Conclua o nível anterior para desbloquear</span>
+              </div>
+            </li>
+          {% else %}
+            <li>
+              <a class="card nivel-row link {% if nivel.status == 'aprovado' %}done{% endif %}" href="{% url 'trilhas:nivel' nivel.pk %}">
+                <span class="nivel-num">{% if nivel.status == 'aprovado' %}✓{% else %}{{ nivel.ordem }}{% endif %}</span>
+                <div class="nivel-main">
+                  <span class="faixa faixa--{{ nivel.faixa }}">{{ nivel.get_faixa_display }}</span>
+                  <span class="nivel-name">{{ nivel.titulo }}</span>
+                  {% if nivel.resumo %}<span class="nivel-resumo">{{ nivel.resumo|truncatechars:110 }}</span>{% endif %}
+                  {% if nivel.titulo_concedido %}<span class="nivel-hint">🏅 {{ nivel.titulo_concedido }}</span>{% endif %}
+                </div>
+                <span class="nivel-state">{{ nivel.get_status_display }}</span>
+              </a>
+            </li>
+          {% endif %}
+        {% endfor %}
+      </ol>
+    </div>
+
+    <aside class="rail">
+      <div class="card pad">
+        <h3 class="h3">Seu progresso</h3>
+        <div class="progress-bar progress-bar--lg"><span style="width: {{ trilha.progresso_pct }}%"></span></div>
+        <p class="progress-label">{{ trilha.progresso_pct }}% · {{ trilha.niveis_aprovados }}/{{ trilha.total_niveis }} níveis aprovados</p>
+        {% with titulos=trilha.titulos.all %}
+          <div class="title-chips" style="margin-top:1rem">
+            {% for t in titulos %}<span class="title-chip">🏅 {{ t.nome }}</span>{% empty %}<span class="title-chip title-chip--muted">Nenhum título ainda</span>{% endfor %}
+          </div>
+        {% endwith %}
+      </div>
+
+      {% if trilha.objetivos %}
+        <div class="card pad">
+          <h3 class="h3">Objetivos</h3>
+          <ul style="margin:0;padding-left:1.2rem;color:var(--muted)">{% for o in trilha.objetivos %}<li>{{ o }}</li>{% endfor %}</ul>
+        </div>
+      {% endif %}
+
+      <div class="card pad">
+        <h3 class="h3">Constelação</h3>
+        <div class="constel">
+          {% for nivel in trilha.niveis.all %}
+            {% if nivel.status == 'bloqueado' %}
+              <div class="node lock"><span class="bead">{{ nivel.ordem }}</span><span class="nm">{{ nivel.titulo }} 🔒</span></div>
+            {% else %}
+              <a class="node {% if nivel.status == 'aprovado' %}done{% else %}cur{% endif %}" href="{% url 'trilhas:nivel' nivel.pk %}">
+                <span class="bead">{% if nivel.status == 'aprovado' %}✓{% else %}{{ nivel.ordem }}{% endif %}</span>
+                <span class="nm">{{ nivel.titulo }}{% if nivel.status != 'aprovado' %}<small>· seu foco agora</small>{% endif %}</span>
+              </a>
+            {% endif %}
+          {% endfor %}
+        </div>
+      </div>
+    </aside>
+  </div>
+{% endif %}
+</section>
+{% endblock %}
+
+{% block scripts %}
+{% if trilha.status == 'gerando_sumario' %}
+  {% url 'trilhas:status' trilha.pk as poll_url %}
+  {% include 'partials/poll.html' with poll_url=poll_url poll_status='gerando_sumario' %}
+{% endif %}
+{% endblock %}

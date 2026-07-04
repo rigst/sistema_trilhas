@@ -1,0 +1,124 @@
+{% extends "base.html" %}
+{% block title %}Exercícios · {{ nivel.titulo }}{% endblock %}
+
+{% block content %}
+<section class="page narrow" id="ex-page">
+  <div class="page-head">
+    <a class="back-link" href="{% url 'trilhas:nivel' nivel.pk %}">← {{ nivel.titulo }}</a>
+    <div class="badges"><span class="faixa faixa--{{ nivel.faixa }}">{{ nivel.get_faixa_display }}</span><span class="pill">Prática livre · sem nota</span></div>
+    <h1 class="h1">Exercícios do nível</h1>
+    <p class="sub">Responda e receba feedback na hora. Erre à vontade — isto não afeta seu progresso.</p>
+  </div>
+
+{% if lista.status == 'gerando' %}
+  <div class="card pad gen-center">
+    <span class="orb"></span>
+    <h2 class="h2">Gerando exercícios…</h2>
+    <p class="sub" style="margin:.4rem auto 1.2rem">A IA está preparando questões de prática sobre este nível.</p>
+    <div class="pbar"><i></i></div>
+  </div>
+
+{% elif lista.status == 'erro' %}
+  <div class="card pad gen-center">
+    <h2 class="h2">Não foi possível gerar os exercícios</h2>
+    <p class="sub" style="margin:.4rem auto 1.2rem">{{ lista.erro }}</p>
+    <a class="btn btn-primary" href="{% url 'avaliacoes:exercicios' nivel.pk %}">Tentar novamente</a>
+  </div>
+
+{% else %}
+  {% csrf_token %}
+  <div class="stack">
+    {% for item in itens %}
+      {% with ex=item.ex %}
+      <div class="card pad exercise" data-id="{{ ex.pk }}" data-tipo="{{ ex.tipo }}" data-url="{% url 'avaliacoes:exercicio_verificar' ex.pk %}">
+        <div class="ex-tag"><span class="spark">✎</span> Exercício {{ ex.ordem }} · {{ ex.get_tipo_display }}</div>
+        <div class="q-enun markdown-body">{{ item.enunciado_html }}</div>
+
+        {% if ex.tipo == 'objetiva' %}
+          <div class="opts">
+            {% for alt in ex.alternativas %}
+              <label class="opt {% if ex.alternativa_escolhida == alt.letra %}{% if ex.nota == 10 %}correct{% else %}wrong{% endif %}{% endif %}">
+                <input type="radio" name="ex_{{ ex.pk }}" value="{{ alt.letra }}" {% if ex.alternativa_escolhida == alt.letra %}checked{% endif %}>
+                <span><strong>{{ alt.letra }})</strong> {{ alt.texto }}</span>
+              </label>
+            {% endfor %}
+          </div>
+        {% else %}
+          <textarea class="js-resp" rows="4" placeholder="Sua resposta…">{{ ex.resposta_texto }}</textarea>
+        {% endif %}
+
+        <div class="ex-actions">
+          <button type="button" class="btn btn-primary js-verify">Verificar</button>
+          <span class="muted" style="font-size:.8rem">feedback imediato</span>
+        </div>
+        <div class="fb js-fb {% if ex.respondido_em %}show {% if ex.nota >= 6 %}ok{% else %}no{% endif %}{% endif %}">{{ item.feedback_html }}</div>
+      </div>
+      {% endwith %}
+    {% endfor %}
+  </div>
+
+  <div class="form-actions" style="justify-content:center;margin-top:2rem">
+    <a class="btn btn-ghost" href="{% url 'trilhas:nivel' nivel.pk %}">Voltar ao conteúdo</a>
+    <form method="post" action="{% url 'avaliacoes:iniciar' nivel.pk %}">{% csrf_token %}<button class="btn btn-primary">Pronto? Fazer a avaliação ⚔</button></form>
+  </div>
+{% endif %}
+</section>
+{% endblock %}
+
+{% block scripts %}
+{% if lista.status == 'gerando' %}
+  {% url 'avaliacoes:exercicios_status' lista.pk as poll_url %}
+  {% include 'partials/poll.html' with poll_url=poll_url poll_status='gerando' %}
+{% elif lista.status == 'pronta' %}
+<script>
+(() => {
+  const csrf = document.querySelector('#ex-page [name=csrfmiddlewaretoken]').value;
+  document.querySelectorAll('.exercise').forEach(card => {
+    const btn = card.querySelector('.js-verify');
+    const fb = card.querySelector('.js-fb');
+    const tipo = card.dataset.tipo;
+    btn.addEventListener('click', async () => {
+      const body = new URLSearchParams();
+      if (tipo === 'objetiva') {
+        const sel = card.querySelector('input[type=radio]:checked');
+        if (!sel) { fb.className = 'fb js-fb show neutral'; fb.textContent = 'Escolha uma alternativa.'; return; }
+        body.set('alternativa', sel.value);
+      } else {
+        body.set('resposta', card.querySelector('.js-resp').value);
+      }
+      btn.disabled = true;
+      const original = btn.innerHTML;
+      btn.innerHTML = '<span class="spin-sm"></span> Verificando';
+      try {
+        const r = await fetch(card.dataset.url, {
+          method: 'POST',
+          headers: { 'X-CSRFToken': csrf, 'X-Requested-With': 'XMLHttpRequest' },
+          body,
+        });
+        const d = await r.json();
+        if (d.erro) { fb.className = 'fb js-fb show no'; fb.textContent = d.erro; return; }
+        if (tipo === 'objetiva') {
+          card.querySelectorAll('.opt').forEach(o => o.classList.remove('correct','wrong'));
+          card.querySelectorAll('.opt').forEach(o => {
+            const v = o.querySelector('input').value;
+            if (v === d.gabarito) o.classList.add('correct');
+            const sel = card.querySelector('input:checked');
+            if (sel && sel.value === v && !d.correto) o.classList.add('wrong');
+          });
+          fb.className = 'fb js-fb show ' + (d.correto ? 'ok' : 'no');
+          fb.innerHTML = (d.correto ? '✔ <strong>Correto!</strong> ' : '✘ <strong>Não foi dessa vez.</strong> ') + d.feedback_html;
+        } else {
+          fb.className = 'fb js-fb show ' + (d.nota >= 6 ? 'ok' : 'no');
+          fb.innerHTML = '<strong>Nota: ' + d.nota.toFixed(1) + '/10</strong><br>' + d.feedback_html;
+        }
+      } catch(e) {
+        fb.className = 'fb js-fb show no'; fb.textContent = 'Falha ao verificar. Tente de novo.';
+      } finally {
+        btn.disabled = false; btn.innerHTML = original;
+      }
+    });
+  });
+})();
+</script>
+{% endif %}
+{% endblock %}

@@ -1,0 +1,70 @@
+{% extends "base.html" %}
+{% block title %}Avaliação · {{ nivel.titulo }}{% endblock %}
+
+{% block content %}
+<section class="page narrow">
+  <div class="page-head">
+    <a class="back-link" href="{% url 'trilhas:nivel' nivel.pk %}">← {{ nivel.titulo }}</a>
+    <h1 class="h1">Avaliação do nível</h1>
+    <p class="sub">Tentativa {{ avaliacao.tentativa }} · nota mínima {{ nivel.trilha.nota_minima_aprovacao }} para conquistar o título.</p>
+  </div>
+
+{% if avaliacao.status == 'gerando' %}
+  <div class="card pad gen-center">
+    <span class="orb"></span>
+    <h2 class="h2">Preparando sua avaliação…</h2>
+    <p class="sub" style="margin:.4rem auto 1.2rem">A IA está elaborando questões objetivas e dissertativas sobre este nível.</p>
+    <div class="pbar"><i></i></div>
+  </div>
+
+{% elif avaliacao.status == 'corrigindo' %}
+  <div class="card pad gen-center">
+    <span class="orb"></span>
+    <h2 class="h2">Corrigindo suas respostas…</h2>
+    <p class="sub" style="margin:.4rem auto 1.2rem">A IA está avaliando as dissertativas e calculando sua nota.</p>
+    <div class="pbar"><i></i></div>
+    <div class="steps" style="justify-content:center"><span class="done">✓ Objetivas</span><span class="now">Dissertativas</span><span>Nota final</span></div>
+  </div>
+
+{% elif avaliacao.status == 'erro' %}
+  <div class="card pad gen-center">
+    <h2 class="h2">Algo deu errado</h2>
+    <p class="sub" style="margin:.4rem auto 1.2rem">{{ avaliacao.erro }}</p>
+    <a class="btn btn-ghost" href="{% url 'trilhas:nivel' nivel.pk %}">Voltar ao nível</a>
+  </div>
+
+{% else %}
+  <form method="post" action="{% url 'avaliacoes:submeter' avaliacao.pk %}" class="card pad">
+    {% csrf_token %}
+    {% for q in questoes %}
+      <div class="q-block">
+        <p class="q-enun"><span class="n">{{ q.ordem }}.</span> {{ q.enunciado_md|linebreaksbr }}</p>
+        {% if q.tipo == 'objetiva' %}
+          <div class="opts">
+            {% for alt in q.alternativas %}
+              <label class="opt"><input type="radio" name="alt_{{ q.pk }}" value="{{ alt.letra }}" required><span><strong>{{ alt.letra }})</strong> {{ alt.texto }}</span></label>
+            {% endfor %}
+          </div>
+        {% else %}
+          <textarea name="texto_{{ q.pk }}" rows="5" placeholder="Sua resposta…"></textarea>
+        {% endif %}
+      </div>
+    {% endfor %}
+    <div class="form-actions">
+      <a class="btn btn-ghost" href="{% url 'trilhas:nivel' nivel.pk %}">Cancelar</a>
+      <button type="submit" class="btn btn-primary">Enviar respostas</button>
+    </div>
+  </form>
+{% endif %}
+</section>
+{% endblock %}
+
+{% block scripts %}
+{% if avaliacao.status == 'gerando' %}
+  {% url 'avaliacoes:status' avaliacao.pk as poll_url %}
+  {% include 'partials/poll.html' with poll_url=poll_url poll_status='gerando' %}
+{% elif avaliacao.status == 'corrigindo' %}
+  {% url 'avaliacoes:status' avaliacao.pk as poll_url %}
+  {% include 'partials/poll.html' with poll_url=poll_url poll_status='corrigindo' %}
+{% endif %}
+{% endblock %}

@@ -1,0 +1,56 @@
+{% extends "base.html" %}
+{% block title %}Resultado · {{ nivel.titulo }}{% endblock %}
+
+{% block content %}
+<section class="page narrow">
+  <div class="page-head">
+    <a class="back-link" href="{% url 'trilhas:detalhe' trilha.pk %}">← {{ trilha.titulo }}</a>
+    <h1 class="h1">Resultado da avaliação</h1>
+  </div>
+
+  <div class="resultado-hero {% if avaliacao.aprovado %}ok{% else %}no{% endif %}">
+    <div class="resultado-nota">{{ avaliacao.nota_final|floatformat:1 }}<span>/10</span></div>
+    <div class="resultado-msg">
+      {% if avaliacao.aprovado %}
+        <h2>🎉 Aprovado!</h2>
+        {% if titulo_conquistado %}<p>Título conquistado: <strong style="color:var(--amber)">{{ titulo_conquistado.nome }}</strong>.</p>{% endif %}
+        <p class="muted">O próximo nível foi desbloqueado.</p>
+      {% else %}
+        <h2>Quase lá</h2>
+        <p class="muted">{{ avaliacao.feedback_geral }}</p>
+      {% endif %}
+    </div>
+  </div>
+
+  <div class="form-actions" style="justify-content:flex-start;margin:0 0 2rem">
+    {% if avaliacao.aprovado %}
+      <a class="btn btn-primary" href="{% url 'trilhas:detalhe' trilha.pk %}">Continuar trilha →</a>
+    {% else %}
+      <a class="btn btn-ghost" href="{% url 'avaliacoes:exercicios' nivel.pk %}">✎ Praticar antes</a>
+      <a class="btn btn-ghost" href="{% url 'trilhas:nivel' nivel.pk %}">Revisar conteúdo</a>
+      <form method="post" action="{% url 'avaliacoes:iniciar' nivel.pk %}">{% csrf_token %}<button type="submit" class="btn btn-primary">Tentar novamente</button></form>
+    {% endif %}
+  </div>
+
+  <h3 class="h3">Correção detalhada</h3>
+  <div class="correcao-list">
+    {% for item in itens %}
+      <div class="correcao-item {% if item.resposta.nota >= 6 %}ok{% elif item.resposta.nota is not None %}bad{% endif %}">
+        <div class="correcao-top">
+          <span class="correcao-num">{{ item.questao.ordem }}</span>
+          <span class="correcao-tipo">{{ item.questao.get_tipo_display }}</span>
+          {% if item.resposta.nota is not None %}<span class="correcao-nota">{{ item.resposta.nota|floatformat:1 }}/10</span>{% endif %}
+        </div>
+        <div class="markdown-body" style="font-size:.95rem">{{ item.enunciado_html }}</div>
+        {% if item.resposta %}
+          <div class="correcao-sua"><b>Sua resposta:</b>
+            {% if item.questao.tipo == 'objetiva' %}{{ item.resposta.alternativa_escolhida|default:"—" }}
+            {% else %}{{ item.resposta.resposta_texto|default:"—"|linebreaksbr }}{% endif %}
+          </div>
+          {% if item.feedback_html %}<div class="correcao-fb markdown-body">{{ item.feedback_html }}</div>{% endif %}
+        {% endif %}
+      </div>
+    {% endfor %}
+  </div>
+</section>
+{% endblock %}
