@@ -1,14 +1,17 @@
 [Unit]
-Description=Celery Worker + Beat — Trilhas de Estudo
+Description=Trilhas de Estudo — Celery Worker + Beat
 After=network.target redis-server.service
 
 [Service]
+Type=simple
 User=rod
 Group=www-data
 WorkingDirectory=/var/www/sistema_trilhas
 EnvironmentFile=/var/www/sistema_trilhas/.env
 Environment=DJANGO_SETTINGS_MODULE=config.settings.production
-ExecStart=/var/www/sistema_trilhas/venv/bin/celery -A config worker --beat -l info
+ExecStart=/var/www/sistema_trilhas/venv/bin/celery -A config worker --beat -l info \
+    --max-tasks-per-child=100 \
+    --logfile=/var/www/sistema_trilhas/logs/celery.log
 Restart=always
 RestartSec=10
 
