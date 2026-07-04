@@ -5,7 +5,6 @@ from django.shortcuts import get_object_or_404, redirect, render
 from django.utils import timezone
 from django.views.decorators.http import require_POST
 
-from ai import services as ai_services
 from ai import tasks as ai_tasks
 from trilhas.mdrender import render_md
 from trilhas.models import Nivel
@@ -75,10 +74,9 @@ def avaliacao_submeter(request, pk):
 
     for questao in avaliacao.questoes.all():
         alt = (request.POST.get(f'alt_{questao.pk}') or '').strip()
-        texto = (request.POST.get(f'texto_{questao.pk}') or '').strip()
         Resposta.objects.update_or_create(
             questao=questao,
-            defaults={'alternativa_escolhida': alt, 'resposta_texto': texto},
+            defaults={'alternativa_escolhida': alt},
         )
 
     avaliacao.status = Avaliacao.Status.CORRIGINDO
@@ -168,17 +166,15 @@ def exercicios_status(request, pk):
 @login_required
 @require_POST
 def exercicio_verificar(request, pk):
-    """Verifica um exercício e devolve o feedback (JSON). Prática — não afeta nota."""
+    """Verifica um exercício objetivo e devolve o feedback (JSON). Prática."""
     ex = get_object_or_404(
         Exercicio.objects.select_related('lista__nivel__trilha__user'),
         pk=pk, lista__nivel__trilha__user=request.user,
     )
-    profile = getattr(request.user, 'profile', None)
 
     # Uma vez respondido, a resposta é definitiva — não pode ser alterada.
     if ex.respondido_em is not None:
         return JsonResponse({
-            'tipo': ex.tipo,
             'ja_respondido': True,
             'correto': (ex.nota or 0) >= 10,
             'gabarito': (ex.gabarito or '').strip().upper(),
@@ -186,45 +182,22 @@ def exercicio_verificar(request, pk):
             'concluida': ex.lista.concluida,
         }, status=409)
 
-    primeira_vez = True
-
-    def _xp():
-        if primeira_vez and profile is not None:
-            profile.registrar_atividade(profile.XP_EXERCICIO)
-
-    if ex.tipo == Exercicio.Tipo.OBJETIVA:
-        escolhida = (request.POST.get('alternativa') or '').strip().upper()
-        correta = (ex.gabarito or '').strip().upper()
-        acertou = bool(escolhida) and escolhida == correta
-        ex.alternativa_escolhida = escolhida
-        ex.nota = 10.0 if acertou else 0.0
-        ex.feedback_md = ex.explicacao_md
-        ex.respondido_em = timezone.now()
-        ex.save(update_fields=['alternativa_escolhida', 'nota', 'feedback_md', 'respondido_em'])
-        _xp()
-        lista = ex.lista
-        return JsonResponse({
-            'tipo': 'objetiva', 'correto': acertou, 'gabarito': correta,
-            'feedback_html': _md(ex.explicacao_md),
-            'concluida': lista.concluida,
-        })
-
-    # Dissertativa: feedback da IA (Sonnet), sem impacto em progressão.
-    texto = (request.POST.get('resposta') or '').strip()
-    try:
-        nota, feedback = ai_services.verificar_exercicio_dissertativa(ex, texto, profile)
-    except Exception as exc:  # noqa: BLE001
-        return JsonResponse({'erro': str(exc)[:300]}, status=502)
-    ex.resposta_texto = texto
-    ex.nota = nota
-    ex.feedback_md = feedback
+    escolhida = (request.POST.get('alternativa') or '').strip().upper()
+    correta = (ex.gabarito or '').strip().upper()
+    acertou = bool(escolhida) and escolhida == correta
+    ex.alternativa_escolhida = escolhida
+    ex.nota = 10.0 if acertou else 0.0
+    ex.feedback_md = ex.explicacao_md
     ex.respondido_em = timezone.now()
-    ex.save(update_fields=['resposta_texto', 'nota', 'feedback_md', 'respondido_em'])
-    _xp()
+    ex.save(update_fields=['alternativa_escolhida', 'nota', 'feedback_md', 'respondido_em'])
+
+    profile = getattr(request.user, 'profile', None)
+    if profile is not None:
+        profile.registrar_atividade(profile.XP_EXERCICIO)
+
     return JsonResponse({
-        'tipo': 'dissertativa', 'nota': nota,
-        'feedback_html': _md(feedback),
-        'gabarito_html': _md(ex.gabarito),
+        'correto': acertou, 'gabarito': correta,
+        'feedback_html': _md(ex.explicacao_md),
         'concluida': ex.lista.concluida,
     })
 

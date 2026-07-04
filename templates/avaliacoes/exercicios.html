@@ -38,22 +38,18 @@
   <div class="stack">
     {% for item in itens %}
       {% with ex=item.ex %}
-      <div class="card pad exercise" data-id="{{ ex.pk }}" data-tipo="{{ ex.tipo }}" data-answered="{% if ex.respondido_em %}1{% else %}0{% endif %}" data-url="{% url 'avaliacoes:exercicio_verificar' ex.pk %}">
-        <div class="ex-tag"><span class="spark">✎</span> Exercício {{ ex.ordem }} · {{ ex.get_tipo_display }}</div>
+      <div class="card pad exercise" data-id="{{ ex.pk }}" data-answered="{% if ex.respondido_em %}1{% else %}0{% endif %}" data-url="{% url 'avaliacoes:exercicio_verificar' ex.pk %}">
+        <div class="ex-tag"><span class="spark">✎</span> Exercício {{ ex.ordem }}</div>
         <div class="q-enun markdown-body">{{ item.enunciado_html }}</div>
 
-        {% if ex.tipo == 'objetiva' %}
-          <div class="opts">
-            {% for alt in ex.alternativas %}
-              <label class="opt {% if ex.respondido_em %}{% if alt.letra == ex.gabarito %}correct{% elif ex.alternativa_escolhida == alt.letra %}wrong{% endif %}{% endif %}">
-                <input type="radio" name="ex_{{ ex.pk }}" value="{{ alt.letra }}" {% if ex.alternativa_escolhida == alt.letra %}checked{% endif %} {% if ex.respondido_em %}disabled{% endif %}>
-                <span><strong>{{ alt.letra }})</strong> {{ alt.texto }}</span>
-              </label>
-            {% endfor %}
-          </div>
-        {% else %}
-          <textarea class="js-resp" rows="4" data-autosave="ex-{{ ex.pk }}" placeholder="Sua resposta…" {% if ex.respondido_em %}disabled{% endif %}>{{ ex.resposta_texto }}</textarea>
-        {% endif %}
+        <div class="opts">
+          {% for alt in ex.alternativas %}
+            <label class="opt {% if ex.respondido_em %}{% if alt.letra == ex.gabarito %}correct{% elif ex.alternativa_escolhida == alt.letra %}wrong{% endif %}{% endif %}">
+              <input type="radio" name="ex_{{ ex.pk }}" value="{{ alt.letra }}" {% if ex.alternativa_escolhida == alt.letra %}checked{% endif %} {% if ex.respondido_em %}disabled{% endif %}>
+              <span><strong>{{ alt.letra }})</strong> {{ alt.texto }}</span>
+            </label>
+          {% endfor %}
+        </div>
 
         <div class="ex-actions">
           {% if ex.respondido_em %}
@@ -99,24 +95,18 @@
     if (concluida) { btnAval.disabled = false; hintEl.textContent = 'Prática concluída ✓ — avaliação liberada!'; }
   };
   const lockCard = (card) => {
-    card.querySelectorAll('input,textarea').forEach(el => el.disabled = true);
+    card.querySelectorAll('input').forEach(el => el.disabled = true);
     const actions = card.querySelector('.ex-actions');
     if (actions) actions.innerHTML = '<span class="muted" style="font-size:.85rem">✓ Respondido — resposta definitiva</span>';
   };
   document.querySelectorAll('.exercise').forEach(card => {
     const btn = card.querySelector('.js-verify');
     const fb = card.querySelector('.js-fb');
-    const tipo = card.dataset.tipo;
     if (!btn) return;  // já respondido: nada a fazer
     btn.addEventListener('click', async () => {
-      const body = new URLSearchParams();
-      if (tipo === 'objetiva') {
-        const sel = card.querySelector('input[type=radio]:checked');
-        if (!sel) { fb.className = 'fb js-fb show neutral'; fb.textContent = 'Escolha uma alternativa.'; return; }
-        body.set('alternativa', sel.value);
-      } else {
-        body.set('resposta', card.querySelector('.js-resp').value);
-      }
+      const sel = card.querySelector('input[type=radio]:checked');
+      if (!sel) { fb.className = 'fb js-fb show neutral'; fb.textContent = 'Escolha uma alternativa.'; return; }
+      const body = new URLSearchParams(); body.set('alternativa', sel.value);
       btn.disabled = true;
       const original = btn.innerHTML;
       btn.innerHTML = '<span class="spin-sm"></span> Verificando';
@@ -130,21 +120,13 @@
         if (d.erro) { fb.className = 'fb js-fb show no'; fb.textContent = d.erro; return; }
         card.dataset.answered = '1';
         lockCard(card);
-        if (tipo === 'objetiva') {
-          card.querySelectorAll('.opt').forEach(o => o.classList.remove('correct','wrong'));
-          card.querySelectorAll('.opt').forEach(o => {
-            const v = o.querySelector('input').value;
-            if (v === d.gabarito) o.classList.add('correct');
-            const sel = card.querySelector('input:checked');
-            if (sel && sel.value === v && !d.correto) o.classList.add('wrong');
-          });
-          fb.className = 'fb js-fb show ' + (d.correto ? 'ok' : 'no');
-          fb.innerHTML = (d.correto ? '✔ <strong>Correto!</strong> ' : '✘ <strong>Não foi dessa vez.</strong> ') + d.feedback_html;
-        } else {
-          fb.className = 'fb js-fb show ' + (d.nota >= 6 ? 'ok' : 'no');
-          const nota = (d.nota != null) ? d.nota.toFixed(1) : '—';
-          fb.innerHTML = '<strong>Nota: ' + nota + '/10</strong><br>' + d.feedback_html;
-        }
+        card.querySelectorAll('.opt').forEach(o => {
+          const v = o.querySelector('input').value;
+          if (v === d.gabarito) o.classList.add('correct');
+          if (sel.value === v && !d.correto) o.classList.add('wrong');
+        });
+        fb.className = 'fb js-fb show ' + (d.correto ? 'ok' : 'no');
+        fb.innerHTML = (d.correto ? '✔ <strong>Correto!</strong> ' : '✘ <strong>Não foi dessa vez.</strong> ') + (d.feedback_html || '');
         refreshProgress(d.concluida);
       } catch(e) {
         fb.className = 'fb js-fb show no'; fb.textContent = 'Falha ao verificar. Tente de novo.';

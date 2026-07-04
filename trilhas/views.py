@@ -226,13 +226,10 @@ def nivel_detalhe(request, pk):
         return redirect('trilhas:detalhe', pk=nivel.trilha_id)
 
     lista = getattr(nivel, 'lista_exercicios', None)
-    subtopicos = list(nivel.subtopicos.all())
-    for i, s in enumerate(subtopicos):
-        s.desbloqueado = i == 0 or subtopicos[i - 1].lido
     return render(request, 'trilhas/nivel.html', {
         'nivel': nivel,
         'trilha': nivel.trilha,
-        'subtopicos': subtopicos,
+        'subtopicos': nivel.subtopicos.all(),
         'primeiro_nao_lido': nivel.primeiro_nao_lido,
         'exercicios_concluidos': bool(lista and lista.concluida),
         'avaliacao': nivel.avaliacoes.order_by('-criada_em').first(),
@@ -294,10 +291,6 @@ def topico(request, nivel_pk, ordem):
         # No último tópico, já começa a preparar os exercícios em background.
         if atual.eh_ultimo:
             _pre_gerar_exercicios(nivel)
-
-    # Marca quais tópicos já estão liberados (leitura sequencial).
-    for i, s in enumerate(subs):
-        s.desbloqueado = i == 0 or subs[i - 1].lido
 
     return render(request, 'trilhas/topico.html', {
         'nivel': nivel,

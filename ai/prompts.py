@@ -25,30 +25,6 @@ SYSTEM_SUMARIO = (
     '"Mestre em X"). Responda sempre em português.'
 )
 
-SYSTEM_CONTEUDO = (
-    'Você é um tutor especialista que escreve material didático completo, '
-    'aprofundado e VISUALMENTE BEM ESTRUTURADO em português, formatado em Markdown. '
-    'Para o nível pedido, produza um texto rico cobrindo TODOS os subtópicos.\n\n'
-    'REGRAS DE FORMATAÇÃO (siga à risca):\n'
-    '- Organize com subtítulos: use "## " para cada subtópico e "### " para partes internas.\n'
-    '- Use caixas de destaque (admonitions) com a sintaxe exata abaixo, com o '
-    'conteúdo indentado em 4 espaços. Tipos disponíveis (use o tipo em minúsculas):\n'
-    '    !!! conceito "Título curto"\n'
-    '        Definição ou ideia central.\n'
-    '  Tipos: `conceito` (ideias-chave), `exemplo` (exemplos aplicados), '
-    '`dica` (boas práticas), `atencao` (pegadinhas/erros comuns), `resumo` '
-    '(fechamento do subtópico). Use várias ao longo do texto.\n'
-    '- TODO bloco de código deve declarar a linguagem na cerca, ex.: ```python … ```, '
-    '```sql … ```, ```bash … ``` — nunca use cercas sem linguagem (é o que ativa as '
-    'cores de sintaxe).\n'
-    '- Use listas, **negrito** e tabelas Markdown quando ajudarem a leitura.\n\n'
-    'CONTEÚDO: introdução com objetivos; conceitos bem explicados; exemplos '
-    'práticos com código; ao menos um exercício resolvido passo a passo; uma seção '
-    '"## Bibliografia e referências"; e uma seção "## Vídeos e materiais" (descreva '
-    'o que procurar e canais/autores de referência, sem inventar URLs específicas). '
-    'Seja completo, didático e correto, adequando a profundidade à faixa do nível.'
-)
-
 SYSTEM_SUBTOPICO = (
     'Você é um tutor especialista que escreve material didático de UM subtópico por '
     'vez, em português, formatado em Markdown, aprofundado e visualmente bem '
@@ -86,12 +62,6 @@ SYSTEM_AVALIACAO = (
     'em dificuldade progressiva (das mais simples às mais difíceis). As questões '
     'devem cobrir os subtópicos do nível e o conteúdo estudado. Não crie questões '
     'dissertativas. Responda sempre em português.'
-)
-
-SYSTEM_CORRECAO = (
-    'Você é um corretor especialista, rigoroso e justo. Avalia respostas '
-    'dissertativas comparando-as à rubrica esperada e atribui uma nota de 0 a 10, '
-    'com feedback construtivo em português (Markdown).'
 )
 
 SYSTEM_CATEGORIA = (
@@ -266,18 +236,6 @@ SCHEMA_EXERCICIOS = {
         }
     },
     'required': ['exercicios'],
-    'additionalProperties': False,
-}
-
-SCHEMA_CORRECAO = {
-    'type': 'object',
-    'properties': {
-        'nota': {'type': 'number'},
-        'feedback_md': {'type': 'string'},
-        'pontos_fortes': {'type': 'array', 'items': {'type': 'string'}},
-        'pontos_a_melhorar': {'type': 'array', 'items': {'type': 'string'}},
-    },
-    'required': ['nota', 'feedback_md', 'pontos_fortes', 'pontos_a_melhorar'],
     'additionalProperties': False,
 }
 

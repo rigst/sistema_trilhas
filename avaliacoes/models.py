@@ -5,7 +5,7 @@ from trilhas.models import FAIXA_TIER, Nivel, Trilha
 
 
 class Avaliacao(models.Model):
-    """Avaliação de um nível — questões objetivas e dissertativas, corrigidas pela IA."""
+    """Avaliação de um nível — questões objetivas, corrigidas pelo gabarito."""
 
     class Status(models.TextChoices):
         GERANDO = 'gerando', 'Gerando'

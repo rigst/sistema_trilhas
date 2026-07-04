@@ -2,15 +2,16 @@
 Integração com a API da Anthropic (Claude).
 
 Divisão de modelos por tarefa (configurável em settings):
-  - Planejamento do sumário e correção de dissertativas → Opus 4.8 (mais julgamento).
-  - Perguntas, conteúdo, avaliação e exercícios → Sonnet 4.6 (rápido/barato).
+  - Planejamento do sumário e percurso do mentor → Opus 4.8 (mais julgamento).
+  - Perguntas, conteúdo, avaliação, exercícios e revisão → Sonnet 4.6 (rápido/barato).
 
 Fluxo:
   1. gerar_perguntas_direcionadoras
   2. gerar_sumario
   3. gerar_conteudo_subtopico (streaming, um tópico por vez)
-  4. gerar_avaliacao / corrigir_avaliacao (com progressão e título)
-  5. gerar_exercicios / verificar_exercicio_dissertativa (prática, sem nota)
+  4. gerar_avaliacao / corrigir_avaliacao (objetivas, com progressão e título)
+  5. gerar_exercicios (prática objetiva, feedback imediato)
+  6. categorizar_trilhas / gerar_revisao / gerar_percurso (organização e revisão)
 
 Toda chamada debita a quota de tokens do Profile do usuário.
 """
@@ -252,7 +253,7 @@ def gerar_conteudo_subtopico(subtopico, profile=None):
 
 
 # ---------------------------------------------------------------------------
-# 4. Avaliação (Sonnet gera; Opus corrige dissertativas)
+# 4. Avaliação (Sonnet gera; correção objetiva determinística por gabarito)
 # ---------------------------------------------------------------------------
 
 def gerar_avaliacao(avaliacao, profile=None):
@@ -293,24 +294,8 @@ def gerar_avaliacao(avaliacao, profile=None):
     return avaliacao
 
 
-def _corrigir_dissertativa(enunciado, rubrica, resposta_texto, profile, model, effort):
-    user = (
-        f'Enunciado da questão:\n{enunciado}\n\n'
-        f'Rubrica esperada:\n{rubrica}\n\n'
-        f'Resposta do aluno:\n{resposta_texto or "(em branco)"}\n\n'
-        'Avalie a resposta de 0 a 10 conforme a rubrica e dê feedback em Markdown.'
-    )
-    return _gerar_json(
-        prompts.SYSTEM_CORRECAO, user, prompts.SCHEMA_CORRECAO, profile,
-        model=model, effort=effort,
-    )
-
-
 def corrigir_avaliacao(avaliacao, profile=None):
-    """Corrige (objetivas determinísticas, dissertativas via Opus), nota e progressão."""
-    model = _model_planejamento()
-    effort = getattr(settings, 'AI_EFFORT', 'high')
-
+    """Corrige a avaliação (objetivas, gabarito determinístico), nota e progressão."""
     soma_pesos = 0.0
     soma_notas = 0.0
 
@@ -320,23 +305,14 @@ def corrigir_avaliacao(avaliacao, profile=None):
             continue
         peso = questao.peso or 1.0
 
-        if questao.tipo == questao.Tipo.OBJETIVA:
-            correta = (questao.gabarito or '').strip().upper()
-            escolhida = (resposta.alternativa_escolhida or '').strip().upper()
-            nota = 10.0 if escolhida and escolhida == correta else 0.0
-            resposta.nota = nota
-            resposta.feedback_md = (
-                'Resposta correta.' if nota else
-                f'Resposta incorreta. Gabarito: **{correta or "—"}**.'
-            )
-        else:
-            res = _corrigir_dissertativa(
-                questao.enunciado_md, questao.gabarito, resposta.resposta_texto,
-                profile, model, effort,
-            )
-            nota = max(0.0, min(10.0, float(res.get('nota') or 0.0)))
-            resposta.nota = nota
-            resposta.feedback_md = _montar_feedback(res)
+        correta = (questao.gabarito or '').strip().upper()
+        escolhida = (resposta.alternativa_escolhida or '').strip().upper()
+        nota = 10.0 if escolhida and escolhida == correta else 0.0
+        resposta.nota = nota
+        resposta.feedback_md = (
+            'Resposta correta.' if nota else
+            f'Resposta incorreta. Gabarito: **{correta or "—"}**.'
+        )
 
         resposta.corrigida_em = timezone.now()
         resposta.save(update_fields=['nota', 'feedback_md', 'corrigida_em'])
@@ -364,17 +340,6 @@ def corrigir_avaliacao(avaliacao, profile=None):
         if profile is not None:
             profile.registrar_atividade(profile.XP_APROVACAO)
     return avaliacao
-
-
-def _montar_feedback(res):
-    partes = [res.get('feedback_md', '').strip()]
-    fortes = res.get('pontos_fortes') or []
-    melhorar = res.get('pontos_a_melhorar') or []
-    if fortes:
-        partes.append('**Pontos fortes:**\n' + '\n'.join(f'- {x}' for x in fortes))
-    if melhorar:
-        partes.append('**A melhorar:**\n' + '\n'.join(f'- {x}' for x in melhorar))
-    return '\n\n'.join(p for p in partes if p)
 
 
 def _aprovar_nivel(nivel):
@@ -444,16 +409,6 @@ def gerar_exercicios(lista, profile=None):
         ))
     Exercicio.objects.bulk_create(objs)
     return lista
-
-
-def verificar_exercicio_dissertativa(exercicio, resposta_texto, profile=None):
-    """Feedback + nota (0–10) de um exercício dissertativo de prática (Sonnet)."""
-    res = _corrigir_dissertativa(
-        exercicio.enunciado_md, exercicio.gabarito, resposta_texto, profile,
-        model=_model_geral(), effort=getattr(settings, 'AI_EFFORT_GERAL', 'medium'),
-    )
-    nota = max(0.0, min(10.0, float(res.get('nota') or 0.0)))
-    return nota, _montar_feedback(res)
 
 
 # ---------------------------------------------------------------------------

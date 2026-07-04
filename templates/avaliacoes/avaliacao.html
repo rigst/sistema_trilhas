@@ -39,15 +39,11 @@
     {% for q in questoes %}
       <div class="q-block">
         <p class="q-enun"><span class="n">{{ q.ordem }}.</span> {{ q.enunciado_md|linebreaksbr }}</p>
-        {% if q.tipo == 'objetiva' %}
-          <div class="opts">
-            {% for alt in q.alternativas %}
-              <label class="opt"><input type="radio" name="alt_{{ q.pk }}" value="{{ alt.letra }}" required><span><strong>{{ alt.letra }})</strong> {{ alt.texto }}</span></label>
-            {% endfor %}
-          </div>
-        {% else %}
-          <textarea name="texto_{{ q.pk }}" rows="5" data-autosave="aval-{{ avaliacao.pk }}-{{ q.pk }}" placeholder="Sua resposta…"></textarea>
-        {% endif %}
+        <div class="opts">
+          {% for alt in q.alternativas %}
+            <label class="opt"><input type="radio" name="alt_{{ q.pk }}" value="{{ alt.letra }}" required><span><strong>{{ alt.letra }})</strong> {{ alt.texto }}</span></label>
+          {% endfor %}
+        </div>
       </div>
     {% endfor %}
     <div class="form-actions">

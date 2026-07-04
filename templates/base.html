@@ -135,15 +135,6 @@
         block.appendChild(btn);
       });
 
-      // Autosave de respostas dissertativas (localStorage).
-      document.querySelectorAll("textarea[data-autosave]").forEach((ta) => {
-        const key = "trilhas-draft:" + ta.dataset.autosave;
-        try { const v = localStorage.getItem(key); if (v && !ta.value) ta.value = v; } catch (e) {}
-        ta.addEventListener("input", () => { try { localStorage.setItem(key, ta.value); } catch (e) {} });
-        const form = ta.closest("form");
-        if (form) form.addEventListener("submit", () => { try { localStorage.removeItem(key); } catch (e) {} });
-      });
-
       // Duplo-clique numa alternativa: descarta (risca/acinzenta) como eliminada.
       document.addEventListener("dblclick", (e) => {
         const opt = e.target.closest(".opt");
