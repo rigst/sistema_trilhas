@@ -11,7 +11,7 @@
   </div>
 
 {% if revisao.status == 'gerando' %}
-  <div class="card pad gen-center">
+  <div class="card pad gen-center" role="status" aria-live="polite">
     <span class="orb"></span>
     <h2 class="h2">Montando sua revisão…</h2>
     <p class="sub" style="margin:.4rem auto 1.2rem">A IA está selecionando os níveis já concluídos e criando as perguntas.</p>
@@ -19,7 +19,7 @@
   </div>
 
 {% elif revisao.status == 'erro' %}
-  <div class="card pad gen-center">
+  <div class="card pad gen-center" role="status" aria-live="polite">
     <h2 class="h2">Não foi possível montar a revisão</h2>
     <p class="sub" style="margin:.4rem auto 1.2rem">{{ revisao.erro }}</p>
     <form method="post" action="{% url 'avaliacoes:revisar' %}">{% csrf_token %}
@@ -37,6 +37,7 @@
     <div class="progress-bar" style="margin-top:.5rem"><span id="rev-progress" style="width: {% widthratio revisao.respondidos revisao.total 100 %}%"></span></div>
   </div>
 
+  {% include 'partials/dica_descarte.html' %}
   <div class="stack">
     {% for item in itens %}
       {% with q=item.q %}

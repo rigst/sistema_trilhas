@@ -11,17 +11,17 @@
     </div>
     <div class="home-actions">
       {% if pode_estudar %}
-        <a class="btn btn-primary" href="{% url 'trilhas:estudar_agora' %}">▶ Estudar agora</a>
+        <a class="btn btn-primary" href="{% url 'trilhas:estudar_agora' %}"><svg class="ic" aria-hidden="true"><use href="#ic-play"/></svg> Estudar agora</a>
       {% endif %}
       {% if trilhas %}
-        <a class="btn btn-mentor" href="{% url 'trilhas:mentor' %}">🧭 Mentor</a>
+        <a class="btn btn-mentor" href="{% url 'trilhas:mentor' %}"><svg class="ic" aria-hidden="true"><use href="#ic-compass"/></svg> Mentor</a>
       {% endif %}
       {% if pode_revisar %}
         <form method="post" action="{% url 'avaliacoes:revisar' %}">{% csrf_token %}
-          <button type="submit" class="btn btn-ghost">🔁 Revisar</button>
+          <button type="submit" class="btn btn-ghost"><svg class="ic" aria-hidden="true"><use href="#ic-refresh"/></svg> Revisar{% if revisoes_devidas %} <span class="btn-count">{{ revisoes_devidas }}</span>{% endif %}</button>
         </form>
       {% endif %}
-      <a class="btn btn-ghost" href="{% url 'trilhas:criar' %}">+ Nova trilha</a>
+      <a class="btn btn-ghost" href="{% url 'trilhas:criar' %}"><svg class="ic" aria-hidden="true"><use href="#ic-plus"/></svg> Nova trilha</a>
     </div>
   </div>
 
@@ -49,6 +49,13 @@
   {% endif %}
 
   {% if trilhas %}
+    {% if trilhas|length > 3 %}
+      <div class="trilha-search">
+        <input type="search" id="trilha-search" placeholder="Buscar trilha por nome, tema ou categoria…"
+               aria-label="Buscar trilha" autocomplete="off">
+        <p class="trilha-search-empty" id="trilha-search-empty" hidden>Nenhuma trilha encontrada.</p>
+      </div>
+    {% endif %}
     {% if multiplos_grupos %}
       {% for categoria, lista in grupos %}
         <details class="folder" open>
@@ -86,4 +93,33 @@
     </div>
   {% endif %}
 </section>
+{% endblock %}
+
+{% block scripts %}
+<script>
+(() => {
+  const input = document.getElementById("trilha-search");
+  if (!input) return;
+  const empty = document.getElementById("trilha-search-empty");
+  const cards = Array.from(document.querySelectorAll(".trilha-card[data-search]"));
+  const folders = Array.from(document.querySelectorAll(".folder"));
+  const filtrar = () => {
+    const q = input.value.trim().toLowerCase();
+    let visiveis = 0;
+    cards.forEach((c) => {
+      const hit = !q || (c.dataset.search || "").includes(q);
+      c.hidden = !hit;
+      if (hit) visiveis++;
+    });
+    // Esconde pastas sem nenhum card visível; abre as que têm correspondência.
+    folders.forEach((f) => {
+      const algum = f.querySelector(".trilha-card:not([hidden])");
+      f.hidden = !algum;
+      if (q && algum) f.open = true;
+    });
+    if (empty) empty.hidden = visiveis !== 0;
+  };
+  input.addEventListener("input", filtrar);
+})();
+</script>
 {% endblock %}

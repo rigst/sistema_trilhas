@@ -74,11 +74,14 @@ class Trilha(models.Model):
     # -- Progresso / gamificação ----------------------------------------
     @property
     def total_niveis(self):
-        return self.niveis.count()
+        # Usa o cache de prefetch quando disponível (evita N+1 no dashboard).
+        return len(self.niveis.all())
 
     @property
     def niveis_aprovados(self):
-        return self.niveis.filter(status=Nivel.Status.APROVADO).count()
+        return sum(
+            1 for n in self.niveis.all() if n.status == Nivel.Status.APROVADO
+        )
 
     @property
     def progresso_pct(self):
@@ -90,11 +93,11 @@ class Trilha(models.Model):
     @property
     def nivel_atual(self):
         """Primeiro nível ainda não aprovado (o foco de estudo do usuário)."""
-        return (
-            self.niveis.exclude(status=Nivel.Status.APROVADO)
-            .order_by('ordem')
-            .first()
-        )
+        # O cache de prefetch já vem ordenado por ordem (Meta.ordering).
+        for n in self.niveis.all():
+            if n.status != Nivel.Status.APROVADO:
+                return n
+        return None
 
     @property
     def concluida(self):
@@ -104,6 +107,9 @@ class Trilha(models.Model):
     def titulo_atual(self):
         """O título mais avançado já conquistado na trilha (os anteriores são
         substituídos por ele na exibição)."""
+        if 'titulos' in getattr(self, '_prefetched_objects_cache', {}):
+            titulos = list(self.titulos.all())
+            return max(titulos, key=lambda t: t.nivel.ordem) if titulos else None
         return self.titulos.order_by('-nivel__ordem').first()
 
     @property
@@ -222,6 +228,13 @@ class Nivel(models.Model):
     criado_em = models.DateTimeField(auto_now_add=True)
     atualizado_em = models.DateTimeField(auto_now=True)
 
+    # Repetição espaçada (SM-2) — agendamento de revisão do nível já aprovado.
+    revisao_ef = models.FloatField('fator de facilidade (SM-2)', default=2.5)
+    revisao_intervalo = models.PositiveIntegerField('intervalo de revisão (dias)', default=0)
+    revisao_repeticoes = models.PositiveIntegerField('repetições de revisão', default=0)
+    revisao_proxima = models.DateField('próxima revisão', null=True, blank=True, db_index=True)
+    revisao_ultima = models.DateField('última revisão', null=True, blank=True)
+
     class Meta:
         verbose_name = 'nível'
         verbose_name_plural = 'níveis'
@@ -233,11 +246,11 @@ class Nivel(models.Model):
     # -- Progresso de leitura -------------------------------------------
     @property
     def total_subtopicos(self):
-        return self.subtopicos.count()
+        return len(self.subtopicos.all())
 
     @property
     def subtopicos_lidos(self):
-        return self.subtopicos.filter(lido=True).count()
+        return sum(1 for s in self.subtopicos.all() if s.lido)
 
     @property
     def leitura_pct(self):
@@ -251,8 +264,61 @@ class Nivel(models.Model):
 
     @property
     def primeiro_nao_lido(self):
-        return self.subtopicos.filter(lido=False).order_by('ordem').first() \
-            or self.subtopicos.order_by('ordem').first()
+        # Usa o cache de prefetch (subtopicos já ordenados por ordem em Meta).
+        subs = list(self.subtopicos.all())
+        for s in subs:
+            if not s.lido:
+                return s
+        return subs[0] if subs else None
+
+    # -- Repetição espaçada (SM-2) --------------------------------------
+    def iniciar_revisao_espacada(self):
+        """Agenda a 1ª revisão ao aprovar o nível (amanhã)."""
+        from django.utils import timezone
+        self.revisao_ef = 2.5
+        self.revisao_intervalo = 1
+        self.revisao_repeticoes = 0
+        self.revisao_ultima = None
+        self.revisao_proxima = timezone.localdate() + timezone.timedelta(days=1)
+        self.save(update_fields=[
+            'revisao_ef', 'revisao_intervalo', 'revisao_repeticoes',
+            'revisao_ultima', 'revisao_proxima', 'atualizado_em',
+        ])
+
+    def registrar_revisao(self, qualidade):
+        """Atualiza o agendamento SM-2 após revisar (qualidade 0–5)."""
+        from django.utils import timezone
+        hoje = timezone.localdate()
+        q = max(0, min(5, int(qualidade)))
+        if q < 3:
+            self.revisao_repeticoes = 0
+            self.revisao_intervalo = 1
+        else:
+            if self.revisao_repeticoes == 0:
+                self.revisao_intervalo = 1
+            elif self.revisao_repeticoes == 1:
+                self.revisao_intervalo = 6
+            else:
+                base = self.revisao_intervalo or 1
+                self.revisao_intervalo = max(1, round(base * (self.revisao_ef or 2.5)))
+            self.revisao_repeticoes += 1
+        ef = (self.revisao_ef or 2.5) + (0.1 - (5 - q) * (0.08 + (5 - q) * 0.02))
+        self.revisao_ef = max(1.3, round(ef, 3))
+        self.revisao_ultima = hoje
+        self.revisao_proxima = hoje + timezone.timedelta(days=self.revisao_intervalo)
+        self.save(update_fields=[
+            'revisao_ef', 'revisao_intervalo', 'revisao_repeticoes',
+            'revisao_ultima', 'revisao_proxima', 'atualizado_em',
+        ])
+
+    @property
+    def revisao_devida(self):
+        from django.utils import timezone
+        return (
+            self.status == Nivel.Status.APROVADO
+            and self.revisao_proxima is not None
+            and self.revisao_proxima <= timezone.localdate()
+        )
 
 
 class Subtopico(models.Model):

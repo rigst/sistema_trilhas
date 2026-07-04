@@ -1,4 +1,4 @@
-<article class="card trilha-card{% if not trilha.ativa %} trilha-card--off{% endif %}">
+<article class="card trilha-card{% if not trilha.ativa %} trilha-card--off{% endif %}" data-search="{{ trilha.titulo|default:trilha.tema_livre|lower }} {{ trilha.descricao|lower }} {{ trilha.categoria_display|lower }}">
   <a href="{% url 'trilhas:detalhe' trilha.pk %}">
     <div class="tc-top">
       <span class="tc-left">

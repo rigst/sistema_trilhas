@@ -11,7 +11,7 @@
   </div>
 
 {% if lista.status == 'gerando' %}
-  <div class="card pad gen-center">
+  <div class="card pad gen-center" role="status" aria-live="polite">
     <span class="orb"></span>
     <h2 class="h2">Gerando exercícios…</h2>
     <p class="sub" style="margin:.4rem auto 1.2rem">A IA está preparando questões de prática sobre este nível.</p>
@@ -19,7 +19,7 @@
   </div>
 
 {% elif lista.status == 'erro' %}
-  <div class="card pad gen-center">
+  <div class="card pad gen-center" role="status" aria-live="polite">
     <h2 class="h2">Não foi possível gerar os exercícios</h2>
     <p class="sub" style="margin:.4rem auto 1.2rem">{{ lista.erro }}</p>
     <a class="btn btn-primary" href="{% url 'avaliacoes:exercicios' nivel.pk %}">Tentar novamente</a>
@@ -35,6 +35,7 @@
     <div class="progress-bar" style="margin-top:.5rem"><span id="ex-progress" style="width: {% widthratio lista.respondidos lista.total 100 %}%"></span></div>
   </div>
 
+  {% include 'partials/dica_descarte.html' %}
   <div class="stack">
     {% for item in itens %}
       {% with ex=item.ex %}

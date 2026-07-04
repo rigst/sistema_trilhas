@@ -27,6 +27,9 @@ class Profile(models.Model):
     xp = models.BigIntegerField('XP', default=0)
     streak_dias = models.PositiveIntegerField('sequência de dias', default=0)
     ultimo_estudo = models.DateField('último dia de estudo', null=True, blank=True)
+    lembrete_streak_em = models.DateField(
+        'último lembrete de ofensiva enviado em', null=True, blank=True
+    )
 
     criado_em = models.DateTimeField(auto_now_add=True)
     atualizado_em = models.DateTimeField(auto_now=True)

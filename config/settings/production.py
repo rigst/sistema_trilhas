@@ -73,3 +73,27 @@ STORAGES = {
 }
 
 CSRF_TRUSTED_ORIGINS = ['https://' + h for h in ALLOWED_HOSTS if h]
+
+
+# ==============================================================================
+# Monitoramento de erros (Sentry) — ativo só quando SENTRY_DSN está definido.
+# ==============================================================================
+
+SENTRY_DSN = os.getenv('SENTRY_DSN', '').strip()
+if SENTRY_DSN:
+    try:
+        import sentry_sdk
+        from sentry_sdk.integrations.celery import CeleryIntegration
+        from sentry_sdk.integrations.django import DjangoIntegration
+
+        sentry_sdk.init(
+            dsn=SENTRY_DSN,
+            integrations=[DjangoIntegration(), CeleryIntegration()],
+            environment=os.getenv('SENTRY_ENVIRONMENT', 'production'),
+            release=os.getenv('SENTRY_RELEASE') or None,
+            traces_sample_rate=float(os.getenv('SENTRY_TRACES_SAMPLE_RATE', '0.0')),
+            send_default_pii=False,
+        )
+    except ImportError:
+        # Pacote ainda não instalado: seguimos sem monitoramento (sem quebrar o app).
+        pass

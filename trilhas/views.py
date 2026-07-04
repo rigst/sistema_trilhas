@@ -6,6 +6,7 @@ from django.template.loader import render_to_string
 from django.utils import timezone
 from django.views.decorators.http import require_POST
 
+from accounts.quota import MSG_SEM_QUOTA, sem_quota_ia
 from ai import tasks as ai_tasks
 
 from .mdrender import render_md
@@ -32,7 +33,7 @@ def _pre_gerar_exercicios(nivel):
 def dashboard(request):
     trilhas = list(
         request.user.trilhas
-        .prefetch_related('niveis', 'titulos__nivel')
+        .prefetch_related('niveis__subtopicos', 'titulos__nivel')
         .all()
     )
     ativas = [t for t in trilhas if t.ativa]
@@ -62,9 +63,13 @@ def dashboard(request):
         grupos.setdefault(t.categoria_display, []).append(t)
 
     pode_estudar = any(t.proximo_topico for t in ativas)
-    pode_revisar = Nivel.objects.filter(
+    aprovados = Nivel.objects.filter(
         trilha__user=request.user, trilha__ativa=True, status=Nivel.Status.APROVADO
-    ).exists()
+    )
+    pode_revisar = aprovados.exists()
+    revisoes_devidas = aprovados.filter(
+        revisao_proxima__lte=timezone.localdate()
+    ).count()
 
     return render(request, 'trilhas/dashboard.html', {
         'trilhas': trilhas,
@@ -74,6 +79,7 @@ def dashboard(request):
         'multiplos_grupos': len(grupos) > 1,
         'pode_estudar': pode_estudar,
         'pode_revisar': pode_revisar,
+        'revisoes_devidas': revisoes_devidas,
     })
 
 
@@ -117,6 +123,9 @@ def estudar_agora(request):
 def mentor(request):
     percurso = request.user.percursos.first()
     if percurso is None:
+        if sem_quota_ia(request.user):
+            messages.error(request, MSG_SEM_QUOTA)
+            return redirect('dashboard')
         percurso = Percurso.objects.create(
             user=request.user, status=Percurso.Status.GERANDO
         )
@@ -130,6 +139,9 @@ def mentor(request):
 @login_required
 @require_POST
 def mentor_atualizar(request):
+    if sem_quota_ia(request.user):
+        messages.error(request, MSG_SEM_QUOTA)
+        return redirect('trilhas:mentor')
     percurso = Percurso.objects.create(
         user=request.user, status=Percurso.Status.GERANDO
     )
@@ -154,6 +166,9 @@ def trilha_criar(request):
         if not tema:
             messages.error(request, 'Descreva o que você quer aprender.')
             return render(request, 'trilhas/trilha_nova.html')
+        if sem_quota_ia(request.user):
+            messages.error(request, MSG_SEM_QUOTA)
+            return redirect('dashboard')
         trilha = Trilha.objects.create(
             user=request.user,
             tema_livre=tema,

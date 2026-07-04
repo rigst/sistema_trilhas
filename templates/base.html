@@ -23,6 +23,7 @@
     <link rel="stylesheet" href="{% static 'css/pygments.css' %}">
 </head>
 <body>
+    {% include 'partials/icons.html' %}
     <header class="site-header">
         <div class="container">
             <nav class="nav">
@@ -45,7 +46,7 @@
                             <span class="lvl">Nv.{{ nivel_xp }}</span>
                             <span class="xp-bar"><i style="width: {{ xp_no_nivel }}%"></i></span>
                         </div>
-                        {% if streak_dias %}<span class="streak" title="{{ streak_dias }} dia(s) seguidos">🔥 {{ streak_dias }}</span>{% endif %}
+                        {% if streak_dias %}<span class="streak" title="{{ streak_dias }} dia(s) seguidos"><svg class="ic" aria-hidden="true"><use href="#ic-flame"/></svg> {{ streak_dias }}</span>{% endif %}
                         <span class="av">{{ user.get_short_name|default:user.username|slice:":1"|upper }}</span>
                         <form action="{% url 'logout' %}" method="post">{% csrf_token %}<button class="nav-logout" type="submit">Sair</button></form>
                     </div>

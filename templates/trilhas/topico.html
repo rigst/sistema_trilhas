@@ -36,7 +36,7 @@
   </div>
 
 {% elif subtopico.status == 'erro' %}
-  <div class="card pad gen-center">
+  <div class="card pad gen-center" role="status" aria-live="polite">
     <h2 class="h2">Não foi possível gerar este tópico</h2>
     <p class="sub" style="margin:.4rem auto 1.3rem">{{ subtopico.erro }}</p>
     <a class="btn btn-primary" href="{% url 'trilhas:topico' nivel.pk subtopico.ordem %}">Tentar novamente</a>

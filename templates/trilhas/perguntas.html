@@ -4,7 +4,7 @@
 {% block content %}
 <section class="page narrow">
 {% if trilha.status == 'gerando_perguntas' %}
-  <div class="card pad gen-center">
+  <div class="card pad gen-center" role="status" aria-live="polite">
     <span class="orb"></span>
     <h2 class="h2">Preparando algumas perguntas…</h2>
     <p class="sub" style="margin:.4rem auto 1.3rem">A IA está montando perguntas para entender seu ponto de partida e seus objetivos.</p>
@@ -13,7 +13,7 @@
   </div>
 
 {% elif trilha.status == 'erro' %}
-  <div class="card pad gen-center">
+  <div class="card pad gen-center" role="status" aria-live="polite">
     <h2 class="h2">Algo deu errado</h2>
     <p class="sub" style="margin:.4rem auto 1.3rem">{{ trilha.erro|default:"Não foi possível gerar as perguntas." }}</p>
     <a class="btn btn-primary" href="{% url 'trilhas:criar' %}">Tentar de novo</a>

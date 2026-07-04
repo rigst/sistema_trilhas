@@ -348,6 +348,7 @@ def _aprovar_nivel(nivel):
 
     nivel.status = Nivel.Status.APROVADO
     nivel.save(update_fields=['status', 'atualizado_em'])
+    nivel.iniciar_revisao_espacada()  # agenda a 1ª revisão espaçada
 
     nome_titulo = nivel.titulo_concedido or f'{nivel.get_faixa_display()} em {nivel.trilha.titulo}'
     Titulo.objects.get_or_create(
@@ -500,9 +501,10 @@ def _catalogo_percurso(user):
                 tem_aprovado = True
                 ref = f'revisar:{nivel.pk}'
                 catalogo[ref] = {'tipo': 'revisar', 'nivel_id': nivel.pk, 'sub_ordem': None}
+                vencida = ' — REVISÃO VENCIDA (priorize)' if nivel.revisao_devida else ''
                 linhas.append(
                     f'- ref "{ref}" [REVISAR] trilha "{t.titulo}" ({cat}): revisar o '
-                    f'nível concluído "{nivel.titulo}" (faixa {nivel.get_faixa_display()}).'
+                    f'nível concluído "{nivel.titulo}" (faixa {nivel.get_faixa_display()}){vencida}.'
                 )
 
     if tem_aprovado:

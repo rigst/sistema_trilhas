@@ -6,6 +6,7 @@ Compartilhadas entre development e production.
 import os
 from pathlib import Path
 
+from celery.schedules import crontab
 from dotenv import load_dotenv
 
 # Carrega variáveis de ambiente do .env
@@ -130,7 +131,37 @@ CELERY_BEAT_SCHEDULE = {
         'task': 'accounts.tasks.cleanup_expired_visitors',
         'schedule': int(os.getenv('CLEANUP_INTERVAL_MINUTES', '60')) * 60,
     },
+    # Lembrete diário de ofensiva (streak) — no-op até STREAK_REMINDERS_ENABLED.
+    'streak-reminders': {
+        'task': 'accounts.tasks.enviar_lembretes_streak',
+        'schedule': crontab(
+            hour=int(os.getenv('STREAK_REMINDER_HOUR', '20')), minute=0,
+        ),
+    },
 }
+
+
+# ==============================================================================
+# E-mail
+# ==============================================================================
+
+EMAIL_BACKEND = os.getenv(
+    'EMAIL_BACKEND', 'django.core.mail.backends.console.EmailBackend'
+)
+EMAIL_HOST = os.getenv('EMAIL_HOST', '')
+EMAIL_PORT = int(os.getenv('EMAIL_PORT', '587'))
+EMAIL_HOST_USER = os.getenv('EMAIL_HOST_USER', '')
+EMAIL_HOST_PASSWORD = os.getenv('EMAIL_HOST_PASSWORD', '')
+EMAIL_USE_TLS = os.getenv('EMAIL_USE_TLS', 'True').lower() in ('true', '1', 'yes')
+DEFAULT_FROM_EMAIL = os.getenv(
+    'DEFAULT_FROM_EMAIL', 'Trilhas de Estudo <no-reply@trilhas.stolben.com>'
+)
+SITE_URL = os.getenv('SITE_URL', 'https://trilhas.stolben.com')
+
+# Lembretes de ofensiva por e-mail só disparam quando explicitamente ligados.
+STREAK_REMINDERS_ENABLED = os.getenv(
+    'STREAK_REMINDERS_ENABLED', 'False'
+).lower() in ('true', '1', 'yes')
 
 
 # ==============================================================================
@@ -140,8 +171,9 @@ CELERY_BEAT_SCHEDULE = {
 ANTHROPIC_API_KEY = os.getenv('ANTHROPIC_API_KEY', '')
 
 # Divisão de modelos por tarefa:
-#   - Planejamento (sumário) e correção de dissertativas → Opus 4.8 (mais julgamento).
+#   - Planejamento (sumário/percurso do mentor) → Opus 4.8 (mais julgamento).
 #   - Demais tarefas (perguntas, conteúdo, avaliação, exercícios) → Sonnet 4.6 (rápido/barato).
+#   - Correção de avaliação é determinística (gabarito), não usa IA.
 AI_MODEL_GERAL = os.getenv('AI_MODEL', 'claude-sonnet-4-6')
 AI_MODEL_PLANEJAMENTO = os.getenv('AI_MODEL_PLANEJAMENTO', 'claude-opus-4-8')
 # Compatibilidade: alguns lugares ainda leem AI_MODEL.

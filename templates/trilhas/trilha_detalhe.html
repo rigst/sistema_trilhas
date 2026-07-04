@@ -4,7 +4,7 @@
 {% block content %}
 <section class="page">
 {% if trilha.status == 'gerando_sumario' %}
-  <div class="card pad gen-center">
+  <div class="card pad gen-center" role="status" aria-live="polite">
     <span class="orb"></span>
     <h2 class="h2">Montando sua trilha…</h2>
     <p class="sub" style="margin:.4rem auto 1.3rem">A IA está desenhando os níveis, do básico ao avançado, com base no seu tema e nas suas respostas.</p>
@@ -13,7 +13,7 @@
   </div>
 
 {% elif trilha.status == 'erro' %}
-  <div class="card pad gen-center">
+  <div class="card pad gen-center" role="status" aria-live="polite">
     <h2 class="h2">Algo deu errado</h2>
     <p class="sub" style="margin:.4rem auto 1.3rem">{{ trilha.erro|default:"Não foi possível gerar a trilha." }}</p>
     <a class="btn btn-ghost" href="{% url 'dashboard' %}">Voltar</a>
@@ -31,7 +31,7 @@
     </div>
     <div class="inline-actions" style="display:flex;gap:.5rem;align-items:center;flex-wrap:wrap">
       {% if trilha.status == 'concluida' %}
-        <a class="btn btn-primary" href="{% url 'trilhas:certificado' trilha.pk %}" target="_blank">🎓 Certificado</a>
+        <a class="btn btn-primary" href="{% url 'trilhas:certificado' trilha.pk %}" target="_blank"><svg class="ic" aria-hidden="true"><use href="#ic-cap"/></svg> Certificado</a>
       {% endif %}
       <form method="post" action="{% url 'trilhas:alternar_ativa' trilha.pk %}">
         {% csrf_token %}
@@ -69,7 +69,7 @@
               <div class="nivel-main">
                 <span class="faixa faixa--{{ nivel.faixa }}">{{ nivel.get_faixa_display }}</span>
                 <span class="nivel-name">{{ nivel.titulo }}</span>
-                <span class="nivel-hint">🔒 Conclua o nível anterior para desbloquear</span>
+                <span class="nivel-hint"><svg class="ic" aria-hidden="true"><use href="#ic-lock"/></svg> Conclua o nível anterior para desbloquear</span>
               </div>
             </li>
           {% else %}
@@ -80,7 +80,7 @@
                   <span class="faixa faixa--{{ nivel.faixa }}">{{ nivel.get_faixa_display }}</span>
                   <span class="nivel-name">{{ nivel.titulo }}</span>
                   {% if nivel.resumo %}<span class="nivel-resumo">{{ nivel.resumo|truncatechars:110 }}</span>{% endif %}
-                  {% if nivel.titulo_concedido %}<span class="nivel-hint">🏅 {{ nivel.titulo_concedido }}</span>{% endif %}
+                  {% if nivel.titulo_concedido %}<span class="nivel-hint"><svg class="ic" aria-hidden="true"><use href="#ic-medal"/></svg> {{ nivel.titulo_concedido }}</span>{% endif %}
                 </div>
                 <span class="nivel-state">{{ nivel.get_status_display }}</span>
               </a>
@@ -124,7 +124,7 @@
         <div class="constel">
           {% for nivel in trilha.niveis.all %}
             {% if nivel.status == 'bloqueado' %}
-              <div class="node lock"><span class="bead">{{ nivel.ordem }}</span><span class="nm">{{ nivel.titulo }} 🔒</span></div>
+              <div class="node lock"><span class="bead">{{ nivel.ordem }}</span><span class="nm">{{ nivel.titulo }} <svg class="ic" aria-hidden="true"><use href="#ic-lock"/></svg></span></div>
             {% else %}
               <a class="node {% if nivel.status == 'aprovado' %}done{% else %}cur{% endif %}" href="{% url 'trilhas:nivel' nivel.pk %}">
                 <span class="bead">{% if nivel.status == 'aprovado' %}✓{% else %}{{ nivel.ordem }}{% endif %}</span>

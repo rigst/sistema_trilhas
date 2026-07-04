@@ -39,11 +39,15 @@ class Avaliacao(models.Model):
 
 
 class Questao(models.Model):
-    """Questão de uma avaliação (objetiva ou dissertativa)."""
+    """Questão objetiva de uma avaliação (corrigida pelo gabarito).
+
+    O tipo DISSERTATIVA é LEGADO: novas avaliações só geram objetivas. O enum e
+    os campos de texto seguem existindo apenas para renderizar avaliações
+    históricas já corrigidas (ver templates/avaliacoes/resultado.html)."""
 
     class Tipo(models.TextChoices):
         OBJETIVA = 'objetiva', 'Objetiva'
-        DISSERTATIVA = 'dissertativa', 'Dissertativa'
+        DISSERTATIVA = 'dissertativa', 'Dissertativa'  # legado (linhas antigas)
 
     avaliacao = models.ForeignKey(
         Avaliacao, on_delete=models.CASCADE, related_name='questoes'
@@ -126,11 +130,14 @@ class ListaExercicios(models.Model):
 
 
 class Exercicio(models.Model):
-    """Exercício de prática com feedback imediato (sem impacto na progressão)."""
+    """Exercício de prática objetivo, com feedback imediato (sem nota).
+
+    DISSERTATIVA é legado: nenhum exercício dissertativo existe mais (0 linhas);
+    o membro segue no enum só para não exigir migração de metadados."""
 
     class Tipo(models.TextChoices):
         OBJETIVA = 'objetiva', 'Objetiva'
-        DISSERTATIVA = 'dissertativa', 'Dissertativa'
+        DISSERTATIVA = 'dissertativa', 'Dissertativa'  # legado (sem uso)
 
     lista = models.ForeignKey(
         ListaExercicios, on_delete=models.CASCADE, related_name='exercicios'

@@ -10,7 +10,7 @@
   </div>
 
 {% if avaliacao.status == 'gerando' %}
-  <div class="card pad gen-center">
+  <div class="card pad gen-center" role="status" aria-live="polite">
     <span class="orb"></span>
     <h2 class="h2">Preparando sua avaliação…</h2>
     <p class="sub" style="margin:.4rem auto 1.2rem">A IA está elaborando 10 questões objetivas, em dificuldade crescente, sobre este nível.</p>
@@ -18,7 +18,7 @@
   </div>
 
 {% elif avaliacao.status == 'corrigindo' %}
-  <div class="card pad gen-center">
+  <div class="card pad gen-center" role="status" aria-live="polite">
     <span class="orb"></span>
     <h2 class="h2">Corrigindo suas respostas…</h2>
     <p class="sub" style="margin:.4rem auto 1.2rem">Conferindo o gabarito e calculando sua nota.</p>
@@ -27,7 +27,7 @@
   </div>
 
 {% elif avaliacao.status == 'erro' %}
-  <div class="card pad gen-center">
+  <div class="card pad gen-center" role="status" aria-live="polite">
     <h2 class="h2">Algo deu errado</h2>
     <p class="sub" style="margin:.4rem auto 1.2rem">{{ avaliacao.erro }}</p>
     <a class="btn btn-ghost" href="{% url 'trilhas:nivel' nivel.pk %}">Voltar ao nível</a>
@@ -36,6 +36,7 @@
 {% else %}
   <form method="post" action="{% url 'avaliacoes:submeter' avaliacao.pk %}" class="card pad">
     {% csrf_token %}
+    {% include 'partials/dica_descarte.html' %}
     {% for q in questoes %}
       <div class="q-block">
         <p class="q-enun"><span class="n">{{ q.ordem }}.</span> {{ q.enunciado_md|linebreaksbr }}</p>

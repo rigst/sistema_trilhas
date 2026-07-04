@@ -5,13 +5,13 @@
 <section class="page narrow" id="mentor-page">
   <div class="page-head">
     <a class="back-link" href="{% url 'dashboard' %}">← Minhas trilhas</a>
-    <div class="badges"><span class="pill">🧭 Mentor pessoal</span></div>
+    <div class="badges"><span class="pill"><svg class="ic" aria-hidden="true"><use href="#ic-compass"/></svg> Mentor pessoal</span></div>
     <h1 class="h1">Seu percurso de hoje</h1>
     <p class="sub">Um plano equilibrado para manter todas as trilhas evoluindo — com o que aprender e o que revisar agora.</p>
   </div>
 
 {% if percurso.status == 'gerando' %}
-  <div class="card pad gen-center">
+  <div class="card pad gen-center" role="status" aria-live="polite">
     <span class="orb"></span>
     <h2 class="h2">O mentor está analisando suas trilhas…</h2>
     <p class="sub" style="margin:.4rem auto 1.2rem">Avaliando seu progresso, o que está parado e o que precisa de reforço.</p>
@@ -19,7 +19,7 @@
   </div>
 
 {% elif percurso.status == 'erro' %}
-  <div class="card pad gen-center">
+  <div class="card pad gen-center" role="status" aria-live="polite">
     <h2 class="h2">Não foi possível montar o percurso</h2>
     <p class="sub" style="margin:.4rem auto 1.2rem">{{ percurso.erro|default:"Comece ou avance ao menos uma trilha para o mentor ter o que planejar." }}</p>
     <form method="post" action="{% url 'trilhas:mentor_atualizar' %}">{% csrf_token %}
@@ -30,7 +30,7 @@
 {% else %}
   {% if percurso.resumo %}
     <div class="mentor-fala card pad">
-      <span class="mentor-av">🧭</span>
+      <span class="mentor-av"><svg class="ic" aria-hidden="true"><use href="#ic-compass"/></svg></span>
       <p>{{ percurso.resumo }}</p>
     </div>
   {% endif %}
@@ -41,9 +41,9 @@
         <span class="passo-num">{{ passo.ordem }}</span>
         <div class="passo-card card pad">
           <div class="passo-tag">
-            {% if passo.tipo == 'aprender' %}📖 Aprender
-            {% elif passo.tipo == 'avaliar' %}⚔ Avaliação
-            {% else %}🔁 Revisar{% endif %}
+            {% if passo.tipo == 'aprender' %}<svg class="ic" aria-hidden="true"><use href="#ic-book"/></svg> Aprender
+            {% elif passo.tipo == 'avaliar' %}<svg class="ic" aria-hidden="true"><use href="#ic-target"/></svg> Avaliação
+            {% else %}<svg class="ic" aria-hidden="true"><use href="#ic-refresh"/></svg> Revisar{% endif %}
             {% if passo.nivel %}<span class="passo-trilha">· {{ passo.nivel.trilha.titulo|truncatechars:40 }}</span>{% endif %}
           </div>
           <h3 class="passo-titulo">{{ passo.titulo }}</h3>
