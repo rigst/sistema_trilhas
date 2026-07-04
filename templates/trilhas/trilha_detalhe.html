@@ -78,10 +78,21 @@
         <h3 class="h3">Seu progresso</h3>
         <div class="progress-bar progress-bar--lg"><span style="width: {{ trilha.progresso_pct }}%"></span></div>
         <p class="progress-label">{{ trilha.progresso_pct }}% · {{ trilha.niveis_aprovados }}/{{ trilha.total_niveis }} níveis aprovados</p>
-        {% with titulos=trilha.titulos.all %}
-          <div class="title-chips" style="margin-top:1rem">
-            {% for t in titulos %}<span class="title-chip">🏅 {{ t.nome }}</span>{% empty %}<span class="title-chip title-chip--muted">Nenhum título ainda</span>{% endfor %}
-          </div>
+        {% with m=trilha.medalha %}
+          {% if m %}
+            <div class="medal medal--{{ m.tier }}" style="width:100%;flex-direction:row;justify-content:flex-start;gap:1rem;margin-top:1.1rem">
+              <span class="medal-disc" style="width:76px;height:76px;flex:none">
+                <span class="medal-ring"></span>
+                <span class="medal-emblem" style="font-size:1.5rem;margin-top:-.35rem">{{ m.emblema }}</span>
+              </span>
+              <span style="text-align:left">
+                <span class="title-chip title-chip--{{ m.tier }}">{{ m.tier_label }}</span>
+                <span class="medal-name" style="display:block;margin-top:.4rem">{{ m.nome }}</span>
+              </span>
+            </div>
+          {% else %}
+            <div class="title-chips" style="margin-top:1rem"><span class="title-chip title-chip--muted">Nenhum título ainda</span></div>
+          {% endif %}
         {% endwith %}
       </div>
 

@@ -9,8 +9,12 @@
     <div class="tp-bar-wrap">
       <div class="tp-steps">
         {% for s in subtopicos %}
-          <a class="tp-step {% if s.ordem == subtopico.ordem %}cur{% elif s.lido %}done{% endif %}"
-             href="{% url 'trilhas:topico' nivel.pk s.ordem %}" title="{{ s.titulo }}"></a>
+          {% if s.desbloqueado %}
+            <a class="tp-step {% if s.ordem == subtopico.ordem %}cur{% elif s.lido %}done{% endif %}"
+               href="{% url 'trilhas:topico' nivel.pk s.ordem %}" title="{{ s.titulo }}"></a>
+          {% else %}
+            <span class="tp-step locked" title="{{ s.titulo }} (bloqueado)"></span>
+          {% endif %}
         {% endfor %}
       </div>
       <span class="tp-label">Tópico {{ passo }} de {{ total }}</span>

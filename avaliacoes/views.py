@@ -130,6 +130,11 @@ def exercicios(request, nivel_pk):
         messages.info(request, 'Este nível ainda está bloqueado.')
         return redirect('trilhas:detalhe', pk=nivel.trilha_id)
 
+    # Só libera os exercícios depois de ler todos os tópicos do nível.
+    if not nivel.conteudo_lido:
+        messages.info(request, 'Leia todos os tópicos do nível antes de praticar.')
+        return redirect('trilhas:nivel', pk=nivel.pk)
+
     lista, created = ListaExercicios.objects.get_or_create(nivel=nivel)
     # Primeira visita (ou erro anterior): dispara a geração.
     if created or lista.status == ListaExercicios.Status.ERRO:
@@ -167,7 +172,19 @@ def exercicio_verificar(request, pk):
         pk=pk, lista__nivel__trilha__user=request.user,
     )
     profile = getattr(request.user, 'profile', None)
-    primeira_vez = ex.respondido_em is None
+
+    # Uma vez respondido, a resposta é definitiva — não pode ser alterada.
+    if ex.respondido_em is not None:
+        return JsonResponse({
+            'tipo': ex.tipo,
+            'ja_respondido': True,
+            'correto': (ex.nota or 0) >= 10,
+            'gabarito': (ex.gabarito or '').strip().upper(),
+            'feedback_html': _md(ex.feedback_md) if ex.feedback_md else '',
+            'concluida': ex.lista.concluida,
+        }, status=409)
+
+    primeira_vez = True
 
     def _xp():
         if primeira_vez and profile is not None:

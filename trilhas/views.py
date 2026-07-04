@@ -12,18 +12,44 @@ from .mdrender import render_md
 from .models import Nivel, PerguntaDirecionadora, Subtopico, Trilha
 
 
+def _pre_gerar_exercicios(nivel):
+    """Garante que a lista de exercícios do nível já esteja sendo gerada."""
+    from avaliacoes.models import ListaExercicios
+
+    lista, created = ListaExercicios.objects.get_or_create(nivel=nivel)
+    if created or lista.status == ListaExercicios.Status.ERRO:
+        lista.status = ListaExercicios.Status.GERANDO
+        lista.erro = ''
+        lista.save(update_fields=['status', 'erro'])
+        ai_tasks.task_gerar_exercicios.delay(lista.pk)
+
+
 # ---------------------------------------------------------------------------
 # Dashboard
 # ---------------------------------------------------------------------------
 
 @login_required
 def dashboard(request):
-    trilhas = (
+    trilhas = list(
         request.user.trilhas
-        .prefetch_related('niveis', 'titulos')
+        .prefetch_related('niveis', 'titulos__nivel')
         .all()
     )
-    return render(request, 'trilhas/dashboard.html', {'trilhas': trilhas})
+    # Medalhas conquistadas (uma por trilha que já tem título), da mais alta
+    # para a mais baixa, para a estante de conquistas.
+    ordem_tier = {'diamante': 0, 'platina': 1, 'ouro': 2, 'prata': 3, 'bronze': 4}
+    medalhas = []
+    for t in trilhas:
+        m = t.medalha
+        if not m:
+            continue
+        m['trilha'] = t
+        m['pips'] = [i < m['estrelas'] for i in range(m['total'])]
+        medalhas.append(m)
+    medalhas.sort(key=lambda m: (ordem_tier.get(m['tier'], 9), -m['estrelas']))
+    return render(request, 'trilhas/dashboard.html', {
+        'trilhas': trilhas, 'medalhas': medalhas,
+    })
 
 
 # ---------------------------------------------------------------------------
@@ -128,10 +154,13 @@ def nivel_detalhe(request, pk):
         return redirect('trilhas:detalhe', pk=nivel.trilha_id)
 
     lista = getattr(nivel, 'lista_exercicios', None)
+    subtopicos = list(nivel.subtopicos.all())
+    for i, s in enumerate(subtopicos):
+        s.desbloqueado = i == 0 or subtopicos[i - 1].lido
     return render(request, 'trilhas/nivel.html', {
         'nivel': nivel,
         'trilha': nivel.trilha,
-        'subtopicos': nivel.subtopicos.all(),
+        'subtopicos': subtopicos,
         'primeiro_nao_lido': nivel.primeiro_nao_lido,
         'exercicios_concluidos': bool(lista and lista.concluida),
         'avaliacao': nivel.avaliacoes.order_by('-criada_em').first(),
@@ -159,6 +188,13 @@ def topico(request, nivel_pk, ordem):
         raise Http404('Tópico não encontrado.')
     idx = subs.index(atual)
 
+    # Leitura em ordem: um tópico só abre depois que o anterior foi lido.
+    desbloqueado = idx == 0 or subs[idx - 1].lido
+    if not desbloqueado:
+        messages.info(request, 'Leia os tópicos anteriores primeiro.')
+        alvo = next((s for s in subs if not s.lido), subs[0])
+        return redirect('trilhas:topico', nivel_pk=nivel.pk, ordem=alvo.ordem)
+
     # Geração sob demanda deste tópico.
     if atual.status == Subtopico.Status.PENDENTE:
         atual.status = Subtopico.Status.GERANDO
@@ -182,6 +218,14 @@ def topico(request, nivel_pk, ordem):
             proximo_sub.status = Subtopico.Status.GERANDO
             proximo_sub.save(update_fields=['status'])
             ai_tasks.task_gerar_subtopico.delay(proximo_sub.pk)
+
+        # No último tópico, já começa a preparar os exercícios em background.
+        if atual.eh_ultimo:
+            _pre_gerar_exercicios(nivel)
+
+    # Marca quais tópicos já estão liberados (leitura sequencial).
+    for i, s in enumerate(subs):
+        s.desbloqueado = i == 0 or subs[i - 1].lido
 
     return render(request, 'trilhas/topico.html', {
         'nivel': nivel,

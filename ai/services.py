@@ -109,12 +109,13 @@ def gerar_perguntas_direcionadoras(trilha, profile=None):
     user = (
         'A pessoa quer aprender o seguinte (descrição livre):\n\n'
         f'"""{trilha.tema_livre.strip()}"""\n\n'
-        'Gere de 4 a 6 perguntas direcionadoras para calibrar um plano de estudos '
-        'personalizado. Cubra: nível/experiência atual no tema; objetivo ou '
-        'aplicação pretendida; subtemas de maior interesse; tempo semanal '
-        'disponível; e preferência entre teoria e prática. Use perguntas de '
-        'escolha única quando fizer sentido (preenchendo "opcoes"); caso contrário, '
-        'perguntas abertas com "opcoes" vazio. Numere em "ordem" a partir de 1.'
+        'Gere de 3 a 5 perguntas direcionadoras de MÚLTIPLA ESCOLHA para calibrar um '
+        'plano de estudos personalizado. Cubra: nível/experiência atual no tema; '
+        'objetivo ou aplicação pretendida; e subtemas de maior interesse. NÃO '
+        'pergunte sobre tempo disponível por semana nem sobre formato/estilo de '
+        'estudo. TODAS as perguntas devem ser de escolha única (tipo "escolha_unica"), '
+        'cada uma com 3 a 5 opções claras em "opcoes". Não faça perguntas abertas ou '
+        'dissertativas. Numere em "ordem" a partir de 1.'
     )
     data = _gerar_json(
         prompts.SYSTEM_PERGUNTAS, user, prompts.SCHEMA_PERGUNTAS, profile,
@@ -128,7 +129,7 @@ def gerar_perguntas_direcionadoras(trilha, profile=None):
             trilha=trilha,
             ordem=p.get('ordem') or i,
             pergunta=p.get('pergunta', '').strip(),
-            tipo=p.get('tipo', 'aberta'),
+            tipo=p.get('tipo', 'escolha_unica'),
             opcoes=p.get('opcoes', []) or [],
         ))
     PerguntaDirecionadora.objects.bulk_create(objs)
@@ -154,7 +155,9 @@ def gerar_sumario(trilha, profile=None):
         'Respostas às perguntas direcionadoras:\n\n'
         f'{qa}\n\n'
         'Monte um sumário de trilha de estudos progressiva, do básico ao avançado, '
-        'com 4 a 7 níveis. Para cada nível: defina a faixa (iniciante → mestre) de '
+        'com 4 a 7 níveis. Escolha em "emblema" UM único emoji que represente '
+        'visualmente o tema (será o brasão da medalha da trilha). Para cada nível: '
+        'defina a faixa (iniciante → mestre) de '
         'forma crescente; um título claro; um resumo do que será aprendido; um '
         '"titulo_concedido" motivador que a pessoa ganha ao ser aprovada (ex.: '
         '"Iniciante em <tema>"); e de 3 a 6 subtópicos coerentes. Numere níveis e '
@@ -168,8 +171,11 @@ def gerar_sumario(trilha, profile=None):
 
     trilha.titulo = (data.get('titulo') or trilha.tema_livre[:120]).strip()
     trilha.descricao = (data.get('descricao') or '').strip()
+    trilha.emblema = (data.get('emblema') or '').strip()[:8]
     trilha.objetivos = data.get('objetivos', []) or []
-    trilha.save(update_fields=['titulo', 'descricao', 'objetivos', 'atualizada_em'])
+    trilha.save(update_fields=[
+        'titulo', 'descricao', 'emblema', 'objetivos', 'atualizada_em',
+    ])
 
     trilha.niveis.all().delete()
     for i, nv in enumerate(data.get('niveis', []), start=1):
@@ -255,12 +261,12 @@ def gerar_avaliacao(avaliacao, profile=None):
         f'Nível: {nivel.titulo} (faixa: {nivel.get_faixa_display()})\n'
         f'Resumo: {nivel.resumo}\n'
         f'Subtópicos:\n{subs}\n\n'
-        'Elabore uma avaliação com 5 questões objetivas (múltipla escolha, 4 a 5 '
-        'alternativas com uma correta) e 2 questões dissertativas. Para objetivas, '
-        'preencha "alternativas" com objetos {letra, texto} e "gabarito" com a '
-        'letra correta. Para dissertativas, deixe "alternativas" vazio e use '
-        '"gabarito" como rubrica do que a resposta ideal deve conter. Defina "peso" '
-        '(dissertativas costumam pesar mais). Numere em "ordem" a partir de 1.'
+        'Elabore uma avaliação com EXATAMENTE 10 questões objetivas (múltipla '
+        'escolha, 4 a 5 alternativas com uma correta), em DIFICULDADE PROGRESSIVA — '
+        'da mais simples (questão 1) à mais difícil (questão 10). Preencha '
+        '"alternativas" com objetos {letra, texto} e "gabarito" com a letra correta. '
+        'Use "peso" 1.0 em todas. Não crie questões dissertativas. Numere em '
+        '"ordem" de 1 a 10.'
     )
     data = _gerar_json(
         prompts.SYSTEM_AVALIACAO, user, prompts.SCHEMA_AVALIACAO, profile,
@@ -408,11 +414,12 @@ def gerar_exercicios(lista, profile=None):
         f'Nível: {nivel.titulo} (faixa: {nivel.get_faixa_display()})\n'
         f'Resumo: {nivel.resumo}\n'
         f'Subtópicos:\n{subs}\n\n'
-        'Crie 6 exercícios de prática (4 objetivos e 2 dissertativos curtos) que '
-        'ajudem a fixar este nível. Para objetivos: "alternativas" com {letra, texto} '
-        'e "gabarito" com a letra correta. Para dissertativos: "alternativas" vazio e '
-        '"gabarito" com a rubrica/resposta ideal. Sempre preencha "explicacao" com '
-        'um comentário didático que será mostrado como feedback. Numere em "ordem".'
+        'Crie EXATAMENTE 5 exercícios de prática, TODOS objetivos (múltipla escolha), '
+        'em DIFICULDADE PROGRESSIVA — do mais simples (exercício 1) ao mais difícil '
+        '(exercício 5). Para cada um: "alternativas" com {letra, texto} e "gabarito" '
+        'com a letra correta. Não crie exercícios dissertativos. Sempre preencha '
+        '"explicacao" com um comentário didático que será mostrado como feedback. '
+        'Numere em "ordem" de 1 a 5.'
     )
     data = _gerar_json(
         prompts.SYSTEM_EXERCICIOS, user, prompts.SCHEMA_EXERCICIOS, profile,

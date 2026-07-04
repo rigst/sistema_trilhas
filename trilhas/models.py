@@ -2,6 +2,22 @@ from django.conf import settings
 from django.db import models
 
 
+# Faixa do nível → patamar da medalha (metal) conquistada na trilha.
+FAIXA_TIER = {
+    'iniciante': ('bronze', 'Bronze'),
+    'intermediario': ('prata', 'Prata'),
+    'avancado': ('ouro', 'Ouro'),
+    'especialista': ('platina', 'Platina'),
+    'mestre': ('diamante', 'Diamante'),
+}
+
+# Emblemas usados quando a IA não definiu um para a trilha (determinístico por id).
+EMBLEMAS_FALLBACK = [
+    '📐', '🧠', '💻', '🎨', '🎼', '🔬', '📈', '🌍', '⚗️', '🧬', '🛠️',
+    '📚', '🏛️', '⚙️', '🧮', '🩺', '⚖️', '🎯', '🚀', '🔭', '🧭', '💡',
+]
+
+
 class Trilha(models.Model):
     """Uma trilha de estudo pessoal, do básico ao avançado, gerada por IA."""
 
@@ -22,6 +38,7 @@ class Trilha(models.Model):
     titulo = models.CharField('título', max_length=200, blank=True)
     descricao = models.TextField('descrição', blank=True)
     objetivos = models.JSONField('objetivos de aprendizagem', default=list, blank=True)
+    emblema = models.CharField('emblema (emoji)', max_length=8, blank=True)
 
     status = models.CharField(
         max_length=25, choices=Status.choices, default=Status.RASCUNHO, db_index=True
@@ -68,6 +85,36 @@ class Trilha(models.Model):
     @property
     def concluida(self):
         return self.total_niveis > 0 and self.niveis_aprovados == self.total_niveis
+
+    @property
+    def titulo_atual(self):
+        """O título mais avançado já conquistado na trilha (os anteriores são
+        substituídos por ele na exibição)."""
+        return self.titulos.order_by('-nivel__ordem').first()
+
+    @property
+    def emblema_display(self):
+        """Emoji/decalque da trilha (definido pela IA, com fallback estável)."""
+        if self.emblema:
+            return self.emblema
+        return EMBLEMAS_FALLBACK[(self.pk or 0) % len(EMBLEMAS_FALLBACK)]
+
+    @property
+    def medalha(self):
+        """Medalha da trilha: emblema + patamar (metal) do título mais avançado.
+        Retorna None enquanto nenhum título foi conquistado."""
+        titulo = self.titulo_atual
+        if titulo is None:
+            return None
+        tier, label = FAIXA_TIER.get(titulo.faixa, ('bronze', 'Bronze'))
+        return {
+            'emblema': self.emblema_display,
+            'tier': tier,
+            'tier_label': label,
+            'nome': titulo.nome,
+            'estrelas': self.niveis_aprovados,
+            'total': self.total_niveis,
+        }
 
 
 class PerguntaDirecionadora(models.Model):
@@ -197,3 +244,15 @@ class Subtopico(models.Model):
     @property
     def eh_ultimo(self):
         return not self.nivel.subtopicos.filter(ordem__gt=self.ordem).exists()
+
+    @property
+    def desbloqueado(self):
+        """Um tópico só abre depois que o anterior foi lido (leitura em ordem).
+        O primeiro tópico e os já lidos ficam sempre disponíveis."""
+        if self.lido:
+            return True
+        anterior = (
+            self.nivel.subtopicos.filter(ordem__lt=self.ordem)
+            .order_by('-ordem').first()
+        )
+        return anterior is None or anterior.lido

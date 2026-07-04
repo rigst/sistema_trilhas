@@ -11,9 +11,10 @@ por structured outputs (sem minItems/maxItems); a quantidade é pedida no prompt
 
 SYSTEM_PERGUNTAS = (
     'Você é um tutor especialista em desenhar trilhas de estudo personalizadas. '
-    'Antes de montar um plano, você faz poucas e boas perguntas para calibrar o '
-    'nível atual da pessoa, o objetivo, o foco e o tempo disponível. Responda '
-    'sempre em português.'
+    'Antes de montar um plano, você faz poucas e boas perguntas de MÚLTIPLA ESCOLHA '
+    'para calibrar o nível atual da pessoa, o objetivo e o foco de interesse. '
+    'Você NÃO pergunta sobre tempo disponível nem sobre formato de estudo, e NUNCA '
+    'faz perguntas abertas/dissertativas. Responda sempre em português.'
 )
 
 SYSTEM_SUMARIO = (
@@ -72,17 +73,19 @@ SYSTEM_SUBTOPICO = (
 )
 
 SYSTEM_EXERCICIOS = (
-    'Você é um tutor que cria exercícios de PRÁTICA (não valem nota) para fixar um '
-    'nível. Misture questões objetivas (múltipla escolha) e dissertativas curtas, '
-    'cobrindo os subtópicos. Para cada exercício, escreva uma explicação clara da '
-    'resposta, que será mostrada como feedback imediato ao aluno. Responda em português.'
+    'Você é um tutor que cria exercícios de PRÁTICA para fixar um nível. Use APENAS '
+    'questões objetivas (múltipla escolha), cobrindo os subtópicos, em dificuldade '
+    'progressiva (das mais simples às mais difíceis). Para cada exercício, escreva '
+    'uma explicação clara da resposta, que será mostrada como feedback imediato ao '
+    'aluno. Não crie questões dissertativas. Responda em português.'
 )
 
 SYSTEM_AVALIACAO = (
     'Você é um avaliador especialista. Elabora avaliações que medem de verdade o '
-    'aprendizado de um nível, combinando questões objetivas (múltipla escolha) e '
-    'dissertativas. As questões devem cobrir os subtópicos do nível e o conteúdo '
-    'estudado. Responda sempre em português.'
+    'aprendizado de um nível usando APENAS questões objetivas (múltipla escolha), '
+    'em dificuldade progressiva (das mais simples às mais difíceis). As questões '
+    'devem cobrir os subtópicos do nível e o conteúdo estudado. Não crie questões '
+    'dissertativas. Responda sempre em português.'
 )
 
 SYSTEM_CORRECAO = (
@@ -106,7 +109,7 @@ SCHEMA_PERGUNTAS = {
                 'properties': {
                     'ordem': {'type': 'integer'},
                     'pergunta': {'type': 'string'},
-                    'tipo': {'type': 'string', 'enum': ['aberta', 'escolha_unica']},
+                    'tipo': {'type': 'string', 'enum': ['escolha_unica']},
                     'opcoes': {'type': 'array', 'items': {'type': 'string'}},
                 },
                 'required': ['ordem', 'pergunta', 'tipo', 'opcoes'],
@@ -123,6 +126,7 @@ SCHEMA_SUMARIO = {
     'properties': {
         'titulo': {'type': 'string'},
         'descricao': {'type': 'string'},
+        'emblema': {'type': 'string'},
         'objetivos': {'type': 'array', 'items': {'type': 'string'}},
         'niveis': {
             'type': 'array',
@@ -162,7 +166,7 @@ SCHEMA_SUMARIO = {
             },
         },
     },
-    'required': ['titulo', 'descricao', 'objetivos', 'niveis'],
+    'required': ['titulo', 'descricao', 'emblema', 'objetivos', 'niveis'],
     'additionalProperties': False,
 }
 
@@ -175,7 +179,7 @@ SCHEMA_AVALIACAO = {
                 'type': 'object',
                 'properties': {
                     'ordem': {'type': 'integer'},
-                    'tipo': {'type': 'string', 'enum': ['objetiva', 'dissertativa']},
+                    'tipo': {'type': 'string', 'enum': ['objetiva']},
                     'enunciado': {'type': 'string'},
                     'alternativas': {
                         'type': 'array',
@@ -210,7 +214,7 @@ SCHEMA_EXERCICIOS = {
                 'type': 'object',
                 'properties': {
                     'ordem': {'type': 'integer'},
-                    'tipo': {'type': 'string', 'enum': ['objetiva', 'dissertativa']},
+                    'tipo': {'type': 'string', 'enum': ['objetiva']},
                     'enunciado': {'type': 'string'},
                     'alternativas': {
                         'type': 'array',

@@ -7,7 +7,7 @@
     <a class="back-link" href="{% url 'trilhas:nivel' nivel.pk %}">← {{ nivel.titulo }}</a>
     <div class="badges"><span class="faixa faixa--{{ nivel.faixa }}">{{ nivel.get_faixa_display }}</span><span class="pill">Prática · obrigatória antes da avaliação</span></div>
     <h1 class="h1">Exercícios do nível</h1>
-    <p class="sub">Responda todos para liberar a avaliação. Erre à vontade — isto não vale nota, só te prepara.</p>
+    <p class="sub">São 5 questões em dificuldade crescente. Atenção: cada resposta é <strong>definitiva</strong> — depois de responder, não dá para alterar. Responda todas para liberar a avaliação.</p>
   </div>
 
 {% if lista.status == 'gerando' %}
@@ -45,19 +45,23 @@
         {% if ex.tipo == 'objetiva' %}
           <div class="opts">
             {% for alt in ex.alternativas %}
-              <label class="opt {% if ex.alternativa_escolhida == alt.letra %}{% if ex.nota == 10 %}correct{% else %}wrong{% endif %}{% endif %}">
-                <input type="radio" name="ex_{{ ex.pk }}" value="{{ alt.letra }}" {% if ex.alternativa_escolhida == alt.letra %}checked{% endif %}>
+              <label class="opt {% if ex.respondido_em %}{% if alt.letra == ex.gabarito %}correct{% elif ex.alternativa_escolhida == alt.letra %}wrong{% endif %}{% endif %}">
+                <input type="radio" name="ex_{{ ex.pk }}" value="{{ alt.letra }}" {% if ex.alternativa_escolhida == alt.letra %}checked{% endif %} {% if ex.respondido_em %}disabled{% endif %}>
                 <span><strong>{{ alt.letra }})</strong> {{ alt.texto }}</span>
               </label>
             {% endfor %}
           </div>
         {% else %}
-          <textarea class="js-resp" rows="4" data-autosave="ex-{{ ex.pk }}" placeholder="Sua resposta…">{{ ex.resposta_texto }}</textarea>
+          <textarea class="js-resp" rows="4" data-autosave="ex-{{ ex.pk }}" placeholder="Sua resposta…" {% if ex.respondido_em %}disabled{% endif %}>{{ ex.resposta_texto }}</textarea>
         {% endif %}
 
         <div class="ex-actions">
-          <button type="button" class="btn btn-primary js-verify">Verificar</button>
-          <span class="muted" style="font-size:.8rem">feedback imediato</span>
+          {% if ex.respondido_em %}
+            <span class="muted" style="font-size:.85rem">✓ Respondido — resposta definitiva</span>
+          {% else %}
+            <button type="button" class="btn btn-primary js-verify">Responder</button>
+            <span class="muted" style="font-size:.8rem">resposta definitiva</span>
+          {% endif %}
         </div>
         <div class="fb js-fb {% if ex.respondido_em %}show {% if ex.nota >= 6 %}ok{% else %}no{% endif %}{% endif %}">{{ item.feedback_html }}</div>
       </div>
@@ -94,10 +98,16 @@
     progEl.style.width = (total ? Math.round(done/total*100) : 0) + '%';
     if (concluida) { btnAval.disabled = false; hintEl.textContent = 'Prática concluída ✓ — avaliação liberada!'; }
   };
+  const lockCard = (card) => {
+    card.querySelectorAll('input,textarea').forEach(el => el.disabled = true);
+    const actions = card.querySelector('.ex-actions');
+    if (actions) actions.innerHTML = '<span class="muted" style="font-size:.85rem">✓ Respondido — resposta definitiva</span>';
+  };
   document.querySelectorAll('.exercise').forEach(card => {
     const btn = card.querySelector('.js-verify');
     const fb = card.querySelector('.js-fb');
     const tipo = card.dataset.tipo;
+    if (!btn) return;  // já respondido: nada a fazer
     btn.addEventListener('click', async () => {
       const body = new URLSearchParams();
       if (tipo === 'objetiva') {
@@ -119,6 +129,7 @@
         const d = await r.json();
         if (d.erro) { fb.className = 'fb js-fb show no'; fb.textContent = d.erro; return; }
         card.dataset.answered = '1';
+        lockCard(card);
         if (tipo === 'objetiva') {
           card.querySelectorAll('.opt').forEach(o => o.classList.remove('correct','wrong'));
           card.querySelectorAll('.opt').forEach(o => {
@@ -131,7 +142,8 @@
           fb.innerHTML = (d.correto ? '✔ <strong>Correto!</strong> ' : '✘ <strong>Não foi dessa vez.</strong> ') + d.feedback_html;
         } else {
           fb.className = 'fb js-fb show ' + (d.nota >= 6 ? 'ok' : 'no');
-          fb.innerHTML = '<strong>Nota: ' + d.nota.toFixed(1) + '/10</strong><br>' + d.feedback_html;
+          const nota = (d.nota != null) ? d.nota.toFixed(1) : '—';
+          fb.innerHTML = '<strong>Nota: ' + nota + '/10</strong><br>' + d.feedback_html;
         }
         refreshProgress(d.concluida);
       } catch(e) {

@@ -25,6 +25,7 @@
     <ol class="topico-index">
       {% for s in subtopicos %}
         <li>
+          {% if s.desbloqueado %}
           <a class="topico-item {% if s.lido %}done{% endif %}" href="{% url 'trilhas:topico' nivel.pk s.ordem %}">
             <span class="ti-num">{% if s.lido %}✓{% else %}{{ s.ordem }}{% endif %}</span>
             <span class="ti-main">
@@ -33,6 +34,15 @@
             </span>
             <span class="ti-cta">{% if s.lido %}Reler{% else %}Ler{% endif %} →</span>
           </a>
+          {% else %}
+          <div class="topico-item locked" aria-disabled="true">
+            <span class="ti-num">🔒</span>
+            <span class="ti-main">
+              <span class="ti-title">{{ s.titulo }}</span>
+              <span class="ti-desc">Leia o tópico anterior para desbloquear</span>
+            </span>
+          </div>
+          {% endif %}
         </li>
       {% endfor %}
     </ol>
@@ -54,8 +64,12 @@
       </li>
       <li class="etapa {% if exercicios_concluidos %}done{% elif nivel.conteudo_lido %}now{% endif %}">
         <span class="etapa-ic">{% if exercicios_concluidos %}✓{% else %}2{% endif %}</span>
-        <span class="etapa-txt"><strong>Praticar os exercícios</strong><small>obrigatório antes da avaliação</small></span>
-        <a class="btn btn-ghost etapa-btn" href="{% url 'avaliacoes:exercicios' nivel.pk %}">✎ {% if exercicios_concluidos %}Revisar{% else %}Praticar{% endif %}</a>
+        <span class="etapa-txt"><strong>Praticar os exercícios</strong><small>5 questões · liberadas após ler tudo</small></span>
+        {% if nivel.conteudo_lido %}
+          <a class="btn btn-ghost etapa-btn" href="{% url 'avaliacoes:exercicios' nivel.pk %}">✎ {% if exercicios_concluidos %}Revisar{% else %}Praticar{% endif %}</a>
+        {% else %}
+          <span class="etapa-lock">🔒 leia todos os tópicos</span>
+        {% endif %}
       </li>
       <li class="etapa {% if nivel.status == 'aprovado' %}done{% elif exercicios_concluidos and nivel.conteudo_lido %}now{% endif %}">
         <span class="etapa-ic">{% if nivel.status == 'aprovado' %}✓{% else %}3{% endif %}</span>

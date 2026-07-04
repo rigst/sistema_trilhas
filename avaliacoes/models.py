@@ -1,6 +1,6 @@
 from django.db import models
 
-from trilhas.models import Nivel, Trilha
+from trilhas.models import FAIXA_TIER, Nivel, Trilha
 
 
 class Avaliacao(models.Model):
@@ -177,3 +177,12 @@ class Titulo(models.Model):
 
     def __str__(self):
         return self.nome
+
+    @property
+    def tier(self):
+        """Slug do patamar da medalha (bronze/prata/ouro/platina/diamante)."""
+        return FAIXA_TIER.get(self.faixa, ('bronze', 'Bronze'))[0]
+
+    @property
+    def tier_label(self):
+        return FAIXA_TIER.get(self.faixa, ('bronze', 'Bronze'))[1]

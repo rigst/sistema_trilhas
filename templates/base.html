@@ -4,7 +4,16 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <meta name="color-scheme" content="dark">
+    <meta name="color-scheme" content="dark light">
+    <script>
+      /* Aplica tema e tamanho de fonte salvos antes da 1ª pintura (sem flash). */
+      (function(){try{
+        var t = localStorage.getItem('trilhas-theme') || 'escuro';
+        document.documentElement.setAttribute('data-theme', t);
+        var f = localStorage.getItem('trilhas-fscale');
+        if (f) document.documentElement.style.setProperty('--fscale', f);
+      }catch(e){}})();
+    </script>
     <title>{% block title %}Trilhas de Estudo{% endblock %}</title>
     <link rel="icon" type="image/x-icon" href="{% static 'favicon.ico' %}">
     <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -58,6 +67,31 @@
         {% block content %}{% endblock %}
     </main>
 
+    <div class="reader-fab" id="reader-fab">
+      <button class="reader-fab-btn js-reader-toggle" type="button" aria-expanded="false" aria-controls="reader-panel" title="Aparência e leitura">
+        <span aria-hidden="true">Aa</span><span class="visually-hidden">Ajustar aparência e tamanho do texto</span>
+      </button>
+      <div class="reader-panel" id="reader-panel" role="dialog" aria-label="Aparência" hidden>
+        <div class="rp-block">
+          <span class="rp-title">Tamanho do texto</span>
+          <div class="rp-font" role="group" aria-label="Tamanho do texto">
+            <button type="button" data-font="dec" aria-label="Diminuir">A−</button>
+            <button type="button" data-font="reset" aria-label="Padrão">A</button>
+            <button type="button" data-font="inc" aria-label="Aumentar">A+</button>
+          </div>
+        </div>
+        <div class="rp-block">
+          <span class="rp-title">Tema</span>
+          <div class="rp-themes" role="group" aria-label="Tema de cores">
+            <button type="button" data-theme-set="escuro" class="rp-theme rp-theme--escuro">Escuro</button>
+            <button type="button" data-theme-set="claro" class="rp-theme rp-theme--claro">Claro</button>
+            <button type="button" data-theme-set="papel" class="rp-theme rp-theme--papel">Papel</button>
+            <button type="button" data-theme-set="preto" class="rp-theme rp-theme--preto">Preto</button>
+          </div>
+        </div>
+      </div>
+    </div>
+
     <footer class="site-footer">
         <div class="container footer-in">
             <div>
@@ -109,6 +143,48 @@
         const form = ta.closest("form");
         if (form) form.addEventListener("submit", () => { try { localStorage.removeItem(key); } catch (e) {} });
       });
+
+      // Painel de leitura: tema (escuro/claro/papel/preto) + tamanho da fonte.
+      const root = document.documentElement;
+      const fab = document.getElementById("reader-fab");
+      if (fab) {
+        const rToggle = fab.querySelector(".js-reader-toggle");
+        const panel = document.getElementById("reader-panel");
+        const MIN = 0.85, MAX = 1.6, STEP = 0.075;
+        const clamp = (v) => Math.min(MAX, Math.max(MIN, v));
+        const curScale = () => parseFloat(getComputedStyle(root).getPropertyValue("--fscale")) || 1;
+        const setScale = (v) => {
+          v = clamp(Math.round(v * 1000) / 1000);
+          root.style.setProperty("--fscale", v);
+          try { localStorage.setItem("trilhas-fscale", v); } catch (e) {}
+        };
+        const markTheme = (t) => fab.querySelectorAll("[data-theme-set]").forEach((b) =>
+          b.setAttribute("aria-pressed", b.dataset.themeSet === t ? "true" : "false"));
+        const setTheme = (t) => {
+          root.setAttribute("data-theme", t);
+          try { localStorage.setItem("trilhas-theme", t); } catch (e) {}
+          markTheme(t);
+        };
+        markTheme(root.getAttribute("data-theme") || "escuro");
+        rToggle.addEventListener("click", () => {
+          const willOpen = panel.hasAttribute("hidden");
+          panel.toggleAttribute("hidden", !willOpen);
+          rToggle.setAttribute("aria-expanded", willOpen ? "true" : "false");
+        });
+        document.addEventListener("click", (e) => {
+          if (!fab.contains(e.target) && !panel.hasAttribute("hidden")) {
+            panel.setAttribute("hidden", ""); rToggle.setAttribute("aria-expanded", "false");
+          }
+        });
+        fab.querySelectorAll("[data-font]").forEach((b) => b.addEventListener("click", () => {
+          const a = b.dataset.font;
+          if (a === "inc") setScale(curScale() + STEP);
+          else if (a === "dec") setScale(curScale() - STEP);
+          else setScale(1);
+        }));
+        fab.querySelectorAll("[data-theme-set]").forEach((b) =>
+          b.addEventListener("click", () => setTheme(b.dataset.themeSet)));
+      }
     })();
     </script>
     {% block scripts %}{% endblock %}

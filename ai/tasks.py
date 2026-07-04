@@ -10,6 +10,21 @@ def _profile(user):
     return getattr(user, 'profile', None)
 
 
+def _pre_gerar_primeiro_topico(trilha):
+    """Assim que a trilha é criada, já deixa pronto o 1º tópico do nível 1."""
+    from trilhas.models import Nivel, Subtopico
+
+    nivel = trilha.niveis.order_by('ordem').first()
+    if nivel is None:
+        return
+    sub = nivel.subtopicos.order_by('ordem').first()
+    if sub is None or sub.status != Subtopico.Status.PENDENTE:
+        return
+    sub.status = Subtopico.Status.GERANDO
+    sub.save(update_fields=['status'])
+    task_gerar_subtopico.delay(sub.pk)
+
+
 @shared_task
 def task_gerar_perguntas(trilha_id):
     from trilhas.models import Trilha
@@ -44,6 +59,7 @@ def task_gerar_sumario(trilha_id):
         trilha.status = Trilha.Status.SUMARIO_GERADO
         trilha.erro = ''
         trilha.save(update_fields=['status', 'erro', 'atualizada_em'])
+        _pre_gerar_primeiro_topico(trilha)
     except Exception as exc:  # noqa: BLE001
         trilha.status = Trilha.Status.ERRO
         trilha.erro = str(exc)[:2000]

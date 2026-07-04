@@ -12,13 +12,40 @@
     <a class="btn btn-primary" href="{% url 'trilhas:criar' %}">+ Nova trilha</a>
   </div>
 
+  {% if medalhas %}
+    <section class="medal-case">
+      <div class="medal-case-head">
+        <h2 class="h3" style="margin:0">🏅 Sua estante de conquistas</h2>
+        <span class="muted" style="font-size:.85rem">{{ medalhas|length }} medalha{{ medalhas|length|pluralize }} · o título mais alto de cada trilha</span>
+      </div>
+      <div class="medal-shelf">
+        {% for m in medalhas %}
+          <a class="medal medal--{{ m.tier }}" href="{% url 'trilhas:detalhe' m.trilha.pk %}" title="{{ m.nome }} — {{ m.tier_label }}">
+            <span class="medal-disc">
+              <span class="medal-ring"></span>
+              <span class="medal-emblem">{{ m.emblema }}</span>
+              <span class="medal-tier">{{ m.tier_label }}</span>
+            </span>
+            <span class="medal-stars" aria-label="{{ m.estrelas }} de {{ m.total }} níveis">
+              {% for on in m.pips %}<i class="{% if on %}on{% endif %}"></i>{% endfor %}
+            </span>
+            <span class="medal-name">{{ m.nome }}</span>
+          </a>
+        {% endfor %}
+      </div>
+    </section>
+  {% endif %}
+
   {% if trilhas %}
     <div class="trilha-grid">
       {% for trilha in trilhas %}
         <article class="card trilha-card">
           <a href="{% url 'trilhas:detalhe' trilha.pk %}">
             <div class="tc-top">
-              <span class="status-badge status-badge--{{ trilha.status }}">{{ trilha.get_status_display }}</span>
+              <span class="tc-left">
+                <span class="tc-emblem {% if trilha.medalha %}tc-emblem--{{ trilha.medalha.tier }}{% endif %}" aria-hidden="true">{{ trilha.emblema_display }}</span>
+                <span class="status-badge status-badge--{{ trilha.status }}">{{ trilha.get_status_display }}</span>
+              </span>
               {% if trilha.total_niveis %}<span class="tc-frac">{{ trilha.niveis_aprovados }}/{{ trilha.total_niveis }}</span>{% endif %}
             </div>
             <h3 class="tc-title">{{ trilha.titulo|default:trilha.tema_livre|truncatechars:64 }}</h3>
@@ -27,9 +54,7 @@
               <div class="progress-bar"><span style="width: {{ trilha.progresso_pct }}%"></span></div>
               <p class="progress-label">{{ trilha.progresso_pct }}% concluído</p>
             {% endif %}
-            {% with titulos=trilha.titulos.all %}
-              {% if titulos %}<div class="title-chips" style="margin-top:.7rem">{% for t in titulos %}<span class="title-chip">🏅 {{ t.nome }}</span>{% endfor %}</div>{% endif %}
-            {% endwith %}
+            {% if trilha.medalha %}<div class="title-chips" style="margin-top:.7rem"><span class="title-chip title-chip--{{ trilha.medalha.tier }}">{{ trilha.medalha.tier_label }} · {{ trilha.medalha.nome }}</span></div>{% endif %}
           </a>
         </article>
       {% endfor %}
