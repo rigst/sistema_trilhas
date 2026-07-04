@@ -39,6 +39,7 @@ class Trilha(models.Model):
     descricao = models.TextField('descrição', blank=True)
     objetivos = models.JSONField('objetivos de aprendizagem', default=list, blank=True)
     emblema = models.CharField('emblema (emoji)', max_length=8, blank=True)
+    categoria = models.CharField('categoria', max_length=60, blank=True, db_index=True)
 
     status = models.CharField(
         max_length=25, choices=Status.choices, default=Status.RASCUNHO, db_index=True
@@ -98,6 +99,22 @@ class Trilha(models.Model):
         if self.emblema:
             return self.emblema
         return EMBLEMAS_FALLBACK[(self.pk or 0) % len(EMBLEMAS_FALLBACK)]
+
+    @property
+    def categoria_display(self):
+        """Nome da 'pasta' onde a trilha aparece (fallback: 'Outras')."""
+        return self.categoria.strip() or 'Outras'
+
+    @property
+    def proximo_topico(self):
+        """(nível, subtópico) para continuar estudando, ou None se concluída."""
+        nivel = self.nivel_atual
+        if nivel is None or nivel.status == Nivel.Status.BLOQUEADO:
+            return None
+        sub = nivel.primeiro_nao_lido
+        if sub is None:
+            return None
+        return nivel, sub
 
     @property
     def medalha(self):

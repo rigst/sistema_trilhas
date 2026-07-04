@@ -137,6 +137,27 @@ def task_gerar_exercicios(lista_id):
 
 
 @shared_task
+def task_gerar_revisao(revisao_id):
+    from avaliacoes.models import Revisao
+
+    try:
+        revisao = Revisao.objects.select_related('user').get(pk=revisao_id)
+    except Revisao.DoesNotExist:
+        return 'revisão inexistente'
+    try:
+        services.gerar_revisao(revisao, _profile(revisao.user))
+        revisao.status = Revisao.Status.PRONTA
+        revisao.erro = ''
+        revisao.save(update_fields=['status', 'erro'])
+    except Exception as exc:  # noqa: BLE001
+        revisao.status = Revisao.Status.ERRO
+        revisao.erro = str(exc)[:2000]
+        revisao.save(update_fields=['status', 'erro'])
+        raise
+    return f'revisão gerada {revisao_id}'
+
+
+@shared_task
 def task_corrigir_avaliacao(avaliacao_id):
     from avaliacoes.models import Avaliacao
 

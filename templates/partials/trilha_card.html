@@ -1,0 +1,18 @@
+<article class="card trilha-card">
+  <a href="{% url 'trilhas:detalhe' trilha.pk %}">
+    <div class="tc-top">
+      <span class="tc-left">
+        <span class="tc-emblem {% if trilha.medalha %}tc-emblem--{{ trilha.medalha.tier }}{% endif %}" aria-hidden="true">{{ trilha.emblema_display }}</span>
+        <span class="status-badge status-badge--{{ trilha.status }}">{{ trilha.get_status_display }}</span>
+      </span>
+      {% if trilha.total_niveis %}<span class="tc-frac">{{ trilha.niveis_aprovados }}/{{ trilha.total_niveis }}</span>{% endif %}
+    </div>
+    <h3 class="tc-title">{{ trilha.titulo|default:trilha.tema_livre|truncatechars:64 }}</h3>
+    {% if trilha.descricao %}<p class="tc-desc">{{ trilha.descricao|truncatechars:120 }}</p>{% endif %}
+    {% if trilha.total_niveis %}
+      <div class="progress-bar"><span style="width: {{ trilha.progresso_pct }}%"></span></div>
+      <p class="progress-label">{{ trilha.progresso_pct }}% concluído</p>
+    {% endif %}
+    {% if trilha.medalha %}<div class="title-chips" style="margin-top:.7rem"><span class="title-chip title-chip--{{ trilha.medalha.tier }}">{{ trilha.medalha.tier_label }} · {{ trilha.medalha.nome }}</span></div>{% endif %}
+  </a>
+</article>

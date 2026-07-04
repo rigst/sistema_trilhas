@@ -10,7 +10,9 @@ from ai import tasks as ai_tasks
 from trilhas.mdrender import render_md
 from trilhas.models import Nivel
 
-from .models import Avaliacao, Exercicio, ListaExercicios, Resposta
+from .models import (
+    Avaliacao, Exercicio, ListaExercicios, QuestaoRevisao, Resposta, Revisao,
+)
 
 _md = render_md
 
@@ -224,4 +226,86 @@ def exercicio_verificar(request, pk):
         'feedback_html': _md(feedback),
         'gabarito_html': _md(ex.gabarito),
         'concluida': ex.lista.concluida,
+    })
+
+
+# ---------------------------------------------------------------------------
+# Revisão espaçada — quiz misto sobre os níveis já concluídos (várias trilhas)
+# ---------------------------------------------------------------------------
+
+@login_required
+@require_POST
+def revisar_iniciar(request):
+    tem_aprovados = Nivel.objects.filter(
+        trilha__user=request.user, status=Nivel.Status.APROVADO
+    ).exists()
+    if not tem_aprovados:
+        messages.info(request, 'Conclua ao menos um nível para liberar a revisão.')
+        return redirect('dashboard')
+
+    # Se já existe uma revisão em andamento (gerando ou não concluída), retoma.
+    ultima = request.user.revisoes.first()
+    if ultima and (
+        ultima.status == Revisao.Status.GERANDO
+        or (ultima.status == Revisao.Status.PRONTA and not ultima.concluida)
+    ):
+        return redirect('avaliacoes:revisao', pk=ultima.pk)
+
+    revisao = Revisao.objects.create(user=request.user, status=Revisao.Status.GERANDO)
+    ai_tasks.task_gerar_revisao.delay(revisao.pk)
+    return redirect('avaliacoes:revisao', pk=revisao.pk)
+
+
+@login_required
+def revisao_detalhe(request, pk):
+    revisao = get_object_or_404(
+        Revisao.objects.prefetch_related('questoes'), pk=pk, user=request.user
+    )
+    itens = []
+    for q in revisao.questoes.all():
+        itens.append({
+            'q': q,
+            'enunciado_html': _md(q.enunciado_md),
+            'explicacao_html': _md(q.explicacao_md),
+        })
+    return render(request, 'avaliacoes/revisao.html', {
+        'revisao': revisao, 'itens': itens,
+    })
+
+
+@login_required
+def revisao_status(request, pk):
+    revisao = get_object_or_404(Revisao, pk=pk, user=request.user)
+    return JsonResponse({'status': revisao.status, 'erro': revisao.erro})
+
+
+@login_required
+@require_POST
+def questao_revisao_verificar(request, pk):
+    q = get_object_or_404(QuestaoRevisao, pk=pk, revisao__user=request.user)
+    if q.respondido_em is not None:
+        return JsonResponse({
+            'ja_respondido': True,
+            'correto': (q.nota or 0) >= 10,
+            'gabarito': (q.gabarito or '').strip().upper(),
+            'feedback_html': _md(q.explicacao_md),
+            'concluida': q.revisao.concluida,
+        }, status=409)
+
+    escolhida = (request.POST.get('alternativa') or '').strip().upper()
+    correta = (q.gabarito or '').strip().upper()
+    acertou = bool(escolhida) and escolhida == correta
+    q.alternativa_escolhida = escolhida
+    q.nota = 10.0 if acertou else 0.0
+    q.respondido_em = timezone.now()
+    q.save(update_fields=['alternativa_escolhida', 'nota', 'respondido_em'])
+
+    profile = getattr(request.user, 'profile', None)
+    if profile is not None:
+        profile.registrar_atividade(profile.XP_EXERCICIO)
+
+    return JsonResponse({
+        'correto': acertou, 'gabarito': correta,
+        'feedback_html': _md(q.explicacao_md),
+        'concluida': q.revisao.concluida,
     })

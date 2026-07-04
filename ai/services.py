@@ -156,7 +156,10 @@ def gerar_sumario(trilha, profile=None):
         f'{qa}\n\n'
         'Monte um sumário de trilha de estudos progressiva, do básico ao avançado, '
         'com 4 a 7 níveis. Escolha em "emblema" UM único emoji que represente '
-        'visualmente o tema (será o brasão da medalha da trilha). Para cada nível: '
+        'visualmente o tema (será o brasão da medalha da trilha). Em "categoria", '
+        'informe a área de conhecimento ampla desta trilha (ex.: "Programação", '
+        '"Direito", "História", "Idiomas", "Música"), usando um rótulo curto e '
+        'reutilizável para agrupar trilhas afins. Para cada nível: '
         'defina a faixa (iniciante → mestre) de '
         'forma crescente; um título claro; um resumo do que será aprendido; um '
         '"titulo_concedido" motivador que a pessoa ganha ao ser aprovada (ex.: '
@@ -172,9 +175,10 @@ def gerar_sumario(trilha, profile=None):
     trilha.titulo = (data.get('titulo') or trilha.tema_livre[:120]).strip()
     trilha.descricao = (data.get('descricao') or '').strip()
     trilha.emblema = (data.get('emblema') or '').strip()[:8]
+    trilha.categoria = (data.get('categoria') or '').strip()[:60]
     trilha.objetivos = data.get('objetivos', []) or []
     trilha.save(update_fields=[
-        'titulo', 'descricao', 'emblema', 'objetivos', 'atualizada_em',
+        'titulo', 'descricao', 'emblema', 'categoria', 'objetivos', 'atualizada_em',
     ])
 
     trilha.niveis.all().delete()
@@ -450,3 +454,98 @@ def verificar_exercicio_dissertativa(exercicio, resposta_texto, profile=None):
     )
     nota = max(0.0, min(10.0, float(res.get('nota') or 0.0)))
     return nota, _montar_feedback(res)
+
+
+# ---------------------------------------------------------------------------
+# 6. Categorização das trilhas (Sonnet — agrupa trilhas semelhantes)
+# ---------------------------------------------------------------------------
+
+def categorizar_trilhas(trilhas, profile=None):
+    """Atribui uma categoria (área) a cada trilha da lista, agrupando afins.
+    Recebe um iterável de Trilha; salva o campo `categoria`."""
+    trilhas = [t for t in trilhas]
+    if not trilhas:
+        return {}
+
+    linhas = []
+    for t in trilhas:
+        titulo = (t.titulo or t.tema_livre or '').strip()[:120]
+        linhas.append(f'- id {t.pk}: {titulo}')
+    user = (
+        'Classifique cada trilha abaixo em uma categoria ampla (área de '
+        'conhecimento), agrupando temas semelhantes sob o MESMO rótulo:\n\n'
+        + '\n'.join(linhas)
+        + '\n\nResponda com um item por trilha, repetindo "id" e a "categoria".'
+    )
+    data = _gerar_json(
+        prompts.SYSTEM_CATEGORIA, user, prompts.SCHEMA_CATEGORIA, profile,
+        model=_model_geral(), effort=getattr(settings, 'AI_EFFORT_GERAL', 'medium'),
+    )
+    por_id = {t.pk: t for t in trilhas}
+    resultado = {}
+    for item in data.get('categorias', []):
+        t = por_id.get(item.get('id'))
+        cat = (item.get('categoria') or '').strip()[:60]
+        if t is not None and cat:
+            t.categoria = cat
+            t.save(update_fields=['categoria', 'atualizada_em'])
+            resultado[t.pk] = cat
+    return resultado
+
+
+# ---------------------------------------------------------------------------
+# 7. Revisão espaçada (Sonnet — quiz misto sobre níveis já concluídos)
+# ---------------------------------------------------------------------------
+
+def gerar_revisao(revisao, profile=None):
+    from avaliacoes.models import QuestaoRevisao
+    from trilhas.models import Nivel
+
+    niveis = list(
+        Nivel.objects
+        .filter(trilha__user=revisao.user, status=Nivel.Status.APROVADO)
+        .select_related('trilha')
+        .order_by('?')[:8]
+    )
+    if not niveis:
+        raise IAError('Nenhum nível concluído para revisar ainda.')
+
+    blocos = []
+    for i, nv in enumerate(niveis, start=1):
+        subs = ', '.join(s.titulo for s in nv.subtopicos.all())
+        blocos.append(
+            f'Nível {i} — trilha "{nv.trilha.titulo}", nível "{nv.titulo}" '
+            f'(faixa {nv.get_faixa_display()}). Subtópicos: {subs}'
+        )
+    n_questoes = min(12, max(6, len(niveis) * 3))
+    user = (
+        'Níveis já concluídos pelo aluno (use-os como base da revisão):\n\n'
+        + '\n'.join(blocos)
+        + f'\n\nCrie {n_questoes} questões objetivas de revisão, misturando os '
+        'níveis acima e variando a dificuldade. Em "origem" coloque o NÚMERO do '
+        'nível de referência (1 a ' + str(len(niveis)) + '). Preencha '
+        '"alternativas" com {letra, texto}, "gabarito" com a letra correta e '
+        '"explicacao" com um comentário didático. Numere em "ordem" a partir de 1.'
+    )
+    data = _gerar_json(
+        prompts.SYSTEM_REVISAO, user, prompts.SCHEMA_REVISAO, profile,
+        model=_model_geral(), effort=getattr(settings, 'AI_EFFORT_GERAL', 'medium'),
+    )
+
+    revisao.questoes.all().delete()
+    objs = []
+    for i, q in enumerate(data.get('questoes', []), start=1):
+        idx = q.get('origem') or 1
+        nv = niveis[idx - 1] if 1 <= idx <= len(niveis) else niveis[0]
+        objs.append(QuestaoRevisao(
+            revisao=revisao,
+            ordem=q.get('ordem') or i,
+            nivel=nv,
+            origem=f'{nv.trilha.titulo} · {nv.titulo}',
+            enunciado_md=(q.get('enunciado') or '').strip(),
+            alternativas=q.get('alternativas', []) or [],
+            gabarito=(q.get('gabarito') or '').strip(),
+            explicacao_md=(q.get('explicacao') or '').strip(),
+        ))
+    QuestaoRevisao.objects.bulk_create(objs)
+    return revisao

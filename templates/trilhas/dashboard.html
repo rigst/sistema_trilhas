@@ -9,7 +9,17 @@
       <h1 class="h1">Minhas trilhas</h1>
       <p class="sub">Continue de onde parou ou comece a dominar algo novo.</p>
     </div>
-    <a class="btn btn-primary" href="{% url 'trilhas:criar' %}">+ Nova trilha</a>
+    <div class="home-actions">
+      {% if pode_estudar %}
+        <a class="btn btn-primary" href="{% url 'trilhas:estudar_agora' %}">▶ Estudar agora</a>
+      {% endif %}
+      {% if pode_revisar %}
+        <form method="post" action="{% url 'avaliacoes:revisar' %}">{% csrf_token %}
+          <button type="submit" class="btn btn-ghost">🔁 Revisar</button>
+        </form>
+      {% endif %}
+      <a class="btn btn-ghost" href="{% url 'trilhas:criar' %}">+ Nova trilha</a>
+    </div>
   </div>
 
   {% if medalhas %}
@@ -37,28 +47,24 @@
   {% endif %}
 
   {% if trilhas %}
-    <div class="trilha-grid">
-      {% for trilha in trilhas %}
-        <article class="card trilha-card">
-          <a href="{% url 'trilhas:detalhe' trilha.pk %}">
-            <div class="tc-top">
-              <span class="tc-left">
-                <span class="tc-emblem {% if trilha.medalha %}tc-emblem--{{ trilha.medalha.tier }}{% endif %}" aria-hidden="true">{{ trilha.emblema_display }}</span>
-                <span class="status-badge status-badge--{{ trilha.status }}">{{ trilha.get_status_display }}</span>
-              </span>
-              {% if trilha.total_niveis %}<span class="tc-frac">{{ trilha.niveis_aprovados }}/{{ trilha.total_niveis }}</span>{% endif %}
-            </div>
-            <h3 class="tc-title">{{ trilha.titulo|default:trilha.tema_livre|truncatechars:64 }}</h3>
-            {% if trilha.descricao %}<p class="tc-desc">{{ trilha.descricao|truncatechars:120 }}</p>{% endif %}
-            {% if trilha.total_niveis %}
-              <div class="progress-bar"><span style="width: {{ trilha.progresso_pct }}%"></span></div>
-              <p class="progress-label">{{ trilha.progresso_pct }}% concluído</p>
-            {% endif %}
-            {% if trilha.medalha %}<div class="title-chips" style="margin-top:.7rem"><span class="title-chip title-chip--{{ trilha.medalha.tier }}">{{ trilha.medalha.tier_label }} · {{ trilha.medalha.nome }}</span></div>{% endif %}
-          </a>
-        </article>
+    {% if multiplos_grupos %}
+      {% for categoria, lista in grupos %}
+        <details class="folder" open>
+          <summary class="folder-head">
+            <span class="folder-ic">📁</span>
+            <span class="folder-name">{{ categoria }}</span>
+            <span class="folder-count">{{ lista|length }}</span>
+          </summary>
+          <div class="trilha-grid">
+            {% for trilha in lista %}{% include 'partials/trilha_card.html' %}{% endfor %}
+          </div>
+        </details>
       {% endfor %}
-    </div>
+    {% else %}
+      <div class="trilha-grid">
+        {% for trilha in trilhas %}{% include 'partials/trilha_card.html' %}{% endfor %}
+      </div>
+    {% endif %}
   {% else %}
     <div class="empty">
       <h3>Você ainda não tem trilhas</h3>

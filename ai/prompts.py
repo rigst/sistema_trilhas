@@ -94,6 +94,23 @@ SYSTEM_CORRECAO = (
     'com feedback construtivo em português (Markdown).'
 )
 
+SYSTEM_CATEGORIA = (
+    'Você organiza trilhas de estudo em categorias amplas (áreas de conhecimento), '
+    'como se fossem pastas. Agrupa temas semelhantes sob o MESMO nome de categoria, '
+    'curto e reconhecível (ex.: "Programação", "Direito", "História", "Idiomas", '
+    '"Música", "Saúde", "Negócios", "Matemática", "Ciências"). Reutilize exatamente '
+    'o mesmo rótulo para trilhas afins. Responda sempre em português.'
+)
+
+SYSTEM_REVISAO = (
+    'Você é um tutor que cria REVISÕES espaçadas: um quiz objetivo que mistura '
+    'perguntas sobre níveis que o aluno já concluiu em diferentes trilhas, para '
+    'reforçar a memória. Use APENAS questões objetivas (múltipla escolha), '
+    'distribuídas entre os níveis fornecidos, com dificuldade variada. Para cada '
+    'questão indique em "origem" o número do nível de referência e escreva uma '
+    '"explicacao" clara da resposta. Responda em português.'
+)
+
 
 # ---------------------------------------------------------------------------
 # JSON Schemas (structured outputs)
@@ -127,6 +144,7 @@ SCHEMA_SUMARIO = {
         'titulo': {'type': 'string'},
         'descricao': {'type': 'string'},
         'emblema': {'type': 'string'},
+        'categoria': {'type': 'string'},
         'objetivos': {'type': 'array', 'items': {'type': 'string'}},
         'niveis': {
             'type': 'array',
@@ -166,7 +184,7 @@ SCHEMA_SUMARIO = {
             },
         },
     },
-    'required': ['titulo', 'descricao', 'emblema', 'objetivos', 'niveis'],
+    'required': ['titulo', 'descricao', 'emblema', 'categoria', 'objetivos', 'niveis'],
     'additionalProperties': False,
 }
 
@@ -249,5 +267,60 @@ SCHEMA_CORRECAO = {
         'pontos_a_melhorar': {'type': 'array', 'items': {'type': 'string'}},
     },
     'required': ['nota', 'feedback_md', 'pontos_fortes', 'pontos_a_melhorar'],
+    'additionalProperties': False,
+}
+
+SCHEMA_CATEGORIA = {
+    'type': 'object',
+    'properties': {
+        'categorias': {
+            'type': 'array',
+            'items': {
+                'type': 'object',
+                'properties': {
+                    'id': {'type': 'integer'},
+                    'categoria': {'type': 'string'},
+                },
+                'required': ['id', 'categoria'],
+                'additionalProperties': False,
+            },
+        }
+    },
+    'required': ['categorias'],
+    'additionalProperties': False,
+}
+
+SCHEMA_REVISAO = {
+    'type': 'object',
+    'properties': {
+        'questoes': {
+            'type': 'array',
+            'items': {
+                'type': 'object',
+                'properties': {
+                    'ordem': {'type': 'integer'},
+                    'origem': {'type': 'integer'},
+                    'enunciado': {'type': 'string'},
+                    'alternativas': {
+                        'type': 'array',
+                        'items': {
+                            'type': 'object',
+                            'properties': {
+                                'letra': {'type': 'string'},
+                                'texto': {'type': 'string'},
+                            },
+                            'required': ['letra', 'texto'],
+                            'additionalProperties': False,
+                        },
+                    },
+                    'gabarito': {'type': 'string'},
+                    'explicacao': {'type': 'string'},
+                },
+                'required': ['ordem', 'origem', 'enunciado', 'alternativas', 'gabarito', 'explicacao'],
+                'additionalProperties': False,
+            },
+        }
+    },
+    'required': ['questoes'],
     'additionalProperties': False,
 }

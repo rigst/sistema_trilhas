@@ -427,6 +427,20 @@ a.node:not(.lock):hover .nm{color:var(--teal)}
 .title-chip--platina{background:rgba(107,130,150,.16);color:#7e93a6;border-color:rgba(107,130,150,.42)}
 .title-chip--diamante{background:rgba(31,155,184,.16);color:#1f9bb8;border-color:rgba(31,155,184,.45)}
 
+/* ---- ações da home + pastas (categorias) ------------------------------- */
+.home-actions{display:flex;gap:.6rem;flex-wrap:wrap;align-items:center}
+.home-actions form{display:inline;margin:0}
+.folder{margin-top:1.5rem;border:1px solid var(--line);border-radius:var(--radius);background:var(--glass-b)}
+.folder-head{list-style:none;cursor:pointer;display:flex;align-items:center;gap:.55rem;padding:.9rem 1.15rem;
+  font-family:var(--disp);font-weight:700;font-size:1.05rem;color:var(--text);user-select:none}
+.folder-head::-webkit-details-marker{display:none}
+.folder-head::after{content:"▾";margin-left:auto;color:var(--muted);transition:transform .2s}
+.folder:not([open]) .folder-head::after{transform:rotate(-90deg)}
+.folder-ic{font-size:1.05rem}
+.folder-count{font-size:.72rem;font-weight:600;color:var(--muted);background:var(--panel-2);
+  border:1px solid var(--line);border-radius:99px;padding:.12rem .55rem}
+.folder .trilha-grid{margin:0 1.15rem 1.2rem}
+
 /* ---- tópicos bloqueados (leitura em ordem) ----------------------------- */
 .topico-item.locked{opacity:.6;cursor:not-allowed;background:var(--glass-b)}
 .topico-item.locked .ti-num{background:var(--panel);color:var(--dim)}

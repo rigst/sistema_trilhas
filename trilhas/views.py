@@ -47,9 +47,47 @@ def dashboard(request):
         m['pips'] = [i < m['estrelas'] for i in range(m['total'])]
         medalhas.append(m)
     medalhas.sort(key=lambda m: (ordem_tier.get(m['tier'], 9), -m['estrelas']))
+
+    # Agrupa as trilhas por categoria (como "pastas"); "Outras" fica por último.
+    from collections import OrderedDict
+    ordenadas = sorted(
+        trilhas,
+        key=lambda t: (t.categoria_display == 'Outras', t.categoria_display.lower()),
+    )
+    grupos = OrderedDict()
+    for t in ordenadas:  # ordenação estável preserva -criada_em dentro do grupo
+        grupos.setdefault(t.categoria_display, []).append(t)
+
+    pode_estudar = any(t.proximo_topico for t in trilhas)
+    pode_revisar = Nivel.objects.filter(
+        trilha__user=request.user, status=Nivel.Status.APROVADO
+    ).exists()
+
     return render(request, 'trilhas/dashboard.html', {
-        'trilhas': trilhas, 'medalhas': medalhas,
+        'trilhas': trilhas,
+        'medalhas': medalhas,
+        'grupos': grupos.items(),
+        'multiplos_grupos': len(grupos) > 1,
+        'pode_estudar': pode_estudar,
+        'pode_revisar': pode_revisar,
     })
+
+
+@login_required
+def estudar_agora(request):
+    """Leva o usuário direto ao próximo tópico em andamento (trilha mais recente)."""
+    candidatas = (
+        request.user.trilhas
+        .exclude(status=Trilha.Status.CONCLUIDA)
+        .order_by('-atualizada_em')
+    )
+    for trilha in candidatas:
+        alvo = trilha.proximo_topico
+        if alvo:
+            nivel, sub = alvo
+            return redirect('trilhas:topico', nivel_pk=nivel.pk, ordem=sub.ordem)
+    messages.info(request, 'Você não tem tópicos em andamento. Comece uma nova trilha!')
+    return redirect('dashboard')
 
 
 # ---------------------------------------------------------------------------
