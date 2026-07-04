@@ -28,17 +28,16 @@
   {% if medalhas %}
     <section class="medal-case">
       <div class="medal-case-head">
-        <h2 class="h3" style="margin:0">🏅 Sua estante de conquistas</h2>
+        <h2 class="h3" style="margin:0">Sua estante de conquistas</h2>
         <span class="muted" style="font-size:.85rem">{{ medalhas|length }} medalha{{ medalhas|length|pluralize }} · o título mais alto de cada trilha</span>
       </div>
       <div class="medal-shelf">
         {% for m in medalhas %}
           <a class="medal medal--{{ m.tier }}" href="{% url 'trilhas:detalhe' m.trilha.pk %}" title="{{ m.nome }} — {{ m.tier_label }}">
             <span class="medal-disc">
-              <span class="medal-ring"></span>
-              <span class="medal-emblem">{{ m.emblema }}</span>
-              <span class="medal-tier">{{ m.tier_label }}</span>
+              <span class="medal-mono">{{ m.sigla }}</span>
             </span>
+            <span class="medal-tier-label">{{ m.tier_label }}</span>
             <span class="medal-stars" aria-label="{{ m.estrelas }} de {{ m.total }} níveis">
               {% for on in m.pips %}<i class="{% if on %}on{% endif %}"></i>{% endfor %}
             </span>
@@ -54,7 +53,6 @@
       {% for categoria, lista in grupos %}
         <details class="folder" open>
           <summary class="folder-head">
-            <span class="folder-ic">📁</span>
             <span class="folder-name">{{ categoria }}</span>
             <span class="folder-count">{{ lista|length }}</span>
           </summary>

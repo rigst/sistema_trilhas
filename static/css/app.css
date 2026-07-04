@@ -179,7 +179,7 @@ select{appearance:none;background-image:linear-gradient(45deg,transparent 50%,va
 @media(max-width:900px){.two-col{grid-template-columns:1fr}}
 .rail{position:sticky;top:96px;display:flex;flex-direction:column;gap:18px}
 .constel{position:relative}
-.constel::before{content:"";position:absolute;left:23px;top:16px;bottom:16px;width:2px;background:linear-gradient(var(--teal),var(--line))}
+.constel::before{content:"";position:absolute;left:15px;top:24px;bottom:24px;width:2px;background:linear-gradient(var(--teal),var(--line))}
 .node{display:flex;gap:.85rem;align-items:center;padding:.5rem 0;position:relative;color:inherit}
 .node .bead{width:32px;height:32px;border-radius:50%;flex:none;display:grid;place-items:center;font-weight:700;font-size:.82rem;background:var(--panel-2);color:var(--muted);z-index:1;font-family:var(--disp)}
 .node.cur .bead{background:linear-gradient(135deg,var(--teal),var(--teal-2));color:#062820;box-shadow:0 0 18px var(--teal-glow)}
@@ -313,7 +313,7 @@ a.node:not(.lock):hover .nm{color:var(--teal)}
 
 /* ---- footer ------------------------------------------------------------ */
 .site-footer{border-top:1px solid var(--line);margin-top:40px}
-.footer-in{display:flex;justify-content:space-between;align-items:center;gap:1rem;padding:26px 0;flex-wrap:wrap}
+.footer-in{display:flex;justify-content:space-between;align-items:center;gap:1rem;padding-top:26px;padding-bottom:26px;flex-wrap:wrap}
 .footer-brand{font-family:var(--disp);font-weight:700}
 .footer-copy{color:var(--dim);font-size:.82rem;margin:.2rem 0 0}
 .footer-points{display:flex;gap:1.2rem;list-style:none;margin:0;padding:0;color:var(--muted);font-size:.82rem;flex-wrap:wrap}
@@ -380,41 +380,44 @@ a.node:not(.lock):hover .nm{color:var(--teal)}
 .medal-shelf{display:flex;gap:1.5rem;overflow-x:auto;padding:.6rem .2rem 1rem;scroll-snap-type:x proximity}
 .medal-shelf::-webkit-scrollbar{height:8px}
 .medal-shelf::-webkit-scrollbar-thumb{background:var(--line-2);border-radius:99px}
-.medal{flex:0 0 auto;width:132px;display:flex;flex-direction:column;align-items:center;gap:.6rem;text-align:center;scroll-snap-align:start;transition:transform .2s}
+.medal{flex:0 0 auto;width:128px;display:flex;flex-direction:column;align-items:center;gap:.5rem;text-align:center;scroll-snap-align:start;transition:transform .2s}
 .medal:hover{transform:translateY(-4px)}
 
-.medal-disc{position:relative;width:104px;height:104px;border-radius:50%;display:grid;place-items:center;
-  background:var(--m-face);box-shadow:0 10px 24px rgba(0,0,0,.4),var(--m-glow)}
-.medal-disc::before{content:"";position:absolute;inset:-4px;border-radius:50%;z-index:-1;
-  background:conic-gradient(from 210deg,var(--m-rim-a),var(--m-rim-b),var(--m-rim-a),var(--m-rim-b),var(--m-rim-a))}
-.medal-disc::after{content:"";position:absolute;inset:0;border-radius:50%;z-index:1;pointer-events:none;
-  background:linear-gradient(130deg,rgba(255,255,255,.6),rgba(255,255,255,0) 42%);mix-blend-mode:screen}
-.medal-ring{position:absolute;inset:9px;border-radius:50%;z-index:2;border:2px solid rgba(255,255,255,.35);
-  box-shadow:inset 0 2px 6px rgba(255,255,255,.45),inset 0 -7px 13px rgba(0,0,0,.28)}
-.medal-emblem{position:relative;z-index:2;font-size:2.1rem;line-height:1;margin-top:-.5rem;filter:drop-shadow(0 1px 1px rgba(0,0,0,.35))}
-.medal-tier{position:absolute;z-index:2;bottom:13px;font-family:var(--disp);font-weight:800;font-size:.55rem;
-  letter-spacing:.14em;text-transform:uppercase;color:var(--m-ink)}
-.medal-stars{display:flex;gap:4px}
-.medal-stars i{width:7px;height:7px;border-radius:50%;background:var(--line-2)}
-.medal-stars i.on{background:var(--m-star);box-shadow:0 0 6px var(--m-star)}
-.medal-name{font-size:.78rem;font-weight:600;color:var(--text);line-height:1.25}
+/* Moeda metálica com monograma gravado — sem emoji, sempre condiz com a trilha. */
+.medal-disc{position:relative;width:96px;height:96px;border-radius:50%;display:grid;place-items:center;
+  background:var(--m-face);
+  box-shadow:0 8px 20px rgba(0,0,0,.38),inset 0 2px 4px rgba(255,255,255,.55),
+             inset 0 -9px 15px rgba(0,0,0,.26),var(--m-glow)}
+.medal-disc::before{content:"";position:absolute;inset:-3px;border-radius:50%;z-index:-1;
+  background:conic-gradient(from 218deg,var(--m-rim-a),var(--m-rim-b) 25%,var(--m-rim-a) 50%,var(--m-rim-b) 75%,var(--m-rim-a))}
+.medal-disc::after{content:"";position:absolute;inset:7px;border-radius:50%;pointer-events:none;
+  border:1.5px solid rgba(255,255,255,.28);box-shadow:inset 0 1px 3px rgba(255,255,255,.35)}
+.medal-mono{font-family:var(--disp);font-weight:800;font-size:2.1rem;line-height:1;color:var(--m-ink);
+  letter-spacing:.01em;text-shadow:0 1px 0 rgba(255,255,255,.45),0 -1px 1px rgba(0,0,0,.22)}
+.medal-tier-label{font-family:var(--disp);font-weight:700;font-size:.62rem;letter-spacing:.16em;
+  text-transform:uppercase;color:var(--m-accent)}
+.medal-stars{display:flex;gap:4px;margin-top:.05rem}
+.medal-stars i{width:6px;height:6px;border-radius:50%;background:var(--line-2)}
+.medal-stars i.on{background:var(--m-accent);box-shadow:0 0 6px var(--m-accent)}
+.medal-name{font-size:.78rem;font-weight:600;color:var(--text);line-height:1.25;margin-top:.1rem}
 
-.medal--bronze{--m-face:radial-gradient(circle at 34% 28%,#f0b877,#c9812f 46%,#8a531d 100%);
-  --m-rim-a:#e6a664;--m-rim-b:#7a4a1e;--m-ink:#3d2410;--m-star:#e6a664;--m-glow:0 0 0 rgba(0,0,0,0)}
-.medal--prata{--m-face:radial-gradient(circle at 34% 28%,#ffffff,#c2cad6 48%,#8b95a3 100%);
-  --m-rim-a:#eef1f6;--m-rim-b:#7d8794;--m-ink:#2c333d;--m-star:#dfe6ef;--m-glow:0 0 18px rgba(200,210,225,.3)}
-.medal--ouro{--m-face:radial-gradient(circle at 34% 28%,#fff1c0,#eeb838 47%,#b07e1a 100%);
-  --m-rim-a:#ffe08a;--m-rim-b:#9a6c12;--m-ink:#5a3d08;--m-star:#ffd76a;--m-glow:0 0 24px rgba(245,181,74,.45)}
-.medal--platina{--m-face:radial-gradient(circle at 34% 28%,#ffffff,#dbe6ef 46%,#9fb0c2 100%);
-  --m-rim-a:#eaf2fa;--m-rim-b:#8395a8;--m-ink:#2a3a49;--m-star:#bfe0f5;--m-glow:0 0 26px rgba(160,200,230,.5)}
-.medal--diamante{--m-face:radial-gradient(circle at 34% 28%,#ffffff,#9ff0f7 44%,#42b6d6 100%);
-  --m-rim-a:#d6fbff;--m-rim-b:#3aa6c8;--m-ink:#0d3a47;--m-star:#8ff0ff;--m-glow:0 0 32px rgba(120,230,245,.6)}
+.medal--bronze{--m-face:radial-gradient(circle at 35% 26%,#f4c088,#c9812f 48%,#82501c 100%);
+  --m-rim-a:#f0b877;--m-rim-b:#7a4a1e;--m-ink:#4a2c11;--m-accent:#d79a58;--m-glow:0 0 0 rgba(0,0,0,0)}
+.medal--prata{--m-face:radial-gradient(circle at 35% 26%,#ffffff,#c6cedb 50%,#828d9c 100%);
+  --m-rim-a:#f2f5fa;--m-rim-b:#7d8794;--m-ink:#333a44;--m-accent:#b9c3d1;--m-glow:0 0 16px rgba(200,210,225,.28)}
+.medal--ouro{--m-face:radial-gradient(circle at 35% 26%,#fff3c8,#eeb838 49%,#a9781a 100%);
+  --m-rim-a:#ffe391;--m-rim-b:#93670f;--m-ink:#5f4209;--m-accent:#e7b24d;--m-glow:0 0 22px rgba(245,181,74,.42)}
+.medal--platina{--m-face:radial-gradient(circle at 35% 26%,#ffffff,#dde7f0 48%,#95a8bb 100%);
+  --m-rim-a:#eef4fb;--m-rim-b:#7e91a5;--m-ink:#2f3f4e;--m-accent:#a9c3da;--m-glow:0 0 24px rgba(160,200,230,.46)}
+.medal--diamante{--m-face:radial-gradient(circle at 35% 26%,#ffffff,#a6f2f8 46%,#3cb0d2 100%);
+  --m-rim-a:#dbfcff;--m-rim-b:#349fc2;--m-ink:#0e3c49;--m-accent:#6fdcef;--m-glow:0 0 30px rgba(120,230,245,.55)}
 .medal--diamante .medal-disc{animation:medal-shine 3.2s ease-in-out infinite}
-@keyframes medal-shine{0%,100%{filter:brightness(1)}50%{filter:brightness(1.16)}}
+@keyframes medal-shine{0%,100%{filter:brightness(1)}50%{filter:brightness(1.14)}}
 
 /* emblema/decalque no card da trilha + chip por patamar */
 .tc-left{display:flex;align-items:center;gap:.6rem}
-.tc-emblem{width:34px;height:34px;border-radius:10px;display:grid;place-items:center;font-size:1.15rem;
+.tc-emblem{width:36px;height:36px;border-radius:10px;display:grid;place-items:center;flex:none;
+  font-family:var(--disp);font-weight:800;font-size:.92rem;letter-spacing:.01em;color:var(--muted);
   background:var(--panel-2);border:1px solid var(--line-2)}
 .tc-emblem--bronze{border-color:rgba(184,115,51,.5);box-shadow:0 0 12px rgba(184,115,51,.28)}
 .tc-emblem--prata{border-color:rgba(180,192,204,.5);box-shadow:0 0 12px rgba(180,192,204,.28)}
@@ -430,16 +433,20 @@ a.node:not(.lock):hover .nm{color:var(--teal)}
 /* ---- ações da home + pastas (categorias) ------------------------------- */
 .home-actions{display:flex;gap:.6rem;flex-wrap:wrap;align-items:center}
 .home-actions form{display:inline;margin:0}
-.folder{margin-top:1.5rem;border:1px solid var(--line);border-radius:var(--radius);background:var(--glass-b)}
-.folder-head{list-style:none;cursor:pointer;display:flex;align-items:center;gap:.55rem;padding:.9rem 1.15rem;
-  font-family:var(--disp);font-weight:700;font-size:1.05rem;color:var(--text);user-select:none}
+/* Categorias como cabeçalhos de seção (sem "caixa dentro de caixa"): os cards
+   ficam direto sobre a página, separados por um divisor sutil. */
+.folder{margin-top:2rem}
+.folder+.folder{margin-top:2.6rem}
+.folder-head{list-style:none;cursor:pointer;display:flex;align-items:center;gap:.65rem;
+  padding:.15rem 0 .7rem;border-bottom:1px solid var(--line);
+  font-family:var(--disp);font-weight:700;font-size:1.1rem;letter-spacing:-.01em;
+  color:var(--text);user-select:none}
 .folder-head::-webkit-details-marker{display:none}
-.folder-head::after{content:"▾";margin-left:auto;color:var(--muted);transition:transform .2s}
+.folder-head::after{content:"▾";margin-left:auto;color:var(--muted);font-size:.85rem;transition:transform .2s}
 .folder:not([open]) .folder-head::after{transform:rotate(-90deg)}
-.folder-ic{font-size:1.05rem}
 .folder-count{font-size:.72rem;font-weight:600;color:var(--muted);background:var(--panel-2);
-  border:1px solid var(--line);border-radius:99px;padding:.12rem .55rem}
-.folder .trilha-grid{margin:0 1.15rem 1.2rem}
+  border:1px solid var(--line);border-radius:99px;padding:.1rem .55rem}
+.folder .trilha-grid{margin:1.1rem 0 0}
 
 /* ---- mentor / percurso ------------------------------------------------- */
 .btn-mentor{background:linear-gradient(135deg,var(--violet),#6E5AC7);color:#fff;box-shadow:0 0 22px rgba(139,124,246,.4)}
@@ -476,9 +483,12 @@ a.node:not(.lock):hover .nm{color:var(--teal)}
 
 /* ---- painel de leitura (tema + tamanho da fonte) ----------------------- */
 .reader-fab{position:fixed;right:18px;bottom:18px;z-index:60;display:flex;flex-direction:column;align-items:flex-end;gap:.6rem}
-.reader-fab-btn{width:48px;height:48px;border-radius:50%;border:1px solid var(--line-2);background:var(--panel);color:var(--text);
-  font-family:var(--disp);font-weight:700;font-size:1.1rem;cursor:pointer;box-shadow:var(--shadow);transition:.15s}
-.reader-fab-btn:hover{border-color:var(--teal);color:var(--teal)}
+.reader-fab-btn{width:42px;height:42px;border-radius:50%;border:1px solid var(--line);
+  background:color-mix(in srgb,var(--panel) 45%,transparent);color:var(--muted);
+  font-family:var(--disp);font-weight:600;font-size:1rem;cursor:pointer;opacity:.4;
+  backdrop-filter:blur(6px);box-shadow:0 4px 14px rgba(0,0,0,.18);transition:opacity .18s,color .18s,border-color .18s}
+.reader-fab-btn:hover,.reader-fab-btn:focus-visible,.reader-fab-btn[aria-expanded="true"]{
+  opacity:1;border-color:var(--teal);color:var(--teal)}
 .reader-panel{width:260px;background:var(--panel);border:1px solid var(--line-2);border-radius:var(--radius-sm);
   box-shadow:var(--shadow);padding:1rem;display:flex;flex-direction:column;gap:1rem}
 .reader-panel[hidden]{display:none}

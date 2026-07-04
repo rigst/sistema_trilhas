@@ -1,5 +1,17 @@
+import re
+
 from django.conf import settings
 from django.db import models
+
+
+# Conectivos e palavras genéricas ignorados ao montar o monograma (sigla) da
+# trilha, para que as iniciais reflitam o assunto (não o "Trilha de…").
+CONECTIVOS_SIGLA = {
+    'de', 'da', 'do', 'das', 'dos', 'e', 'a', 'o', 'as', 'os', 'para', 'com',
+    'em', 'no', 'na', 'nos', 'nas', 'ao', 'à', 'the', 'of', 'and', 'to', 'in', 'for',
+    'trilha', 'trilhas', 'curso', 'cursos', 'estudo', 'estudos', 'aula', 'aulas',
+    'módulo', 'modulo', 'introdução', 'introducao',
+}
 
 
 # Faixa do nível → patamar da medalha (metal) conquistada na trilha.
@@ -101,6 +113,20 @@ class Trilha(models.Model):
         return EMBLEMAS_FALLBACK[(self.pk or 0) % len(EMBLEMAS_FALLBACK)]
 
     @property
+    def sigla(self):
+        """Monograma da trilha (1–2 iniciais do título) para gravar na medalha.
+        Sempre condiz com o assunto, ao contrário de um emoji genérico."""
+        base = (self.titulo or self.tema_livre or '').strip()
+        # Palavras sem pontuação nas bordas (ex.: "Estudos:" -> "Estudos").
+        palavras = [w for w in (re.sub(r'^\W+|\W+$', '', p) for p in base.split()) if w]
+        signif = [p for p in palavras if p.lower() not in CONECTIVOS_SIGLA] or palavras
+        if len(signif) >= 2:
+            return (signif[0][:1] + signif[1][:1]).upper()
+        if signif:
+            return signif[0][:2].upper() if len(signif[0]) > 1 else signif[0][:1].upper()
+        return '★'
+
+    @property
     def categoria_display(self):
         """Nome da 'pasta' onde a trilha aparece (fallback: 'Outras')."""
         return self.categoria.strip() or 'Outras'
@@ -125,7 +151,7 @@ class Trilha(models.Model):
             return None
         tier, label = FAIXA_TIER.get(titulo.faixa, ('bronze', 'Bronze'))
         return {
-            'emblema': self.emblema_display,
+            'sigla': self.sigla,
             'tier': tier,
             'tier_label': label,
             'nome': titulo.nome,
