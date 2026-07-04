@@ -12,6 +12,7 @@
   --green:#34D399; --red:#F87171; --sky:#7DD3FC;
   --teal-glow:rgba(45,212,191,.35); --amber-glow:rgba(245,181,74,.3);
   --code-ink:#a7f3e5;
+  --header-bg:#10152A;
   --disp:"Sora",system-ui,sans-serif; --sans:"Inter",system-ui,sans-serif; --mono:"JetBrains Mono",ui-monospace,monospace;
   --radius:18px; --radius-sm:12px; --radius-xs:9px;
   --shadow:0 20px 50px rgba(0,0,0,.35);
@@ -26,6 +27,7 @@ html{scroll-behavior:smooth;font-size:calc(100% * var(--fscale,1))}
   --glass-a:rgba(17,24,45,.03); --glass-b:rgba(17,24,45,.015);
   --line:rgba(17,24,45,.10); --line-2:rgba(17,24,45,.16);
   --text:#151B2E; --muted:#54607F; --dim:#8791A9;
+  --header-bg:#FFFFFF;
   --teal:#0E9C88; --teal-2:#0C8878; --teal-glow:rgba(14,156,136,.18);
   --code-ink:#0C7A6B; --shadow:0 16px 40px rgba(20,26,46,.12);
 }
@@ -35,6 +37,7 @@ html{scroll-behavior:smooth;font-size:calc(100% * var(--fscale,1))}
   --glass-a:rgba(70,52,25,.04); --glass-b:rgba(70,52,25,.02);
   --line:rgba(70,52,25,.14); --line-2:rgba(70,52,25,.22);
   --text:#3A2E1C; --muted:#6E5C42; --dim:#93826A;
+  --header-bg:#F3E7CE;
   --teal:#0C8474; --teal-2:#0A7365; --amber:#A9761A; --violet:#6E5AC7;
   --teal-glow:rgba(12,132,116,.16); --code-ink:#7A4E12;
   --shadow:0 16px 40px rgba(70,52,25,.14);
@@ -45,6 +48,7 @@ html{scroll-behavior:smooth;font-size:calc(100% * var(--fscale,1))}
   --glass-a:rgba(255,255,255,.035); --glass-b:rgba(255,255,255,.012);
   --line:rgba(255,255,255,.10); --line-2:rgba(255,255,255,.16);
   --text:#F2F3F8; --muted:#A2A8BE; --dim:#6C7288; --code-ink:#a7f3e5;
+  --header-bg:#0B0B0F;
 }
 :root[data-theme="claro"] body,
 :root[data-theme="papel"] body,
@@ -81,7 +85,9 @@ h1,h2,h3,h4{font-family:var(--disp);letter-spacing:-.01em;line-height:1.15}
 .back-link:hover{color:var(--teal)}
 
 /* ---- header / nav ------------------------------------------------------ */
-.site-header{position:sticky;top:0;z-index:20;background:rgba(12,16,32,.72);backdrop-filter:blur(14px);border-bottom:1px solid var(--line)}
+/* Barra superior fixa no topo da página (não acompanha a rolagem), com cor
+   que segue o tema (clara no claro/papel, escura no escuro/preto). */
+.site-header{background:var(--header-bg,var(--panel));border-bottom:1px solid var(--line);box-shadow:0 1px 0 var(--line)}
 .nav{display:flex;align-items:center;justify-content:space-between;height:70px;gap:1rem}
 .nav-top{display:flex;align-items:center;gap:1rem}
 .brand{font-family:var(--disp);font-weight:800;font-size:1.28rem;display:flex;align-items:center;gap:.6rem;letter-spacing:-.01em}
@@ -152,6 +158,7 @@ select{appearance:none;background-image:linear-gradient(45deg,transparent 50%,va
 .status-badge--concluida{background:rgba(52,211,153,.12);color:var(--green)}
 .status-badge--em_andamento{background:rgba(45,212,191,.12);color:var(--teal)}
 .status-badge--erro{background:rgba(248,113,113,.12);color:var(--red)}
+.status-badge--off{background:var(--panel-2);color:var(--dim);border:1px solid var(--line)}
 
 /* ---- progress ---------------------------------------------------------- */
 .progress-bar{height:9px;background:var(--panel-2);border-radius:99px;overflow:hidden;margin:.5rem 0}
@@ -197,7 +204,8 @@ a.node:not(.lock):hover .nm{color:var(--teal)}
 .nivel-row.lock{opacity:.55}
 .nivel-num{width:36px;height:36px;border-radius:10px;flex:none;display:grid;place-items:center;font-weight:700;font-family:var(--disp);background:var(--panel-2);color:var(--teal)}
 .nivel-row.done .nivel-num{background:rgba(52,211,153,.16);color:var(--green)}
-.nivel-main{flex:1;display:flex;flex-direction:column;gap:.15rem}
+.nivel-main{flex:1;min-width:0;display:flex;flex-direction:column;align-items:flex-start;gap:.25rem}
+.nivel-main>*{max-width:100%}
 .nivel-name{font-weight:600}
 .nivel-hint,.nivel-resumo{font-size:.82rem;color:var(--muted)}
 .nivel-state{font-size:.75rem;color:var(--dim);white-space:nowrap}
@@ -447,6 +455,9 @@ a.node:not(.lock):hover .nm{color:var(--teal)}
 .folder-count{font-size:.72rem;font-weight:600;color:var(--muted);background:var(--panel-2);
   border:1px solid var(--line);border-radius:99px;padding:.1rem .55rem}
 .folder .trilha-grid{margin:1.1rem 0 0}
+.folder--off .folder-head{color:var(--muted)}
+.trilha-card--off{opacity:.6}
+.trilha-card--off:hover{opacity:.9}
 
 /* ---- mentor / percurso ------------------------------------------------- */
 .btn-mentor{background:linear-gradient(135deg,var(--violet),#6E5AC7);color:#fff;box-shadow:0 0 22px rgba(139,124,246,.4)}

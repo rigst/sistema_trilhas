@@ -52,6 +52,7 @@ class Trilha(models.Model):
     objetivos = models.JSONField('objetivos de aprendizagem', default=list, blank=True)
     emblema = models.CharField('emblema (emoji)', max_length=8, blank=True)
     categoria = models.CharField('categoria', max_length=60, blank=True, db_index=True)
+    ativa = models.BooleanField('ativa', default=True, db_index=True)
 
     status = models.CharField(
         max_length=25, choices=Status.choices, default=Status.RASCUNHO, db_index=True

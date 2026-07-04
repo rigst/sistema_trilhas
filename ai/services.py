@@ -457,7 +457,7 @@ def _catalogo_percurso(user):
     from trilhas.models import Nivel, Trilha
 
     prontas = (
-        Trilha.objects.filter(user=user)
+        Trilha.objects.filter(user=user, ativa=True)
         .exclude(status__in=[
             Trilha.Status.RASCUNHO, Trilha.Status.GERANDO_PERGUNTAS,
             Trilha.Status.AGUARDANDO_RESPOSTAS, Trilha.Status.GERANDO_SUMARIO,
@@ -572,7 +572,8 @@ def gerar_revisao(revisao, profile=None):
 
     niveis = list(
         Nivel.objects
-        .filter(trilha__user=revisao.user, status=Nivel.Status.APROVADO)
+        .filter(trilha__user=revisao.user, trilha__ativa=True,
+                status=Nivel.Status.APROVADO)
         .select_related('trilha')
         .order_by('?')[:8]
     )

@@ -35,11 +35,14 @@ def dashboard(request):
         .prefetch_related('niveis', 'titulos__nivel')
         .all()
     )
-    # Medalhas conquistadas (uma por trilha que já tem título), da mais alta
-    # para a mais baixa, para a estante de conquistas.
+    ativas = [t for t in trilhas if t.ativa]
+    desativadas = [t for t in trilhas if not t.ativa]
+
+    # Medalhas conquistadas (uma por trilha ativa que já tem título), da mais
+    # alta para a mais baixa, para a estante de conquistas.
     ordem_tier = {'diamante': 0, 'platina': 1, 'ouro': 2, 'prata': 3, 'bronze': 4}
     medalhas = []
-    for t in trilhas:
+    for t in ativas:
         m = t.medalha
         if not m:
             continue
@@ -48,23 +51,24 @@ def dashboard(request):
         medalhas.append(m)
     medalhas.sort(key=lambda m: (ordem_tier.get(m['tier'], 9), -m['estrelas']))
 
-    # Agrupa as trilhas por categoria (como "pastas"); "Outras" fica por último.
+    # Agrupa as trilhas ativas por categoria (como "pastas"); "Outras" por último.
     from collections import OrderedDict
     ordenadas = sorted(
-        trilhas,
+        ativas,
         key=lambda t: (t.categoria_display == 'Outras', t.categoria_display.lower()),
     )
     grupos = OrderedDict()
     for t in ordenadas:  # ordenação estável preserva -criada_em dentro do grupo
         grupos.setdefault(t.categoria_display, []).append(t)
 
-    pode_estudar = any(t.proximo_topico for t in trilhas)
+    pode_estudar = any(t.proximo_topico for t in ativas)
     pode_revisar = Nivel.objects.filter(
-        trilha__user=request.user, status=Nivel.Status.APROVADO
+        trilha__user=request.user, trilha__ativa=True, status=Nivel.Status.APROVADO
     ).exists()
 
     return render(request, 'trilhas/dashboard.html', {
         'trilhas': trilhas,
+        'desativadas': desativadas,
         'medalhas': medalhas,
         'grupos': grupos.items(),
         'multiplos_grupos': len(grupos) > 1,
@@ -74,10 +78,25 @@ def dashboard(request):
 
 
 @login_required
+@require_POST
+def trilha_alternar_ativa(request, pk):
+    """Ativa/desativa uma trilha. Desativadas somem da revisão e do mentor."""
+    trilha = get_object_or_404(Trilha, pk=pk, user=request.user)
+    trilha.ativa = not trilha.ativa
+    trilha.save(update_fields=['ativa', 'atualizada_em'])
+    if trilha.ativa:
+        messages.success(request, 'Trilha reativada — de volta à revisão e ao mentor.')
+    else:
+        messages.info(request, 'Trilha desativada — fora da revisão, do mentor e do “Estudar agora”.')
+    return redirect('trilhas:detalhe', pk=pk)
+
+
+@login_required
 def estudar_agora(request):
     """Leva o usuário direto ao próximo tópico em andamento (trilha mais recente)."""
     candidatas = (
         request.user.trilhas
+        .filter(ativa=True)
         .exclude(status=Trilha.Status.CONCLUIDA)
         .order_by('-atualizada_em')
     )

@@ -63,8 +63,20 @@
       {% endfor %}
     {% else %}
       <div class="trilha-grid">
-        {% for trilha in trilhas %}{% include 'partials/trilha_card.html' %}{% endfor %}
+        {% for categoria, lista in grupos %}{% for trilha in lista %}{% include 'partials/trilha_card.html' %}{% endfor %}{% endfor %}
       </div>
+    {% endif %}
+
+    {% if desativadas %}
+      <details class="folder folder--off">
+        <summary class="folder-head">
+          <span class="folder-name">Desativadas</span>
+          <span class="folder-count">{{ desativadas|length }}</span>
+        </summary>
+        <div class="trilha-grid">
+          {% for trilha in desativadas %}{% include 'partials/trilha_card.html' %}{% endfor %}
+        </div>
+      </details>
     {% endif %}
   {% else %}
     <div class="empty">

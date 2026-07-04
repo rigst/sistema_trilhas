@@ -210,7 +210,7 @@ def exercicio_verificar(request, pk):
 @require_POST
 def revisar_iniciar(request):
     tem_aprovados = Nivel.objects.filter(
-        trilha__user=request.user, status=Nivel.Status.APROVADO
+        trilha__user=request.user, trilha__ativa=True, status=Nivel.Status.APROVADO
     ).exists()
     if not tem_aprovados:
         messages.info(request, 'Conclua ao menos um nível para liberar a revisão.')

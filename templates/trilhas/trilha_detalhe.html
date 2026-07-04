@@ -22,19 +22,36 @@
 {% else %}
   <div class="spread page-head">
     <div>
-      <div class="badges"><span class="status-badge status-badge--{{ trilha.status }}">{{ trilha.get_status_display }}</span></div>
+      <div class="badges">
+        <span class="status-badge status-badge--{{ trilha.status }}">{{ trilha.get_status_display }}</span>
+        {% if not trilha.ativa %}<span class="status-badge status-badge--off">Desativada</span>{% endif %}
+      </div>
       <h1 class="h1">{{ trilha.titulo }}</h1>
       {% if trilha.descricao %}<p class="sub">{{ trilha.descricao }}</p>{% endif %}
     </div>
-    <div class="inline-actions" style="display:flex;gap:.5rem;align-items:center">
+    <div class="inline-actions" style="display:flex;gap:.5rem;align-items:center;flex-wrap:wrap">
       {% if trilha.status == 'concluida' %}
         <a class="btn btn-primary" href="{% url 'trilhas:certificado' trilha.pk %}" target="_blank">🎓 Certificado</a>
       {% endif %}
+      <form method="post" action="{% url 'trilhas:alternar_ativa' trilha.pk %}">
+        {% csrf_token %}
+        {% if trilha.ativa %}
+          <button type="submit" class="btn btn-ghost" title="Some da revisão, do mentor e do Estudar agora">Desativar</button>
+        {% else %}
+          <button type="submit" class="btn btn-primary">Reativar</button>
+        {% endif %}
+      </form>
       <form method="post" action="{% url 'trilhas:excluir' trilha.pk %}" onsubmit="return confirm('Excluir esta trilha e todo o progresso?');">
         {% csrf_token %}<button type="submit" class="btn btn-danger">Excluir</button>
       </form>
     </div>
   </div>
+
+  {% if not trilha.ativa %}
+    <div class="card pad" style="border-color:var(--line-2);margin-bottom:1.4rem">
+      <strong>Trilha desativada.</strong> <span class="muted">Ela não entra na revisão espaçada, no percurso do mentor nem no “Estudar agora”. Suas conquistas ficam guardadas — reative quando quiser retomá-la.</span>
+    </div>
+  {% endif %}
 
   {% if trilha.status == 'concluida' %}
     <div class="card pad" style="border-color:rgba(52,211,153,.35);background:rgba(52,211,153,.06);margin-bottom:1.4rem">
@@ -82,8 +99,7 @@
           {% if m %}
             <div class="medal medal--{{ m.tier }}" style="width:100%;flex-direction:row;justify-content:flex-start;gap:1rem;margin-top:1.1rem">
               <span class="medal-disc" style="width:76px;height:76px;flex:none">
-                <span class="medal-ring"></span>
-                <span class="medal-emblem" style="font-size:1.5rem;margin-top:-.35rem">{{ m.emblema }}</span>
+                <span class="medal-mono" style="font-size:1.55rem">{{ m.sigla }}</span>
               </span>
               <span style="text-align:left">
                 <span class="title-chip title-chip--{{ m.tier }}">{{ m.tier_label }}</span>
