@@ -190,6 +190,38 @@
         navigator.serviceWorker.register("/sw.js").catch(() => {});
       }
 
+      // Tabelas responsivas: cada célula ganha o rótulo da coluna, para o
+      // modo empilhado (fichas) do mobile.
+      document.querySelectorAll(".markdown-body table").forEach((t) => {
+        const ths = Array.from(t.querySelectorAll("thead th")).map((th) => th.textContent.trim());
+        if (!ths.length) return;
+        t.querySelectorAll("tbody tr").forEach((tr) =>
+          Array.from(tr.children).forEach((td, i) => {
+            if (ths[i]) td.setAttribute("data-label", ths[i]);
+          }));
+      });
+
+      // Visualizador de diagrama em tela cheia (aberto pelo botão ampliar).
+      window.__abrirDiagrama = (svg) => {
+        const modal = document.createElement("div");
+        modal.className = "diagram-modal";
+        modal.innerHTML = '<div class="dm-top"><button type="button" class="dm-close" aria-label="Fechar">✕</button></div>' +
+          '<div class="dm-body"></div><div class="dm-hint">arraste para explorar o diagrama</div>';
+        const clone = svg.cloneNode(true);
+        clone.removeAttribute("style");
+        const w = +svg.dataset.natW || 800, h = +svg.dataset.natH || 500;
+        // Amplia um pouco além do natural para leitura confortável no toque.
+        clone.setAttribute("width", Math.ceil(w * 1.15));
+        clone.setAttribute("height", Math.ceil(h * 1.15));
+        modal.querySelector(".dm-body").appendChild(clone);
+        const fechar = () => { modal.remove(); document.removeEventListener("keydown", esc); };
+        const esc = (e) => { if (e.key === "Escape") fechar(); };
+        modal.querySelector(".dm-close").addEventListener("click", fechar);
+        modal.addEventListener("click", (e) => { if (e.target === modal) fechar(); });
+        document.addEventListener("keydown", esc);
+        document.body.appendChild(modal);
+      };
+
       // Diagramas Mermaid: carrega a lib só quando a página tem diagrama e
       // renderiza apenas os visíveis (cards ocultos renderizam ao aparecer).
       window.__mermaidRefresh = (scope, force) => {
@@ -217,8 +249,10 @@
           n.textContent = n.dataset.src || n.textContent;
         });
         window.mermaid.run({ nodes }).then(() => {
-          // Apara o SVG ao desenho real (o Mermaid deixa margens enormes
-          // em alguns tipos, ex.: timeline).
+          // Apara o SVG ao desenho real (o Mermaid deixa margens enormes em
+          // alguns tipos, ex.: timeline) e ajusta à largura do contêiner —
+          // nunca há rolagem lateral; diagramas encolhidos ganham o botão
+          // de ampliar em tela cheia.
           nodes.forEach((n) => {
             const svg = n.querySelector("svg");
             if (!svg) return;
@@ -227,12 +261,21 @@
               if (!b.width || !b.height) return;
               const w = b.width + 16, h = b.height + 16;
               svg.setAttribute("viewBox", `${b.x - 8} ${b.y - 8} ${w} ${h}`);
-              // Diagramas muito largos encolhem até ~2 telas (nunca abaixo de
-              // 55%, para o texto seguir legível); o excesso rola na lateral.
-              const cw = n.clientWidth || 340;
-              const scale = Math.min(1, Math.max(0.55, (2 * cw) / w));
-              svg.setAttribute("width", Math.ceil(w * scale));
-              svg.setAttribute("height", Math.ceil(h * scale));
+              svg.dataset.natW = Math.ceil(w);
+              svg.dataset.natH = Math.ceil(h);
+              const cw = (n.clientWidth || 340) - 16;
+              const scale = Math.min(1, cw / w);
+              svg.setAttribute("width", Math.floor(w * scale));
+              svg.setAttribute("height", Math.floor(h * scale));
+              if (scale < 0.85 && !n.querySelector(".mermaid-expand")) {
+                const btn = document.createElement("button");
+                btn.type = "button";
+                btn.className = "mermaid-expand";
+                btn.setAttribute("aria-label", "Ampliar diagrama");
+                btn.innerHTML = '<svg class="ic" aria-hidden="true"><use href="#ic-expand"/></svg>';
+                btn.addEventListener("click", () => window.__abrirDiagrama(svg));
+                n.appendChild(btn);
+              }
             } catch (e) {}
           });
         }).catch(() => {});
