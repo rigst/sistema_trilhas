@@ -82,13 +82,14 @@
   {% if medalhas %}
     <section class="medal-case">
       <div class="medal-case-head">
-        <h2 class="h3" style="margin:0">Sua estante de conquistas</h2>
-        <span class="muted" style="font-size:.85rem">{{ medalhas|length }} medalha{{ medalhas|length|pluralize }} · o título mais alto de cada trilha</span>
+        <h2 class="h3" style="margin:0">Sala de troféus</h2>
+        <span class="muted" style="font-size:.85rem">{{ medalhas|length }} troféu{{ medalhas|length|pluralize }} · o título mais alto de cada trilha</span>
       </div>
       <div class="medal-shelf">
         {% for m in medalhas %}
           <a class="medal medal--{{ m.tier }}" href="{% url 'trilhas:detalhe' m.trilha.pk %}" title="{{ m.nome }} — {{ m.tier_label }}">
-            <span class="medal-disc">
+            <span class="medal-trophy" aria-hidden="true">
+              <svg class="trophy-svg" viewBox="0 0 64 64"><use href="#ic-trophy"/></svg>
               <span class="medal-mono">{{ m.sigla }}</span>
             </span>
             <span class="medal-tier-label">{{ m.tier_label }}</span>

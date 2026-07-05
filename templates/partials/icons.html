@@ -1,5 +1,31 @@
 {# Sprite de ícones inline (traço, currentColor). Use: <svg class="ic" aria-hidden="true"><use href="#ic-nome"/></svg> #}
 <svg width="0" height="0" style="position:absolute" aria-hidden="true" focusable="false">
+  <defs>
+    {# Metais dos troféus (um gradiente por patamar). #}
+    <linearGradient id="mg-bronze" x1="0" y1="0" x2=".4" y2="1">
+      <stop offset="0" stop-color="#f4c088"/><stop offset=".5" stop-color="#c9812f"/><stop offset="1" stop-color="#82501c"/>
+    </linearGradient>
+    <linearGradient id="mg-prata" x1="0" y1="0" x2=".4" y2="1">
+      <stop offset="0" stop-color="#ffffff"/><stop offset=".5" stop-color="#c6cedb"/><stop offset="1" stop-color="#828d9c"/>
+    </linearGradient>
+    <linearGradient id="mg-ouro" x1="0" y1="0" x2=".4" y2="1">
+      <stop offset="0" stop-color="#fff3c8"/><stop offset=".5" stop-color="#eeb838"/><stop offset="1" stop-color="#a9781a"/>
+    </linearGradient>
+    <linearGradient id="mg-platina" x1="0" y1="0" x2=".4" y2="1">
+      <stop offset="0" stop-color="#ffffff"/><stop offset=".5" stop-color="#dde7f0"/><stop offset="1" stop-color="#95a8bb"/>
+    </linearGradient>
+    <linearGradient id="mg-diamante" x1="0" y1="0" x2=".4" y2="1">
+      <stop offset="0" stop-color="#ffffff"/><stop offset=".5" stop-color="#a6f2f8"/><stop offset="1" stop-color="#3cb0d2"/>
+    </linearGradient>
+  </defs>
+  {# Troféu: alças herdam o stroke; taça/pedestal herdam o fill do <svg>. #}
+  <symbol id="ic-trophy" viewBox="0 0 64 64">
+    <path fill="none" stroke-width="4" stroke-linecap="round"
+          d="M13 14H7.5A3.5 3.5 0 0 0 4 17.5C4 27 10 33.5 18 35M51 14h5.5A3.5 3.5 0 0 1 60 17.5C60 27 54 33.5 46 35"/>
+    <path stroke="none" d="M14 6h36v17c0 11-8 19-18 19S14 34 14 23z"/>
+    <path stroke="none" d="M28.5 41.5h7l1.6 7.5H26.9z"/>
+    <path stroke="none" d="M21 49h22a3 3 0 0 1 3 3v5H18v-5a3 3 0 0 1 3-3z"/>
+  </symbol>
   <symbol id="ic-play" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
     <path d="M6 4.5v15l13-7.5z"/>
   </symbol>

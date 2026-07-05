@@ -35,6 +35,22 @@ class IAError(Exception):
 # Infra
 # ---------------------------------------------------------------------------
 
+import re
+
+
+# "Trilha de Python" -> "Python": o título é o nome do assunto, sem prefixo.
+_PREFIXO_TITULO = re.compile(
+    r'^(trilha|curso|jornada|guia|estudo)s?( completo| completa)?'
+    r'( de| do| da| dos| das| para| em| sobre)?[\s:–-]+',
+    re.IGNORECASE,
+)
+
+
+def limpar_titulo(titulo):
+    limpo = _PREFIXO_TITULO.sub('', (titulo or '').strip()).strip()
+    return (limpo or (titulo or '').strip())[:200]
+
+
 def _model_geral():
     return getattr(settings, 'AI_MODEL_GERAL', 'claude-sonnet-4-6')
 
@@ -156,7 +172,9 @@ def gerar_sumario(trilha, profile=None):
         'Respostas às perguntas direcionadoras:\n\n'
         f'{qa}\n\n'
         'Monte um sumário de trilha de estudos progressiva, do básico ao avançado, '
-        'com 4 a 7 níveis. Escolha em "emblema" UM único emoji que represente '
+        'com 4 a 7 níveis. Em "titulo", use o NOME DIRETO do assunto (ex.: '
+        '"Fotografia de Rua", "Python do Zero") — NUNCA comece com "Trilha de", '
+        '"Curso de", "Guia de" ou similares. Escolha em "emblema" UM único emoji que represente '
         'visualmente o tema (será o brasão da medalha da trilha). Em "categoria", '
         'informe a área de conhecimento ampla desta trilha (ex.: "Programação", '
         '"Direito", "História", "Idiomas", "Música"), usando um rótulo curto e '
@@ -173,7 +191,7 @@ def gerar_sumario(trilha, profile=None):
         model=_model_planejamento(), effort=getattr(settings, 'AI_EFFORT', 'high'),
     )
 
-    trilha.titulo = (data.get('titulo') or trilha.tema_livre[:120]).strip()
+    trilha.titulo = limpar_titulo(data.get('titulo') or trilha.tema_livre[:120])
     trilha.descricao = (data.get('descricao') or '').strip()
     trilha.emblema = (data.get('emblema') or '').strip()[:8]
     trilha.categoria = (data.get('categoria') or '').strip()[:60]
