@@ -111,6 +111,42 @@ class SalvosTests(TestCase):
         self.assertIn('Nada salvo por enquanto', resp.content.decode())
 
 
+class AdmonitionTests(TestCase):
+    def _render(self, md):
+        from trilhas.mdrender import render_md
+        return render_md(md)
+
+    def test_indentacao_de_8_espacos_vira_admonition(self):
+        # Caso real de produção: corpo com 8 espaços virava bloco de código.
+        html = self._render(
+            '!!! conceito "SSH"\n'
+            '        SSH é um túnel blindado.\n'
+            '        Sem ele, nada de VPS.\n'
+        )
+        self.assertIn('admonition conceito', html)
+        self.assertIn('<p>SSH é um túnel blindado.', html)
+        self.assertNotIn('<code>SSH', html)
+
+    def test_corpo_sem_indentacao_e_absorvido(self):
+        html = self._render(
+            '!!! dica "Atalho"\nUse Ctrl+R para buscar no histórico.\n\nParágrafo fora.'
+        )
+        self.assertIn('admonition dica', html)
+        self.assertIn('<p>Use Ctrl+R', html)
+        # O parágrafo após a linha vazia fica FORA da caixa.
+        self.assertIn('<p>Parágrafo fora.</p>', html)
+
+    def test_indentacao_correta_permanece_intacta(self):
+        html = self._render('!!! resumo "Fim"\n    Ponto A e ponto B.\n')
+        self.assertIn('admonition resumo', html)
+        self.assertIn('<p>Ponto A e ponto B.</p>', html)
+
+    def test_exclamacoes_em_code_fence_nao_sao_tocadas(self):
+        html = self._render('```bash\necho "!!! nao e admonition"\n```\n')
+        self.assertNotIn('class="admonition', html)
+        self.assertIn('codehilite', html)
+
+
 class MermaidTests(TestCase):
     def test_cerca_mermaid_vira_div_nao_bloco_de_codigo(self):
         from trilhas.mdrender import render_md

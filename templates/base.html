@@ -196,10 +196,17 @@
         if (!window.mermaid) return;
         const tema = document.documentElement.getAttribute("data-theme") || "escuro";
         const escuro = tema === "escuro" || tema === "preto";
+        // useMaxWidth:false = o diagrama mantém o tamanho natural (fonte
+        // legível) e rola horizontalmente dentro do contêiner quando é largo,
+        // em vez de encolher até a fonte ficar ilegível no celular.
+        const noShrink = { useMaxWidth: false };
         window.mermaid.initialize({
           startOnLoad: false,
           theme: escuro ? "dark" : "neutral",
           fontFamily: "Inter, system-ui, sans-serif",
+          themeVariables: { fontSize: "15px" },
+          flowchart: noShrink, sequence: noShrink, timeline: noShrink,
+          mindmap: noShrink, pie: noShrink, journey: noShrink, gantt: noShrink,
         });
         let nodes = Array.from((scope || document).querySelectorAll(".mermaid"));
         if (!force) nodes = nodes.filter((n) => !n.hasAttribute("data-processed"));
@@ -209,7 +216,26 @@
           n.removeAttribute("data-processed");
           n.textContent = n.dataset.src || n.textContent;
         });
-        window.mermaid.run({ nodes }).catch(() => {});
+        window.mermaid.run({ nodes }).then(() => {
+          // Apara o SVG ao desenho real (o Mermaid deixa margens enormes
+          // em alguns tipos, ex.: timeline).
+          nodes.forEach((n) => {
+            const svg = n.querySelector("svg");
+            if (!svg) return;
+            try {
+              const b = svg.getBBox();
+              if (!b.width || !b.height) return;
+              const w = b.width + 16, h = b.height + 16;
+              svg.setAttribute("viewBox", `${b.x - 8} ${b.y - 8} ${w} ${h}`);
+              // Diagramas muito largos encolhem até ~2 telas (nunca abaixo de
+              // 55%, para o texto seguir legível); o excesso rola na lateral.
+              const cw = n.clientWidth || 340;
+              const scale = Math.min(1, Math.max(0.55, (2 * cw) / w));
+              svg.setAttribute("width", Math.ceil(w * scale));
+              svg.setAttribute("height", Math.ceil(h * scale));
+            } catch (e) {}
+          });
+        }).catch(() => {});
       };
       const diagramas = document.querySelectorAll(".mermaid");
       if (diagramas.length) {
