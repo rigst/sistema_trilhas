@@ -10,7 +10,7 @@
       <p class="sub">Continue de onde parou ou comece a dominar algo novo.</p>
     </div>
     <div class="home-actions">
-      {% if pode_estudar %}
+      {% if pode_estudar and not continuar %}
         <a class="btn btn-primary" href="{% url 'trilhas:estudar_agora' %}"><svg class="ic" aria-hidden="true"><use href="#ic-play"/></svg> Estudar agora</a>
       {% endif %}
       {% if trilhas %}
@@ -24,6 +24,60 @@
       <a class="btn btn-ghost" href="{% url 'trilhas:criar' %}"><svg class="ic" aria-hidden="true"><use href="#ic-plus"/></svg> Nova trilha</a>
     </div>
   </div>
+
+  {% if continuar %}
+    <a class="continue-hero" href="{% url 'trilhas:topico' continuar.nivel.pk continuar.sub.ordem %}">
+      <span class="ch-emblem">{{ continuar.trilha.sigla }}</span>
+      <span class="ch-main">
+        <span class="ch-eyebrow">Continuar de onde parou</span>
+        <span class="ch-title">{{ continuar.sub.titulo }}</span>
+        <span class="ch-path">{{ continuar.trilha.titulo }} · {{ continuar.nivel.titulo }}</span>
+        <span class="ch-bar" aria-hidden="true"><i style="width:{{ continuar.nivel.leitura_pct }}%"></i></span>
+      </span>
+      <span class="ch-cta" aria-hidden="true"><svg class="ic"><use href="#ic-play"/></svg></span>
+    </a>
+  {% endif %}
+
+  {% if feed_revisao or pode_revisar and not quiz_feito_hoje %}
+    <section class="feed-hoje" id="feed-hoje">
+      {% csrf_token %}
+      <div class="feed-head">
+        <h2 class="h3" style="margin:0">Para hoje</h2>
+        <span class="muted" style="font-size:.85rem">memória se constrói voltando — 30 segundos por card</span>
+      </div>
+
+      {% for nivel in feed_revisao %}
+        <article class="flashcard" data-url="{% url 'avaliacoes:revisao_rapida' nivel.pk %}">
+          <div class="fc-tag"><span class="fc-dot"></span> Revisão devida · {{ nivel.trilha.titulo }}</div>
+          <h3 class="fc-pergunta">O que você lembra de “{{ nivel.titulo }}”?</h3>
+          <p class="fc-hint">Tente responder de cabeça antes de virar o card.</p>
+          <button type="button" class="btn btn-ghost fc-virar">Virar o card</button>
+          <div class="fc-verso" hidden>
+            {% if nivel.resumo %}<p class="fc-resumo">{{ nivel.resumo }}</p>{% endif %}
+            <ul class="fc-topicos">
+              {% for s in nivel.subtopicos.all %}<li>{{ s.titulo }}</li>{% endfor %}
+            </ul>
+            <div class="fc-acoes">
+              <button type="button" class="btn btn-primary fc-btn" data-resposta="lembrei">Lembrei bem</button>
+              <button type="button" class="btn btn-ghost fc-btn" data-resposta="rever">Preciso rever</button>
+            </div>
+          </div>
+          <div class="fc-feito" hidden></div>
+        </article>
+      {% endfor %}
+
+      {% if pode_revisar and not quiz_feito_hoje %}
+        <article class="flashcard flashcard--quiz">
+          <div class="fc-tag"><span class="fc-dot fc-dot--quiz"></span> Quiz do dia</div>
+          <h3 class="fc-pergunta">Perguntas rápidas sobre o que você já concluiu</h3>
+          <p class="fc-hint">Um deck de questões misturando suas trilhas — e a revisão espaçada se reagenda sozinha.</p>
+          <form method="post" action="{% url 'avaliacoes:revisar' %}">{% csrf_token %}
+            <button type="submit" class="btn btn-primary">Começar o quiz →</button>
+          </form>
+        </article>
+      {% endif %}
+    </section>
+  {% endif %}
 
   {% if medalhas %}
     <section class="medal-case">
@@ -97,6 +151,45 @@
 
 {% block scripts %}
 <script>
+// Flashcards de revisão rápida: virar, autoavaliar e reagendar (SM-2).
+(() => {
+  const feed = document.getElementById("feed-hoje");
+  if (!feed) return;
+  const csrf = feed.querySelector("[name=csrfmiddlewaretoken]");
+  feed.querySelectorAll(".flashcard[data-url]").forEach((card) => {
+    const virar = card.querySelector(".fc-virar");
+    const verso = card.querySelector(".fc-verso");
+    const feito = card.querySelector(".fc-feito");
+    if (virar) virar.addEventListener("click", () => {
+      verso.hidden = false;
+      virar.remove();
+      card.classList.add("virado");
+    });
+    card.querySelectorAll(".fc-btn").forEach((btn) => btn.addEventListener("click", async () => {
+      card.querySelectorAll(".fc-btn").forEach((b) => (b.disabled = true));
+      try {
+        const body = new URLSearchParams();
+        body.set("resposta", btn.dataset.resposta);
+        const r = await fetch(card.dataset.url, {
+          method: "POST",
+          headers: { "X-CSRFToken": csrf.value, "X-Requested-With": "XMLHttpRequest" },
+          body,
+        });
+        const d = await r.json();
+        if (!d.ok) throw new Error();
+        verso.hidden = true;
+        feito.hidden = false;
+        feito.innerHTML = btn.dataset.resposta === "lembrei"
+          ? "✓ Boa! Próxima revisão em <strong>" + d.proxima_em_dias + " dia" + (d.proxima_em_dias > 1 ? "s" : "") + "</strong>."
+          : "Anotado — este nível volta <strong>amanhã</strong> para reforçar.";
+        card.classList.add("respondido");
+      } catch (e) {
+        card.querySelectorAll(".fc-btn").forEach((b) => (b.disabled = false));
+      }
+    }));
+  });
+})();
+
 (() => {
   const input = document.getElementById("trilha-search");
   if (!input) return;

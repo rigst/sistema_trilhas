@@ -1,0 +1,75 @@
+{% extends "base.html" %}
+{% block title %}Salvos · Trilhas de Estudo{% endblock %}
+
+{% block content %}
+<section class="page narrow">
+  <div class="page-head">
+    <div class="eyebrow">Sua biblioteca de destaques</div>
+    <h1 class="h1">Cards salvos</h1>
+    <p class="sub">Os cards que você guardou durante a leitura, para rever quando quiser.</p>
+  </div>
+
+  {% if total %}
+    {% for trilha, cards in grupos %}
+      <section class="salvos-grupo">
+        <h2 class="salvos-trilha"><span class="tc-emblem">{{ trilha.sigla }}</span> {{ trilha.titulo }}</h2>
+        {% for c in cards %}
+          <article class="saved-card card" data-pk="{{ c.pk }}">
+            <div class="saved-meta">
+              <span>{{ c.subtopico.nivel.titulo }} · {{ c.subtopico.titulo }}</span>
+              <span class="saved-meta-right">
+                <a href="{% url 'trilhas:topico' c.subtopico.nivel.pk c.subtopico.ordem %}">Abrir tópico →</a>
+              </span>
+            </div>
+            <div class="markdown-body saved-body">{{ c.html|safe }}</div>
+            <button type="button" class="saved-remove js-remover"
+                    data-sub="{{ c.subtopico.pk }}" data-indice="{{ c.indice }}"
+                    aria-label="Remover dos salvos">
+              <svg class="ic" aria-hidden="true"><use href="#ic-bookmark"/></svg> Remover
+            </button>
+          </article>
+        {% endfor %}
+      </section>
+    {% endfor %}
+    <form style="display:none">{% csrf_token %}</form>
+  {% else %}
+    <div class="empty">
+      <h3>Nada salvo por enquanto</h3>
+      <p>Durante a leitura em cards, toque no marcador <svg class="ic" aria-hidden="true" style="vertical-align:-3px"><use href="#ic-bookmark"/></svg> para guardar um card aqui.</p>
+      <a class="btn btn-primary" href="{% url 'trilhas:estudar_agora' %}">Estudar agora</a>
+    </div>
+  {% endif %}
+</section>
+{% endblock %}
+
+{% block scripts %}
+{% if total %}
+<script>
+(() => {
+  const csrf = document.querySelector("[name=csrfmiddlewaretoken]").value;
+  document.querySelectorAll(".js-remover").forEach((btn) => btn.addEventListener("click", async () => {
+    btn.disabled = true;
+    try {
+      const body = new URLSearchParams();
+      body.set("subtopico", btn.dataset.sub);
+      body.set("indice", btn.dataset.indice);
+      const r = await fetch("{% url 'trilhas:salvo_toggle' %}", {
+        method: "POST",
+        headers: { "X-CSRFToken": csrf, "X-Requested-With": "XMLHttpRequest" },
+        body,
+      });
+      const d = await r.json();
+      if (d.salvo === false) {
+        const card = btn.closest(".saved-card");
+        const grupo = card.closest(".salvos-grupo");
+        card.remove();
+        if (grupo && !grupo.querySelector(".saved-card")) grupo.remove();
+      } else {
+        btn.disabled = false;
+      }
+    } catch (e) { btn.disabled = false; }
+  }));
+})();
+</script>
+{% endif %}
+{% endblock %}

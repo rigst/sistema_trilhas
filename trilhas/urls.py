@@ -6,6 +6,8 @@ app_name = 'trilhas'
 
 urlpatterns = [
     path('nova/', views.trilha_criar, name='criar'),
+    path('salvos/', views.salvos, name='salvos'),
+    path('salvos/toggle/', views.salvo_toggle, name='salvo_toggle'),
     path('estudar-agora/', views.estudar_agora, name='estudar_agora'),
     path('mentor/', views.mentor, name='mentor'),
     path('mentor/atualizar/', views.mentor_atualizar, name='mentor_atualizar'),

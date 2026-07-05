@@ -368,6 +368,35 @@ class Subtopico(models.Model):
         return anterior is None or anterior.lido
 
 
+class CardSalvo(models.Model):
+    """Card de leitura guardado pelo usuário (como salvar um post) — vira a
+    biblioteca pessoal de destaques para revisão espontânea."""
+
+    user = models.ForeignKey(
+        settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name='cards_salvos'
+    )
+    subtopico = models.ForeignKey(
+        Subtopico, on_delete=models.CASCADE, related_name='cards_salvos'
+    )
+    indice = models.PositiveIntegerField('índice do card no tópico')
+    # Trecho do conteúdo já renderizado (HTML do próprio app, não do usuário).
+    html = models.TextField('conteúdo do card (HTML)')
+    criado_em = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        verbose_name = 'card salvo'
+        verbose_name_plural = 'cards salvos'
+        ordering = ['-criado_em']
+        constraints = [
+            models.UniqueConstraint(
+                fields=['user', 'subtopico', 'indice'], name='card_salvo_unico'
+            ),
+        ]
+
+    def __str__(self):
+        return f'Card {self.indice} de {self.subtopico_id} ({self.user_id})'
+
+
 class Percurso(models.Model):
     """Percurso personalizado do Mentor: uma sequência de passos (aprender/
     revisar/avaliar) equilibrada entre as trilhas do usuário."""

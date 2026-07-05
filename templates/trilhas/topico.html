@@ -1,5 +1,7 @@
 {% extends "base.html" %}
+{% load static %}
 {% block title %}{{ subtopico.titulo }} · {{ nivel.titulo }}{% endblock %}
+{% block body_class %}is-reader{% endblock %}
 
 {% block content %}
 <section class="page narrow" id="topico-root">
@@ -43,7 +45,46 @@
   </div>
 
 {% else %}
-  <article class="markdown-body">{{ conteudo_html }}</article>
+  <!-- Cabeçalho do leitor: barra segmentada (estilo stories) + alternador de modo -->
+  <div class="story-head">
+    <div class="story-bars" aria-label="Progresso da leitura"></div>
+    <span class="story-count" aria-live="polite"></span>
+    <div class="mode-toggle" role="group" aria-label="Modo de leitura">
+      <button type="button" data-mode="cards">Cards</button>
+      <button type="button" data-mode="artigo">Artigo</button>
+    </div>
+  </div>
+
+  <div class="story-stage">
+    <article class="markdown-body" id="md-source">{{ conteudo_html }}</article>
+    <button class="story-tap story-tap--l" type="button" tabindex="-1" aria-hidden="true"></button>
+    <button class="story-tap story-tap--r" type="button" tabindex="-1" aria-hidden="true"></button>
+  </div>
+
+  <div class="story-foot">
+    <button class="story-nav-btn story-prev" type="button" aria-label="Card anterior">
+      <svg class="ic" aria-hidden="true"><use href="#ic-chev-l"/></svg>
+    </button>
+    <button class="story-nav-btn story-next" type="button" aria-label="Próximo card">
+      <svg class="ic" aria-hidden="true"><use href="#ic-chev-r"/></svg>
+    </button>
+  </div>
+
+  <!-- Card final (montado pelo leitor em modo cards) -->
+  <template id="story-final">
+    <div class="sc-fim">
+      <span class="fim-badge" aria-hidden="true">✓</span>
+      <h2 class="h2" style="margin:0">Tópico concluído</h2>
+      {% if ganhou_xp %}<p class="fim-xp">+{{ xp_topico }} XP</p>{% endif %}
+      <p class="muted" style="margin:.15rem 0 0;font-size:.9rem">{{ subtopico.titulo }} · tópico {{ passo }} de {{ total }}</p>
+      {% if proximo %}
+        <a class="btn btn-primary" href="{% url 'trilhas:topico' nivel.pk proximo.ordem %}">Próximo: {{ proximo.titulo }} →</a>
+      {% else %}
+        <a class="btn btn-primary" href="{% url 'avaliacoes:exercicios' nivel.pk %}">Concluir e praticar ⚔</a>
+      {% endif %}
+      <a class="btn btn-ghost" href="{% url 'trilhas:nivel' nivel.pk %}">Ver todos os tópicos</a>
+    </div>
+  </template>
 
   <nav class="topico-nav">
     {% if anterior %}
@@ -64,5 +105,121 @@
 {% if subtopico.status == 'pendente' or subtopico.status == 'gerando' %}
   {% url 'trilhas:topico_status' subtopico.pk as poll_url %}
   {% include 'partials/poll.html' with poll_url=poll_url poll_status=subtopico.status %}
+{% elif subtopico.status == 'pronto' %}
+<script src="{% static 'js/deck.js' %}"></script>
+<script>
+(() => {
+  const root = document.getElementById("topico-root");
+  const src = document.getElementById("md-source");
+  if (!root || !src) return;
+
+  /* ---- 1. Fatiar o conteúdo em cards -----------------------------------
+     Se o texto veio com separadores `---` (conteúdo novo), cada seção é um
+     card. Caso contrário, fatiamos por título/caixa de destaque/tamanho. */
+  const nodes = Array.from(src.children);
+  const byHr = nodes.filter((n) => n.tagName === "HR").length >= 2;
+  const BUDGET = 700; // ~caracteres por card no modo heurístico
+  const groups = [];
+  let cur = null, section = "";
+  const start = (kicker) => { cur = { kicker: kicker || "", els: [], w: 0, closed: false }; groups.push(cur); };
+  const weight = (el) => {
+    const len = (el.textContent || "").length;
+    if (el.matches("pre,.codehilite,table")) return Math.max(len, 380);
+    return len;
+  };
+
+  nodes.forEach((el) => {
+    if (el.tagName === "HR") { el.remove(); cur = null; return; }
+    const isHead = /^H[23]$/.test(el.tagName);
+    if (isHead) section = el.textContent.trim();
+    if (byHr) {
+      if (!cur) start(isHead ? "" : section);
+      cur.els.push(el);
+      return;
+    }
+    if (isHead) { start(""); cur.els.push(el); cur.w = 90; return; }
+    const isAdm = el.classList.contains("admonition");
+    const w = weight(el);
+    const lastEl = cur && cur.els[cur.els.length - 1];
+    const lastIsHead = !!lastEl && /^H[23]$/.test(lastEl.tagName);
+    if (isAdm && !(cur && lastIsHead && cur.els.length === 1)) start(section);
+    else if (!cur || cur.closed || (cur.w + w > BUDGET && !lastIsHead)) start(section);
+    cur.els.push(el);
+    cur.w += w;
+    if (isAdm) cur.closed = true;
+  });
+  // Junta um resto muito curto ao card anterior (evita card "migalha").
+  const last = groups[groups.length - 1];
+  if (!byHr && groups.length > 1 && last && last.w < 150 && !last.closed) {
+    const prev = groups[groups.length - 2];
+    if (!prev.closed) { prev.els.push(...last.els); groups.pop(); }
+  }
+
+  /* ---- 2. Montar os cards (com botão de salvar) ------------------------- */
+  const salvos = new Set({{ salvos_indices|default:"[]" }});
+  const csrf = document.querySelector("input[name=csrfmiddlewaretoken]");
+  const SUB_PK = {{ subtopico.pk }};
+  const TOGGLE_URL = "{% url 'trilhas:salvo_toggle' %}";
+
+  groups.filter((g) => g.els.length).forEach((g, i) => {
+    const card = document.createElement("section");
+    card.className = "story-card";
+    const save = document.createElement("button");
+    save.type = "button";
+    save.className = "sc-save" + (salvos.has(i) ? " on" : "");
+    save.setAttribute("aria-label", salvos.has(i) ? "Remover dos salvos" : "Salvar card");
+    save.innerHTML = '<svg class="ic" aria-hidden="true"><use href="#ic-bookmark"/></svg>';
+    const inner = document.createElement("div");
+    inner.className = "sc-in";
+    if (g.kicker) {
+      const k = document.createElement("div");
+      k.className = "sc-kicker";
+      k.textContent = g.kicker;
+      inner.appendChild(k);
+    }
+    g.els.forEach((el) => inner.appendChild(el));
+    save.addEventListener("click", async () => {
+      if (!csrf) return;
+      save.disabled = true;
+      try {
+        const body = new URLSearchParams();
+        body.set("subtopico", SUB_PK);
+        body.set("indice", i);
+        if (!save.classList.contains("on")) body.set("html", inner.innerHTML);
+        const r = await fetch(TOGGLE_URL, {
+          method: "POST",
+          headers: { "X-CSRFToken": csrf.value, "X-Requested-With": "XMLHttpRequest" },
+          body,
+        });
+        const d = await r.json();
+        save.classList.toggle("on", !!d.salvo);
+        save.setAttribute("aria-label", d.salvo ? "Remover dos salvos" : "Salvar card");
+      } catch (e) {}
+      save.disabled = false;
+    });
+    card.appendChild(save);
+    card.appendChild(inner);
+    src.appendChild(card);
+  });
+
+  // Card final de conclusão (a partir do <template>).
+  const tpl = document.getElementById("story-final");
+  if (tpl) {
+    const fim = document.createElement("section");
+    fim.className = "story-card story-card--fim";
+    const inner = document.createElement("div");
+    inner.className = "sc-in";
+    inner.appendChild(tpl.content.cloneNode(true));
+    fim.appendChild(inner);
+    src.appendChild(fim);
+  }
+
+  /* ---- 3. Navegação (deck compartilhado) --------------------------------- */
+  window.TrilhasDeck(root, {
+    posKey: "story-pos-{{ subtopico.pk }}",
+    modeKey: "trilhas-leitura",
+  });
+})();
+</script>
 {% endif %}
 {% endblock %}

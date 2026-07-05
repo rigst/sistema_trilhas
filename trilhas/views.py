@@ -10,7 +10,9 @@ from accounts.quota import MSG_SEM_QUOTA, sem_quota_ia
 from ai import tasks as ai_tasks
 
 from .mdrender import render_md
-from .models import Nivel, Percurso, PerguntaDirecionadora, Subtopico, Trilha
+from .models import (
+    CardSalvo, Nivel, Percurso, PerguntaDirecionadora, Subtopico, Trilha,
+)
 
 
 def _pre_gerar_exercicios(nivel):
@@ -63,6 +65,28 @@ def dashboard(request):
         grupos.setdefault(t.categoria_display, []).append(t)
 
     pode_estudar = any(t.proximo_topico for t in ativas)
+
+    # Destaque "continuar de onde parou": o próximo tópico da trilha mais recente.
+    continuar = None
+    for t in sorted(ativas, key=lambda t: t.atualizada_em, reverse=True):
+        alvo = t.proximo_topico
+        if alvo:
+            continuar = {'trilha': t, 'nivel': alvo[0], 'sub': alvo[1]}
+            break
+
+    # Feed "para hoje": flashcards dos níveis com revisão espaçada devida
+    # (autoavaliação lembrei/rever, direto no SM-2) + quiz do dia.
+    hoje = timezone.localdate()
+    feed_revisao = list(
+        Nivel.objects
+        .filter(trilha__user=request.user, trilha__ativa=True,
+                status=Nivel.Status.APROVADO, revisao_proxima__lte=hoje)
+        .select_related('trilha')
+        .prefetch_related('subtopicos')
+        .order_by('revisao_proxima')[:3]
+    )
+    quiz_feito_hoje = request.user.revisoes.filter(criada_em__date=hoje).exists()
+
     aprovados = Nivel.objects.filter(
         trilha__user=request.user, trilha__ativa=True, status=Nivel.Status.APROVADO
     )
@@ -78,6 +102,9 @@ def dashboard(request):
         'grupos': grupos.items(),
         'multiplos_grupos': len(grupos) > 1,
         'pode_estudar': pode_estudar,
+        'continuar': continuar,
+        'feed_revisao': feed_revisao,
+        'quiz_feito_hoje': quiz_feito_hoje,
         'pode_revisar': pode_revisar,
         'revisoes_devidas': revisoes_devidas,
     })
@@ -306,8 +333,10 @@ def topico(request, nivel_pk, ordem):
         atual.refresh_from_db()
 
     # Pronto: marca como lido (XP na 1ª vez) e pré-gera o próximo em background.
+    ganhou_xp = False
     if atual.status == Subtopico.Status.PRONTO:
         if not atual.lido:
+            ganhou_xp = True
             atual.lido = True
             atual.save(update_fields=['lido'])
             profile = getattr(request.user, 'profile', None)
@@ -336,6 +365,12 @@ def topico(request, nivel_pk, ordem):
         'total': len(subs),
         'anterior': subs[idx - 1] if idx > 0 else None,
         'proximo': subs[idx + 1] if idx + 1 < len(subs) else None,
+        'ganhou_xp': ganhou_xp,
+        'xp_topico': getattr(getattr(request.user, 'profile', None), 'XP_TOPICO', 10),
+        'salvos_indices': list(
+            CardSalvo.objects.filter(user=request.user, subtopico=atual)
+            .values_list('indice', flat=True)
+        ),
     })
 
 
@@ -343,6 +378,56 @@ def topico(request, nivel_pk, ordem):
 def topico_status(request, pk):
     sub = get_object_or_404(Subtopico, pk=pk, nivel__trilha__user=request.user)
     return JsonResponse({'status': sub.status, 'erro': sub.erro})
+
+
+# ---------------------------------------------------------------------------
+# Cards salvos — biblioteca pessoal de destaques (como salvar um post)
+# ---------------------------------------------------------------------------
+
+@login_required
+def salvos(request):
+    cards = list(
+        request.user.cards_salvos
+        .select_related('subtopico__nivel__trilha')
+    )
+    # Agrupa por trilha (mais recente primeiro dentro do grupo, já pela ordering).
+    from collections import OrderedDict
+    grupos = OrderedDict()
+    for c in cards:
+        grupos.setdefault(c.subtopico.nivel.trilha, []).append(c)
+    return render(request, 'trilhas/salvos.html', {
+        'grupos': grupos.items(),
+        'total': len(cards),
+    })
+
+
+@login_required
+@require_POST
+def salvo_toggle(request):
+    """Salva/remove um card de leitura (JSON). O HTML vem do próprio render."""
+    sub = get_object_or_404(
+        Subtopico, pk=request.POST.get('subtopico'),
+        nivel__trilha__user=request.user,
+    )
+    try:
+        indice = int(request.POST.get('indice', ''))
+    except ValueError:
+        return JsonResponse({'erro': 'Índice inválido.'}, status=400)
+
+    existente = CardSalvo.objects.filter(
+        user=request.user, subtopico=sub, indice=indice
+    ).first()
+    if existente:
+        existente.delete()
+        return JsonResponse({'salvo': False})
+
+    html = (request.POST.get('html') or '').strip()
+    if not html:
+        return JsonResponse({'erro': 'Card vazio.'}, status=400)
+    CardSalvo.objects.create(
+        user=request.user, subtopico=sub, indice=indice, html=html[:20000],
+    )
+    return JsonResponse({'salvo': True})
 
 
 # ---------------------------------------------------------------------------

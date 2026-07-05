@@ -207,6 +207,40 @@ def exercicio_verificar(request, pk):
 
 
 # ---------------------------------------------------------------------------
+# Flashcard de revisão rápida (feed do dashboard) — autoavaliação direto no SM-2
+# ---------------------------------------------------------------------------
+
+# Qualidade SM-2 por autoavaliação: lembrar bem avança o intervalo; pedir
+# revisão reseta (q < 3) e reagenda para amanhã.
+QUALIDADE_FLASHCARD = {'lembrei': 4, 'rever': 2}
+
+
+@login_required
+@require_POST
+def revisao_rapida(request, nivel_pk):
+    nivel = get_object_or_404(
+        Nivel, pk=nivel_pk, trilha__user=request.user,
+        trilha__ativa=True, status=Nivel.Status.APROVADO,
+    )
+    qualidade = QUALIDADE_FLASHCARD.get(request.POST.get('resposta'))
+    if qualidade is None:
+        return JsonResponse({'erro': 'Resposta inválida.'}, status=400)
+
+    nivel.registrar_revisao(qualidade)
+
+    profile = getattr(request.user, 'profile', None)
+    if profile is not None:
+        profile.registrar_atividade(profile.XP_EXERCICIO)
+
+    dias = max(1, (nivel.revisao_proxima - timezone.localdate()).days)
+    return JsonResponse({
+        'ok': True,
+        'proxima_em_dias': dias,
+        'streak': profile.streak_dias if profile else None,
+    })
+
+
+# ---------------------------------------------------------------------------
 # Revisão espaçada — quiz misto sobre os níveis já concluídos (várias trilhas)
 # ---------------------------------------------------------------------------
 

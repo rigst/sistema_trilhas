@@ -16,13 +16,16 @@
     </script>
     <title>{% block title %}Trilhas de Estudo{% endblock %}</title>
     <link rel="icon" type="image/x-icon" href="{% static 'favicon.ico' %}">
+    <link rel="manifest" href="{% static 'manifest.webmanifest' %}">
+    <link rel="apple-touch-icon" href="{% static 'img/icon-192.png' %}">
+    <meta name="theme-color" content="#10152A">
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Sora:wght@500;600;700;800&family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="{% static 'css/app.css' %}">
     <link rel="stylesheet" href="{% static 'css/pygments.css' %}">
 </head>
-<body>
+<body class="{% block body_class %}{% endblock %}">
     {% include 'partials/icons.html' %}
     <header class="site-header">
         <div class="container">
@@ -40,6 +43,7 @@
                     <ul class="nav-links" id="nav-links">
                         <li><a href="{% url 'dashboard' %}" {% if request.resolver_match.url_name == 'dashboard' %}class="active"{% endif %}>Minhas trilhas</a></li>
                         <li><a href="{% url 'trilhas:criar' %}" {% if request.resolver_match.url_name == 'criar' %}class="active"{% endif %}>Nova trilha</a></li>
+                        <li><a href="{% url 'trilhas:salvos' %}" {% if request.resolver_match.url_name == 'salvos' %}class="active"{% endif %}>Salvos</a></li>
                     </ul>
                     <div class="hud" id="nav-hud">
                         <div class="xp" title="{{ xp }} XP · nível de jogador {{ nivel_xp }}">
@@ -93,6 +97,26 @@
       </div>
     </div>
 
+    {% if user.is_authenticated %}
+    <nav class="app-tabbar" aria-label="Navegação rápida">
+        <a class="tab-item {% if request.resolver_match.url_name == 'dashboard' %}active{% endif %}" href="{% url 'dashboard' %}">
+            <svg class="ic" aria-hidden="true"><use href="#ic-home"/></svg> Trilhas
+        </a>
+        <a class="tab-item tab-item--go" href="{% url 'trilhas:estudar_agora' %}">
+            <span class="tab-go"><svg class="ic" aria-hidden="true"><use href="#ic-play"/></svg></span> Estudar
+        </a>
+        <a class="tab-item {% if request.resolver_match.url_name == 'mentor' %}active{% endif %}" href="{% url 'trilhas:mentor' %}">
+            <svg class="ic" aria-hidden="true"><use href="#ic-compass"/></svg> Mentor
+        </a>
+        <a class="tab-item {% if request.resolver_match.url_name == 'salvos' %}active{% endif %}" href="{% url 'trilhas:salvos' %}">
+            <svg class="ic" aria-hidden="true"><use href="#ic-bookmark"/></svg> Salvos
+        </a>
+        <a class="tab-item {% if request.resolver_match.url_name == 'criar' %}active{% endif %}" href="{% url 'trilhas:criar' %}">
+            <svg class="ic" aria-hidden="true"><use href="#ic-plus"/></svg> Nova
+        </a>
+    </nav>
+    {% endif %}
+
     <footer class="site-footer">
         <div class="container footer-in">
             <div>
@@ -135,6 +159,28 @@
         });
         block.appendChild(btn);
       });
+
+      // Caixas "!!! quiz": a resposta fica oculta até o aluno pedir para ver.
+      document.querySelectorAll(".markdown-body .admonition.quiz").forEach((box) => {
+        if (box.querySelector(".quiz-reveal")) return;
+        const title = box.querySelector(".admonition-title");
+        const rest = Array.from(box.children).filter((el) => el !== title);
+        if (!title || !rest.length) return;
+        const body = document.createElement("div");
+        body.className = "quiz-body";
+        rest.forEach((el) => body.appendChild(el));
+        const btn = document.createElement("button");
+        btn.type = "button"; btn.className = "quiz-reveal";
+        btn.textContent = "Pensou? Toque para ver a resposta";
+        btn.addEventListener("click", () => { box.classList.add("revelado"); btn.remove(); });
+        box.appendChild(btn);
+        box.appendChild(body);
+      });
+
+      // PWA: registra o service worker (cache de estáticos + instalável).
+      if ("serviceWorker" in navigator) {
+        navigator.serviceWorker.register("/sw.js").catch(() => {});
+      }
 
       // Duplo-clique numa alternativa: descarta (risca/acinzenta) como eliminada.
       document.addEventListener("dblclick", (e) => {

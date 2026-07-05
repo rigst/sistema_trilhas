@@ -15,6 +15,7 @@ urlpatterns = [
     path('exercicios/<int:pk>/status/', views.exercicios_status, name='exercicios_status'),
     path('exercicio/<int:pk>/verificar/', views.exercicio_verificar, name='exercicio_verificar'),
     # Revisão espaçada (várias trilhas)
+    path('revisao-rapida/<int:nivel_pk>/', views.revisao_rapida, name='revisao_rapida'),
     path('revisar/', views.revisar_iniciar, name='revisar'),
     path('revisao/<int:pk>/', views.revisao_detalhe, name='revisao'),
     path('revisao/<int:pk>/status/', views.revisao_status, name='revisao_status'),
