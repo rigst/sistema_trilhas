@@ -732,6 +732,78 @@ a.node:not(.lock):hover .nm{color:var(--teal)}
 .mode-artigo .rev-deck .story-card+.story-card{margin-top:1rem}
 .mode-cards .rev-deck .story-card{max-height:none;min-height:0}
 
+/* =========================================================================
+   Modernização: movimento, profundidade e micro-interações.
+   ========================================================================= */
+
+/* Transição nativa entre páginas (app-like; só quando o navegador suporta). */
+@media(prefers-reduced-motion:no-preference){
+  @view-transition{navigation:auto}
+  ::view-transition-old(root){animation-duration:.16s}
+  ::view-transition-new(root){animation-duration:.22s}
+}
+
+/* Header fixo com vidro fosco — a navegação está sempre à mão. */
+.site-header{position:sticky;top:0;z-index:70;
+  background:color-mix(in srgb,var(--header-bg) 80%,transparent);
+  backdrop-filter:blur(14px);-webkit-backdrop-filter:blur(14px)}
+[id]{scroll-margin-top:92px}
+
+/* Seleção de texto e scrollbars na identidade do app. */
+::selection{background:rgba(45,212,191,.3)}
+*{scrollbar-width:thin;scrollbar-color:var(--line-2) transparent}
+*::-webkit-scrollbar{width:10px;height:10px}
+*::-webkit-scrollbar-thumb{background:var(--line-2);border-radius:99px}
+*::-webkit-scrollbar-track{background:transparent}
+
+/* Botões com resposta tátil e brilho interno no primário. */
+.btn:active{transform:scale(.97)}
+.btn-primary{box-shadow:0 0 24px var(--teal-glow),inset 0 1px 0 rgba(255,255,255,.28)}
+.btn-mentor{box-shadow:0 0 22px rgba(139,124,246,.4),inset 0 1px 0 rgba(255,255,255,.25)}
+input:focus,textarea:focus,select:focus{box-shadow:0 0 0 3px var(--teal-glow)}
+
+/* Entrada suave do conteúdo principal do dashboard (escalonada). */
+@keyframes rise{from{opacity:0;transform:translateY(14px)}to{opacity:1;transform:none}}
+.continue-hero,.medal-case,.feed-hoje .flashcard,.trilha-grid>*{animation:rise .5s cubic-bezier(.2,.7,.3,1) both}
+.trilha-grid>*:nth-child(1){animation-delay:.03s}
+.trilha-grid>*:nth-child(2){animation-delay:.08s}
+.trilha-grid>*:nth-child(3){animation-delay:.13s}
+.trilha-grid>*:nth-child(4){animation-delay:.18s}
+.trilha-grid>*:nth-child(5){animation-delay:.23s}
+.trilha-grid>*:nth-child(n+6){animation-delay:.28s}
+.feed-hoje .flashcard:nth-child(n+2){animation-delay:.1s}
+
+/* Cards de trilha: título acende e a fração ganha destaque no hover. */
+.trilha-card:hover .tc-title{color:var(--teal)}
+.trilha-card .tc-frac{transition:color .2s}
+.trilha-card:hover .tc-frac{color:var(--teal)}
+
+/* Flash messages: entram deslizando e saem sozinhas (JS no base). */
+.flash-message{animation:rise .35s cubic-bezier(.2,.7,.3,1) both}
+.flash-message.saindo{opacity:0;transform:translateY(-8px);transition:.4s}
+
+/* Barra de XP com brilho vivo (sensação de progresso contínuo). */
+.xp-bar{position:relative}
+.xp-bar>i{position:relative;overflow:hidden}
+.xp-bar>i::after{content:"";position:absolute;inset:0;
+  background:linear-gradient(90deg,transparent,rgba(255,255,255,.4),transparent);
+  animation:xp-sheen 2.8s ease-in-out infinite}
+@keyframes xp-sheen{0%{transform:translateX(-100%)}55%,100%{transform:translateX(100%)}}
+
+/* Conteúdo largo nunca estoura a tela (mobile). */
+.markdown-body table{display:block;overflow-x:auto}
+.markdown-body .codehilite pre,.markdown-body pre{overflow-x:auto}
+
+/* Ações da home confortáveis no toque. */
+@media(max-width:560px){
+  .home-actions{width:100%}
+  .home-actions .btn,.home-actions form{flex:1 1 calc(50% - .3rem)}
+  .home-actions form .btn{width:100%}
+}
+
+/* Botão de aparência um pouco mais visível. */
+.reader-fab-btn{opacity:.6}
+
 /* ---- polimentos gerais -------------------------------------------------- */
 .h1{font-size:clamp(1.65rem,3.2vw + .85rem,2.5rem)}
 

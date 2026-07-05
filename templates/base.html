@@ -160,6 +160,14 @@
         block.appendChild(btn);
       });
 
+      // Flash messages saem sozinhas depois de alguns segundos.
+      document.querySelectorAll(".flash-message").forEach((msg, i) => {
+        setTimeout(() => {
+          msg.classList.add("saindo");
+          setTimeout(() => msg.remove(), 450);
+        }, 6000 + i * 400);
+      });
+
       // Caixas "!!! quiz": a resposta fica oculta até o aluno pedir para ver.
       document.querySelectorAll(".markdown-body .admonition.quiz").forEach((box) => {
         if (box.querySelector(".quiz-reveal")) return;
