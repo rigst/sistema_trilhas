@@ -36,7 +36,7 @@
           </a>
           {% else %}
           <div class="topico-item locked" aria-disabled="true">
-            <span class="ti-num">🔒</span>
+            <span class="ti-num"><svg class="ic" aria-hidden="true"><use href="#ic-lock"/></svg></span>
             <span class="ti-main">
               <span class="ti-title">{{ s.titulo }}</span>
               <span class="ti-desc">Leia o tópico anterior para desbloquear</span>
@@ -66,9 +66,9 @@
         <span class="etapa-ic">{% if exercicios_concluidos %}✓{% else %}2{% endif %}</span>
         <span class="etapa-txt"><strong>Praticar os exercícios</strong><small>5 questões · liberadas após ler tudo</small></span>
         {% if nivel.conteudo_lido %}
-          <a class="btn btn-ghost etapa-btn" href="{% url 'avaliacoes:exercicios' nivel.pk %}">✎ {% if exercicios_concluidos %}Revisar{% else %}Praticar{% endif %}</a>
+          <a class="btn btn-ghost etapa-btn" href="{% url 'avaliacoes:exercicios' nivel.pk %}"><svg class="ic" aria-hidden="true"><use href="#ic-pencil"/></svg> {% if exercicios_concluidos %}Revisar{% else %}Praticar{% endif %}</a>
         {% else %}
-          <span class="etapa-lock">🔒 leia todos os tópicos</span>
+          <span class="etapa-lock"><svg class="ic" aria-hidden="true"><use href="#ic-lock"/></svg> leia todos os tópicos</span>
         {% endif %}
       </li>
       <li class="etapa {% if nivel.status == 'aprovado' %}done{% elif exercicios_concluidos and nivel.conteudo_lido %}now{% endif %}">
@@ -76,15 +76,15 @@
         <span class="etapa-txt"><strong>Fazer a avaliação</strong><small>vale o título {{ nivel.titulo_concedido }}</small></span>
         {% if nivel.conteudo_lido and exercicios_concluidos %}
           <form method="post" action="{% url 'avaliacoes:iniciar' nivel.pk %}" class="etapa-btn">{% csrf_token %}
-            <button type="submit" class="btn btn-primary">⚔ {% if nivel.status == 'aprovado' %}Refazer{% else %}Avaliação{% endif %}</button>
+            <button type="submit" class="btn btn-primary"><svg class="ic" aria-hidden="true"><use href="#ic-sword"/></svg> {% if nivel.status == 'aprovado' %}Refazer{% else %}Avaliação{% endif %}</button>
           </form>
         {% else %}
-          <span class="etapa-lock">🔒 conclua as etapas acima</span>
+          <span class="etapa-lock"><svg class="ic" aria-hidden="true"><use href="#ic-lock"/></svg> conclua as etapas acima</span>
         {% endif %}
       </li>
     </ol>
     {% if nivel.status == 'aprovado' %}
-      <div class="aprovado-note" style="margin-top:1rem">🏅 Título conquistado: <strong>{{ nivel.titulo_concedido }}</strong>.</div>
+      <div class="aprovado-note" style="margin-top:1rem"><svg class="ic" aria-hidden="true"><use href="#ic-medal"/></svg> Título conquistado: <strong>{{ nivel.titulo_concedido }}</strong>.</div>
     {% endif %}
   </div>
 </section>

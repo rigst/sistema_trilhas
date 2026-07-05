@@ -7,7 +7,7 @@
 {% if subtopico.status == 'pendente' or subtopico.status == 'gerando' or subtopico.status == 'erro' %}
 <section class="page narrow">
   <div class="topico-progress">
-    <a class="back-link" href="{% url 'trilhas:nivel' nivel.pk %}" style="margin:0">☰ {{ nivel.titulo }}</a>
+    <a class="back-link" href="{% url 'trilhas:nivel' nivel.pk %}" style="margin:0"><svg class="ic" aria-hidden="true"><use href="#ic-list"/></svg> {{ nivel.titulo }}</a>
     <span class="tp-label">Tópico {{ passo }} de {{ total }}</span>
   </div>
   <div class="page-head" style="margin-top:1.4rem">
@@ -93,7 +93,7 @@
       {% if proximo %}
         <a class="btn btn-primary" href="{% url 'trilhas:topico' nivel.pk proximo.ordem %}">Próximo: {{ proximo.titulo }} →</a>
       {% else %}
-        <a class="btn btn-primary" href="{% url 'avaliacoes:exercicios' nivel.pk %}">Concluir e praticar ⚔</a>
+        <a class="btn btn-primary" href="{% url 'avaliacoes:exercicios' nivel.pk %}">Concluir e praticar <svg class="ic" aria-hidden="true"><use href="#ic-sword"/></svg></a>
       {% endif %}
       <a class="btn btn-ghost" href="{% url 'trilhas:nivel' nivel.pk %}">Ver todos os tópicos</a>
     </div>
@@ -107,7 +107,7 @@
     {% if proximo %}
       <a class="btn btn-primary" href="{% url 'trilhas:topico' nivel.pk proximo.ordem %}">Próximo tópico →</a>
     {% else %}
-      <a class="btn btn-primary" href="{% url 'avaliacoes:exercicios' nivel.pk %}">Concluir e praticar ⚔</a>
+      <a class="btn btn-primary" href="{% url 'avaliacoes:exercicios' nivel.pk %}">Concluir e praticar <svg class="ic" aria-hidden="true"><use href="#ic-sword"/></svg></a>
     {% endif %}
   </nav>
 </section>

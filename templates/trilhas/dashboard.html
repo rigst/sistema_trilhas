@@ -5,7 +5,7 @@
 <section class="page">
   <div class="spread page-head">
     <div>
-      <div class="eyebrow">Seu ateliê de conhecimento</div>
+      <div class="eyebrow">Mapa de expedição</div>
       <h1 class="h1">Minhas trilhas</h1>
       <p class="sub">Continue de onde parou ou comece a dominar algo novo.</p>
     </div>
@@ -151,6 +151,56 @@
 
 {% block scripts %}
 <script>
+// Capa-constelação: desenha o mini-mapa da trilha (nós = níveis; os já
+// aprovados ficam acesos). Determinístico por trilha (seed = pk).
+(() => {
+  const NS = "http://www.w3.org/2000/svg";
+  const mulberry = (seed) => () => {
+    seed |= 0; seed = (seed + 0x6D2B79F5) | 0;
+    let t = Math.imul(seed ^ (seed >>> 15), 1 | seed);
+    t = (t + Math.imul(t ^ (t >>> 7), 61 | t)) ^ t;
+    return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
+  };
+  document.querySelectorAll(".tc-cover[data-seed]").forEach((cover) => {
+    const r = mulberry((+cover.dataset.seed || 1) * 2654435761);
+    const total = Math.min(Math.max(+cover.dataset.total || 5, 4), 9);
+    const done = Math.min(+cover.dataset.done || 0, total);
+    const W = 130, H = 40;
+    const svg = document.createElementNS(NS, "svg");
+    svg.setAttribute("viewBox", `0 0 ${W} ${H}`);
+    svg.setAttribute("preserveAspectRatio", "xMidYMid slice");
+    // Poeira de fundo (estrelas distantes).
+    for (let i = 0; i < 14; i++) {
+      const s = document.createElementNS(NS, "circle");
+      s.setAttribute("class", "speck");
+      s.setAttribute("cx", (r() * W).toFixed(1));
+      s.setAttribute("cy", (r() * H).toFixed(1));
+      s.setAttribute("r", (0.4 + r() * 0.5).toFixed(2));
+      svg.appendChild(s);
+    }
+    // O caminho da trilha: nós serpenteando da esquerda à direita.
+    const pts = [];
+    for (let i = 0; i < total; i++) {
+      const x = 12 + ((W - 44) * i) / (total - 1) + (r() - 0.5) * 7;
+      const y = 10 + (H - 20) * r();
+      pts.push([x, y]);
+    }
+    const path = document.createElementNS(NS, "path");
+    path.setAttribute("class", "trail");
+    path.setAttribute("d", pts.map((p, i) => (i ? "L" : "M") + p[0].toFixed(1) + " " + p[1].toFixed(1)).join(" "));
+    svg.appendChild(path);
+    pts.forEach((p, i) => {
+      const c = document.createElementNS(NS, "circle");
+      if (i < done) c.setAttribute("class", "done");
+      c.setAttribute("cx", p[0].toFixed(1));
+      c.setAttribute("cy", p[1].toFixed(1));
+      c.setAttribute("r", i < done ? 2.6 : 2);
+      svg.appendChild(c);
+    });
+    cover.insertBefore(svg, cover.firstChild);
+  });
+})();
+
 // Flashcards de revisão rápida: virar, autoavaliar e reagendar (SM-2).
 (() => {
   const feed = document.getElementById("feed-hoje");

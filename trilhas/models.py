@@ -139,6 +139,11 @@ class Trilha(models.Model):
         return self.categoria.strip() or 'Outras'
 
     @property
+    def hue(self):
+        """Matiz (0–359) estável da trilha — colore a capa-constelação."""
+        return ((self.pk or 0) * 137) % 360
+
+    @property
     def proximo_topico(self):
         """(nível, subtópico) para continuar estudando, ou None se concluída."""
         nivel = self.nivel_atual

@@ -40,7 +40,7 @@
     {% for item in itens %}
       {% with ex=item.ex %}
       <div class="card pad exercise" data-id="{{ ex.pk }}" data-answered="{% if ex.respondido_em %}1{% else %}0{% endif %}" data-url="{% url 'avaliacoes:exercicio_verificar' ex.pk %}">
-        <div class="ex-tag"><span class="spark">✎</span> Exercício {{ ex.ordem }}</div>
+        <div class="ex-tag"><span class="spark"><svg class="ic" aria-hidden="true"><use href="#ic-pencil"/></svg></span> Exercício {{ ex.ordem }}</div>
         <div class="q-enun markdown-body">{{ item.enunciado_html }}</div>
 
         <div class="opts">
@@ -69,7 +69,7 @@
   <div class="form-actions" style="justify-content:center;margin-top:2rem">
     <a class="btn btn-ghost" href="{% url 'trilhas:nivel' nivel.pk %}">Voltar ao nível</a>
     <form method="post" action="{% url 'avaliacoes:iniciar' nivel.pk %}">{% csrf_token %}
-      <button id="btn-aval" class="btn btn-primary" {% if not lista.concluida %}disabled{% endif %}>Fazer a avaliação ⚔</button>
+      <button id="btn-aval" class="btn btn-primary" {% if not lista.concluida %}disabled{% endif %}>Fazer a avaliação <svg class="ic" aria-hidden="true"><use href="#ic-sword"/></svg></button>
     </form>
   </div>
 {% endif %}

@@ -26,7 +26,7 @@
     {% if avaliacao.aprovado %}
       <a class="btn btn-primary" href="{% url 'trilhas:detalhe' trilha.pk %}">Continuar trilha →</a>
     {% else %}
-      <a class="btn btn-ghost" href="{% url 'avaliacoes:exercicios' nivel.pk %}">✎ Praticar antes</a>
+      <a class="btn btn-ghost" href="{% url 'avaliacoes:exercicios' nivel.pk %}"><svg class="ic" aria-hidden="true"><use href="#ic-pencil"/></svg> Praticar antes</a>
       <a class="btn btn-ghost" href="{% url 'trilhas:nivel' nivel.pk %}">Revisar conteúdo</a>
       <form method="post" action="{% url 'avaliacoes:iniciar' nivel.pk %}">{% csrf_token %}<button type="submit" class="btn btn-primary">Tentar novamente</button></form>
     {% endif %}

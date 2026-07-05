@@ -6,7 +6,7 @@
 <section class="page narrow" id="rev-page">
   <div class="page-head">
     <a class="back-link" href="{% url 'dashboard' %}">← Minhas trilhas</a>
-    <div class="badges"><span class="pill">🔁 Revisão espaçada</span></div>
+    <div class="badges"><span class="pill"><svg class="ic" aria-hidden="true"><use href="#ic-refresh"/></svg> Revisão espaçada</span></div>
     <h1 class="h1">Revisão dos níveis concluídos</h1>
     <p class="sub">Perguntas misturando o que você já dominou em diferentes trilhas. Cada resposta é definitiva — o objetivo é reforçar a memória.</p>
   </div>
@@ -54,7 +54,7 @@
       {% with q=item.q %}
       <div class="story-card card pad exercise" data-id="{{ q.pk }}" data-answered="{% if q.respondido_em %}1{% else %}0{% endif %}" data-url="{% url 'avaliacoes:revisao_verificar' q.pk %}">
         <div class="sc-in">
-          <div class="ex-tag"><span class="spark">🔁</span> Questão {{ q.ordem }}{% if q.origem %} · <span class="muted" style="text-transform:none;letter-spacing:0;font-weight:500">{{ q.origem }}</span>{% endif %}</div>
+          <div class="ex-tag"><span class="spark"><svg class="ic" aria-hidden="true"><use href="#ic-refresh"/></svg></span> Questão {{ q.ordem }}{% if q.origem %} · <span class="muted" style="text-transform:none;letter-spacing:0;font-weight:500">{{ q.origem }}</span>{% endif %}</div>
           <div class="q-enun markdown-body">{{ item.enunciado_html }}</div>
 
           <div class="opts">
@@ -83,13 +83,13 @@
     <div class="story-card story-card--fim">
       <div class="sc-in">
         <div class="sc-fim">
-          <span class="fim-badge" aria-hidden="true">🔁</span>
+          <span class="fim-badge" aria-hidden="true"><svg class="ic" aria-hidden="true"><use href="#ic-refresh"/></svg></span>
           <h2 class="h2" style="margin:0" id="rev-fim-titulo">{% if revisao.concluida %}Revisão concluída{% else %}Quase lá{% endif %}</h2>
           <p class="muted" id="rev-fim-sub" style="margin:.15rem 0 0;font-size:.92rem">
             {% if revisao.concluida %}{{ revisao.acertos }}/{{ revisao.total }} acertos · os intervalos de revisão de cada nível foram reagendados.{% else %}Responda as questões que faltam para reagendar a revisão espaçada.{% endif %}
           </p>
           <form method="post" action="{% url 'avaliacoes:revisar' %}" style="width:100%;max-width:330px">{% csrf_token %}
-            <button class="btn btn-primary btn-block" style="margin-top:1rem">Nova revisão 🔁</button>
+            <button class="btn btn-primary btn-block" style="margin-top:1rem">Nova revisão <svg class="ic" aria-hidden="true"><use href="#ic-refresh"/></svg></button>
           </form>
           <a class="btn btn-ghost" href="{% url 'dashboard' %}">Voltar às trilhas</a>
         </div>
@@ -112,7 +112,7 @@
   <div class="form-actions rev-lista-acoes" style="justify-content:center;margin-top:2rem">
     <a class="btn btn-ghost" href="{% url 'dashboard' %}">Voltar</a>
     <form method="post" action="{% url 'avaliacoes:revisar' %}">{% csrf_token %}
-      <button class="btn btn-primary">Nova revisão 🔁</button>
+      <button class="btn btn-primary">Nova revisão <svg class="ic" aria-hidden="true"><use href="#ic-refresh"/></svg></button>
     </form>
   </div>
 {% endif %}
