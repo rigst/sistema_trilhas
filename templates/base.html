@@ -190,6 +190,36 @@
         navigator.serviceWorker.register("/sw.js").catch(() => {});
       }
 
+      // Diagramas Mermaid: carrega a lib só quando a página tem diagrama e
+      // renderiza apenas os visíveis (cards ocultos renderizam ao aparecer).
+      window.__mermaidRefresh = (scope, force) => {
+        if (!window.mermaid) return;
+        const tema = document.documentElement.getAttribute("data-theme") || "escuro";
+        const escuro = tema === "escuro" || tema === "preto";
+        window.mermaid.initialize({
+          startOnLoad: false,
+          theme: escuro ? "dark" : "neutral",
+          fontFamily: "Inter, system-ui, sans-serif",
+        });
+        let nodes = Array.from((scope || document).querySelectorAll(".mermaid"));
+        if (!force) nodes = nodes.filter((n) => !n.hasAttribute("data-processed"));
+        nodes = nodes.filter((n) => n.offsetParent !== null);
+        if (!nodes.length) return;
+        nodes.forEach((n) => {
+          n.removeAttribute("data-processed");
+          n.textContent = n.dataset.src || n.textContent;
+        });
+        window.mermaid.run({ nodes }).catch(() => {});
+      };
+      const diagramas = document.querySelectorAll(".mermaid");
+      if (diagramas.length) {
+        diagramas.forEach((d) => { d.dataset.src = d.textContent; });
+        const ms = document.createElement("script");
+        ms.src = "{% static 'js/mermaid.min.js' %}";
+        ms.onload = () => window.__mermaidRefresh();
+        document.body.appendChild(ms);
+      }
+
       // Duplo-clique numa alternativa: descarta (risca/acinzenta) como eliminada.
       document.addEventListener("dblclick", (e) => {
         const opt = e.target.closest(".opt");
@@ -230,6 +260,7 @@
           root.setAttribute("data-theme", t);
           try { localStorage.setItem("trilhas-theme", t); } catch (e) {}
           markTheme(t);
+          if (window.__mermaidRefresh) window.__mermaidRefresh(document, true);
         };
         markTheme(root.getAttribute("data-theme") || "escuro");
         rToggle.addEventListener("click", () => {

@@ -138,7 +138,8 @@
       return;
     }
     if (isHead) { start(""); cur.els.push(el); cur.w = 90; return; }
-    const isAdm = el.classList.contains("admonition");
+    // Caixas de destaque e diagramas ganham um card próprio (um post = uma ideia).
+    const isAdm = el.classList.contains("admonition") || el.classList.contains("mermaid");
     const w = weight(el);
     const lastEl = cur && cur.els[cur.els.length - 1];
     const lastIsHead = !!lastEl && /^H[23]$/.test(lastEl.tagName);
@@ -218,6 +219,10 @@
   window.TrilhasDeck(root, {
     posKey: "story-pos-{{ subtopico.pk }}",
     modeKey: "trilhas-leitura",
+    // Diagramas só medem certo quando visíveis: renderiza ao abrir o card.
+    onShow: (i, card) => {
+      if (window.__mermaidRefresh) window.__mermaidRefresh(card);
+    },
   });
 })();
 </script>

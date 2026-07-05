@@ -254,10 +254,23 @@ a.node:not(.lock):hover .nm{color:var(--teal)}
 .markdown-body th{background:var(--panel-2);color:var(--text);font-family:var(--sans)}
 .markdown-body hr{border:0;border-top:1px solid var(--line);margin:2rem 0}
 
+/* diagramas mermaid */
+.markdown-body .mermaid{display:flex;justify-content:center;margin:1.4rem 0;padding:1rem .6rem;
+  border:1px solid var(--line);border-radius:14px;background:var(--panel);overflow-x:auto;
+  color:transparent;min-height:60px} /* texto-fonte invisível até renderizar */
+.markdown-body .mermaid[data-processed]{color:var(--text)}
+.markdown-body .mermaid svg{max-width:100%;height:auto}
+
 /* admonitions / callouts */
 .markdown-body .admonition{margin:1.4rem 0;padding:1rem 1.15rem;border-radius:14px;border:1px solid var(--line);background:var(--panel);border-left:3px solid var(--muted)}
 .markdown-body .admonition-title{font-weight:700;font-size:.7rem;letter-spacing:.09em;text-transform:uppercase;margin:0 0 .4rem;color:var(--muted);display:flex;align-items:center;gap:.45rem}
-.markdown-body .admonition-title::before{content:"";width:8px;height:8px;border-radius:50%;background:currentColor}
+.markdown-body .admonition-title::before{content:"●";font-size:.7rem;line-height:1}
+.markdown-body .admonition.conceito .admonition-title::before{content:"💡";font-size:.95rem}
+.markdown-body .admonition.exemplo .admonition-title::before{content:"🧪";font-size:.95rem}
+.markdown-body .admonition.dica .admonition-title::before{content:"✨";font-size:.95rem}
+.markdown-body .admonition.atencao .admonition-title::before{content:"⚠️";font-size:.95rem}
+.markdown-body .admonition.resumo .admonition-title::before{content:"📌";font-size:.95rem}
+.markdown-body .admonition.quiz .admonition-title::before{content:"🤔";font-size:1.05rem}
 .markdown-body .admonition>p:last-child{margin-bottom:0}
 .markdown-body .admonition.conceito{border-left-color:var(--teal)} .admonition.conceito .admonition-title{color:var(--teal)}
 .markdown-body .admonition.exemplo{border-left-color:var(--sky)} .admonition.exemplo .admonition-title{color:var(--sky)}
@@ -592,7 +605,11 @@ a.node:not(.lock):hover .nm{color:var(--teal)}
 .mode-cards .markdown-body h2,.mode-cards .markdown-body h3{margin-top:0}
 @keyframes card-in{from{opacity:0;transform:translateX(26px) scale(.985)}to{opacity:1;transform:none}}
 @keyframes card-back{from{opacity:0;transform:translateX(-26px) scale(.985)}to{opacity:1;transform:none}}
-@media(max-width:820px){.mode-cards .story-card{max-height:calc(100dvh - 200px);min-height:min(62dvh,520px)}}
+/* Mobile: sem rolagem interna no card — a página é a única superfície de
+   rolagem (o deck leva a viewport ao topo do card ao trocar). */
+@media(max-width:820px){
+  .mode-cards .story-card{max-height:none;min-height:0;overflow-y:visible;overscroll-behavior:auto}
+}
 
 /* zonas de toque nas bordas (só em telas de toque) */
 .story-tap{display:none;position:absolute;top:0;bottom:0;width:52px;border:0;background:transparent;padding:0;z-index:6}
@@ -607,6 +624,12 @@ a.node:not(.lock):hover .nm{color:var(--teal)}
 .story-nav-btn:hover:not(:disabled){border-color:var(--teal);color:var(--teal);box-shadow:0 0 14px var(--teal-glow)}
 .story-nav-btn:disabled{opacity:.3;cursor:default}
 .story-nav-btn .ic{width:20px;height:20px}
+
+/* Botões dentro do conteúdo (card final etc.) não herdam estilo de link. */
+.markdown-body a.btn{text-decoration:none}
+.markdown-body a.btn-primary{color:#062820}
+.markdown-body a.btn-ghost{color:var(--text)}
+.markdown-body a.btn-ghost:hover{color:var(--teal)}
 
 /* card final de conclusão */
 .sc-fim{display:flex;flex-direction:column;align-items:center;text-align:center;gap:.45rem}
@@ -703,10 +726,10 @@ a.node:not(.lock):hover .nm{color:var(--teal)}
 
 /* ---- salvar card (marcador no leitor) ----------------------------------- */
 .sc-save{display:none}
-.mode-cards .story-card .sc-save{display:grid;place-items:center;position:sticky;top:0;z-index:4;
-  align-self:flex-end;margin:0 0 -36px;width:36px;height:36px;border-radius:50%;cursor:pointer;
+.mode-cards .story-card .sc-save{display:grid;place-items:center;
+  align-self:flex-end;margin:0 0 .4rem;width:36px;height:36px;border-radius:50%;cursor:pointer;flex:none;
   border:1px solid var(--line-2);background:color-mix(in srgb,var(--panel) 80%,transparent);
-  color:var(--dim);backdrop-filter:blur(4px);transition:.15s}
+  color:var(--dim);transition:.15s}
 .sc-save:hover{color:var(--amber);border-color:var(--amber)}
 .sc-save.on{color:var(--amber);border-color:rgba(245,181,74,.55);box-shadow:0 0 12px var(--amber-glow)}
 .sc-save.on .ic{fill:currentColor}

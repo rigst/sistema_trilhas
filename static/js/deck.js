@@ -22,6 +22,9 @@ window.TrilhasDeck = function (root, opts) {
     bars.appendChild(b);
   });
   const segs = Array.from(bars.children);
+  const movel = window.matchMedia("(max-width: 820px)");
+  const semMovimento = window.matchMedia("(prefers-reduced-motion: reduce)");
+  let booted = false;
 
   function show(i, dir) {
     idx = Math.max(0, Math.min(list.length - 1, i));
@@ -33,6 +36,12 @@ window.TrilhasDeck = function (root, opts) {
     if (count) count.textContent = (idx + 1) + " / " + list.length;
     stage.dataset.dir = dir || "fwd";
     list[idx].scrollTop = 0;
+    // No mobile o card não rola por dentro: leva a página ao topo do card.
+    if (booted && movel.matches) {
+      const alvo = stage.getBoundingClientRect().top + window.scrollY - 116;
+      window.scrollTo({ top: Math.max(alvo, 0), behavior: semMovimento.matches ? "auto" : "smooth" });
+    }
+    booted = true;
     if (prevBtn) prevBtn.disabled = idx === 0;
     if (nextBtn) nextBtn.disabled = idx === list.length - 1;
     if (opts.posKey) try { sessionStorage.setItem(opts.posKey, idx); } catch (e) {}

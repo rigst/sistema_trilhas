@@ -111,6 +111,23 @@ class SalvosTests(TestCase):
         self.assertIn('Nada salvo por enquanto', resp.content.decode())
 
 
+class MermaidTests(TestCase):
+    def test_cerca_mermaid_vira_div_nao_bloco_de_codigo(self):
+        from trilhas.mdrender import render_md
+        html = render_md('Antes.\n\n```mermaid\nflowchart TD\n  A --> B\n```\n\nDepois.')
+        self.assertIn('class="mermaid"', html)
+        self.assertIn('flowchart TD', html)
+        # Não pode ter virado bloco de código destacado.
+        trecho = html.split('mermaid')[1][:200]
+        self.assertNotIn('<pre', trecho)
+
+    def test_codigo_normal_continua_destacado(self):
+        from trilhas.mdrender import render_md
+        html = render_md('```python\nx = 1\n```')
+        self.assertIn('codehilite', html)
+        self.assertNotIn('class="mermaid"', html)
+
+
 class PWATests(TestCase):
     def test_service_worker_servido_da_raiz(self):
         resp = self.client.get('/sw.js')
