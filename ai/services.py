@@ -47,7 +47,13 @@ _PREFIXO_TITULO = re.compile(
 
 
 def limpar_titulo(titulo):
-    limpo = _PREFIXO_TITULO.sub('', (titulo or '').strip()).strip()
+    limpo = (titulo or '').strip()
+    # Itera: "Trilha de Estudos: X" -> "Estudos: X" -> "X".
+    for _ in range(3):
+        novo = _PREFIXO_TITULO.sub('', limpo).strip()
+        if novo == limpo:
+            break
+        limpo = novo
     return (limpo or (titulo or '').strip())[:200]
 
 

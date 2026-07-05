@@ -21,6 +21,11 @@ class LimparTituloTests(SimpleTestCase):
         for t in ('Fotografia de Rua', 'Redes de Computadores', 'Direito Penal'):
             self.assertEqual(limpar_titulo(t), t)
 
+    def test_prefixos_encadeados_sao_removidos(self):
+        self.assertEqual(
+            limpar_titulo('Trilha de Estudos: Batuque no RS'), 'Batuque no RS'
+        )
+
     def test_nao_devolve_vazio(self):
         self.assertEqual(limpar_titulo('Trilha'), 'Trilha')
         self.assertEqual(limpar_titulo(''), '')
