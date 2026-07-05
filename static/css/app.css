@@ -827,6 +827,80 @@ input:focus,textarea:focus,select:focus{box-shadow:0 0 0 3px var(--teal-glow)}
 /* Botão de aparência um pouco mais visível. */
 .reader-fab-btn{opacity:.6}
 
+/* =========================================================================
+   Leitor imersivo (stories em tela cheia) — modo Cards do leitor de tópico.
+   Escopo `.reader` para não afetar o deck da revisão (que fica em página).
+   ========================================================================= */
+.story-frame{display:flex;flex-direction:column;min-width:0}
+
+/* No modo Cards: o leitor vira um overlay que toma a tela inteira. */
+.reader.mode-cards .topico-progress,
+.reader.mode-cards .reader-doc-head,
+.reader.mode-cards .topico-nav{display:none}
+body:has(.reader.mode-cards){overflow:hidden}
+body:has(.reader.mode-cards) .reader-fab{z-index:82}
+
+.reader.mode-cards .story-shell{
+  position:fixed;inset:0;z-index:80;display:flex;
+  background:
+    radial-gradient(1200px 620px at 82% -10%,rgba(139,124,246,.16),transparent),
+    radial-gradient(900px 520px at -8% 0,rgba(45,212,191,.12),transparent),
+    var(--bg)}
+.reader.mode-cards .story-frame{flex:1;min-height:0;width:100%;margin:0 auto}
+
+/* Desktop: moldura central "tipo Instagram web" sobre um fundo esmaecido. */
+@media(min-width:821px){
+  .reader.mode-cards .story-shell{background:rgba(3,6,14,.74);
+    backdrop-filter:blur(10px);-webkit-backdrop-filter:blur(10px);padding:24px}
+  .reader.mode-cards .story-frame{max-width:460px;height:min(900px,calc(100vh - 48px));
+    margin:auto;border-radius:26px;overflow:hidden;border:1px solid var(--line-2);
+    box-shadow:0 40px 120px rgba(0,0,0,.6);
+    background:radial-gradient(900px 520px at 82% -10%,rgba(139,124,246,.14),transparent),var(--panel)}
+}
+
+/* Barra superior: fechar · identidade · alternador · progresso segmentado. */
+.story-topbar{flex:none;display:flex;flex-direction:column;gap:.7rem;
+  padding:calc(.7rem + env(safe-area-inset-top)) 1rem .1rem}
+.story-topbar-row{display:flex;align-items:center;gap:.75rem}
+.story-close{width:34px;height:34px;border-radius:50%;display:grid;place-items:center;flex:none;
+  border:1px solid var(--line-2);color:var(--text);background:transparent;font-size:.95rem;line-height:1;transition:.15s}
+.story-close:hover{border-color:var(--red);color:var(--red)}
+.story-id{flex:1;min-width:0;display:flex;flex-direction:column;gap:.06rem}
+.story-id-kicker{font-size:.64rem;font-weight:700;letter-spacing:.12em;text-transform:uppercase;color:var(--teal)}
+.story-id-title{font-family:var(--disp);font-weight:600;font-size:.94rem;color:var(--text);
+  white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.story-topbar-progress{align-items:center}
+
+/* Palco: um card por vez, ocupando todo o espaço entre topo e rodapé. */
+.reader.mode-cards .story-stage{flex:1;min-height:0;position:relative;display:flex;overflow:hidden}
+.reader.mode-cards .story-card{position:absolute;inset:0;display:none;flex-direction:column;
+  overflow-y:auto;overscroll-behavior:contain;-webkit-overflow-scrolling:touch;
+  padding:clamp(20px,5.2vw,42px) clamp(20px,5.6vw,46px) clamp(26px,7vw,46px);
+  background:transparent;border:0;border-radius:0;box-shadow:none;min-height:0;max-height:none}
+.reader.mode-cards .story-card.on{display:flex;animation:card-in .32s cubic-bezier(.2,.7,.3,1)}
+.reader.mode-cards .story-stage[data-dir="back"] .story-card.on{animation-name:card-back}
+.reader.mode-cards .story-card--fim.on{display:flex}
+.reader.mode-cards .sc-in{margin:auto 0;width:100%;font-size:1.07rem;line-height:1.68}
+.reader.mode-cards .sc-save{position:static;margin:0 0 .3rem;align-self:flex-end}
+
+/* Rodapé: setas de navegação (também no toque) + arrasto lateral (deck.js).
+   Sem zonas de toque sobre o conteúdo, para não colidir com botões e links. */
+.reader.mode-cards .story-foot{flex:none;display:flex;justify-content:center;gap:1.4rem;margin:0;
+  padding:.3rem 1rem calc(1rem + env(safe-area-inset-bottom))}
+.reader.mode-cards .story-tap{display:none}
+
+/* Modo Artigo: leitura corrida, sem overlay — a barra some e volta o documento. */
+.reader.mode-artigo .story-shell{position:static;background:none;padding:0}
+.reader.mode-artigo .story-frame{max-width:none;height:auto;border:0;border-radius:0;box-shadow:none;background:none}
+.reader.mode-artigo .story-close,
+.reader.mode-artigo .story-id,
+.reader.mode-artigo .story-topbar-progress{display:none}
+.reader.mode-artigo .story-topbar{padding:0;margin:.4rem 0 1.4rem}
+.reader.mode-artigo .story-topbar-row{justify-content:flex-end}
+.reader.mode-artigo .story-stage{overflow:visible}
+.reader.mode-artigo .story-tap{display:none}
+.reader.mode-artigo .story-card+.story-card{margin-top:1.6rem}
+
 /* ---- polimentos gerais -------------------------------------------------- */
 .h1{font-size:clamp(1.65rem,3.2vw + .85rem,2.5rem)}
 
