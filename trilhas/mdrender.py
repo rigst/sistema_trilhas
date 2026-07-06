@@ -60,27 +60,55 @@ def _normalizar_admonitions(texto):
                 i += 1
         else:
             # Corpo indentado (qualquer largura), com linhas vazias internas.
+            # Fences ```lang dentro do corpo são convertidas para :::lang (8 espaços)
+            # porque o fenced_code preprocessor não enxerga fences dentro de admonitions.
+            in_inner_fence = False
+            inner_lang = ''
             while i < len(linhas):
                 atual = linhas[i]
+                stripped = atual.lstrip()
                 if atual.strip() == '':
+                    if in_inner_fence:
+                        # linha vazia dentro de fence: preserva
+                        corpo.append(('', None))
+                        i += 1
+                        continue
                     prox = next((l for l in linhas[i + 1:] if l.strip()), '')
                     if prox.startswith(' '):
                         corpo.append(('', None))
                         i += 1
                         continue
                     break
-                if not atual.startswith(' '):
+                if not atual.startswith(' ') and not in_inner_fence:
                     break
-                corpo.append((atual, len(atual) - len(atual.lstrip())))
-                i += 1
-        indents = [ind for _, ind in corpo if ind is not None]
-        if indents:
-            base = min(indents)
-            for l, ind in corpo:
-                if ind is None:
-                    out.append('')
+                if stripped.startswith('```'):
+                    if not in_inner_fence:
+                        in_inner_fence = True
+                        inner_lang = stripped[3:].strip()
+                        lang_tag = inner_lang if inner_lang else 'text'
+                        # ind=-1 significa "8 espaços fixos" — bypass da normalização relativa
+                        corpo.append(('', None))
+                        corpo.append((':::' + lang_tag, -1))
+                    else:
+                        in_inner_fence = False
+                        inner_lang = ''
+                    i += 1
+                    continue
+                if in_inner_fence:
+                    corpo.append((stripped, -1))
                 else:
-                    out.append(' ' * (4 + ind - base) + l.lstrip())
+                    corpo.append((atual, len(atual) - len(atual.lstrip())))
+                i += 1
+        indents = [ind for _, ind in corpo if ind is not None and ind >= 0]
+        base = min(indents) if indents else 0
+        for l, ind in corpo:
+            if ind is None:
+                out.append('')
+            elif ind == -1:
+                # código dentro de fence em admonition: sempre 8 espaços fixos
+                out.append('        ' + l)
+            else:
+                out.append(' ' * (4 + ind - base) + l.lstrip())
     return '\n'.join(out)
 
 

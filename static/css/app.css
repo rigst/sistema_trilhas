@@ -223,8 +223,11 @@ select{appearance:none;background-image:linear-gradient(45deg,transparent 50%,va
 .node{display:flex;gap:.85rem;align-items:center;padding:.5rem 0;position:relative;color:inherit}
 .node .bead{width:32px;height:32px;border-radius:50%;flex:none;display:grid;place-items:center;font-weight:700;font-size:.82rem;background:var(--panel-2);color:var(--muted);z-index:1;font-family:var(--disp)}
 .node.cur .bead{background:linear-gradient(135deg,var(--teal),var(--teal-2));color:#062820;box-shadow:0 0 18px var(--teal-glow)}
-.node.done .bead{background:rgba(45,212,191,.18);color:var(--teal);box-shadow:inset 0 0 0 1px rgba(45,212,191,.4)}
-.node.lock{opacity:.5}
+.node.done .bead{background:color-mix(in srgb,var(--teal) 16%,var(--panel));color:var(--teal);box-shadow:inset 0 0 0 1px rgba(45,212,191,.4)}
+/* Bloqueado: esmaece texto e cores, mas o disco continua OPACO — se o nó
+   inteiro ganhasse opacity, a linha vertical vazaria por trás dos números. */
+.node.lock .bead{background:color-mix(in srgb,var(--panel-2) 55%,var(--bg));color:var(--dim)}
+.node.lock .nm{opacity:.55}
 a.node:not(.lock):hover .nm{color:var(--teal)}
 .node .nm{font-size:.92rem;display:flex;flex-direction:column;gap:.1rem}
 .node .nm small{color:var(--dim);font-size:.78rem}
@@ -945,8 +948,12 @@ body:has(.reader.mode-cards) .reader-fab{z-index:82}
 .tc-cover circle.done{fill:hsl(var(--ch) 82% 62%);stroke:none;
   filter:drop-shadow(0 0 3px hsl(var(--ch) 82% 60% / .9))}
 .tc-cover circle.speck{fill:hsl(var(--ch) 60% 72% / .3);stroke:none}
-.tc-cover-sigla{position:absolute;right:14px;top:9px;font-family:var(--disp);font-weight:800;
-  font-size:1.9rem;line-height:1;color:hsl(var(--ch) 75% 74% / .4);letter-spacing:.02em;user-select:none}
+/* card com foto real (sem border-bottom: o overlay não cobre a área da borda
+   e a foto apareceria sem escurecer, criando uma linha clara no rodapé) */
+.tc-cover--photo{background-size:cover;background-position:center;border-bottom:0}
+.tc-cover--photo::before{content:'';position:absolute;inset:0;z-index:0;
+  background:linear-gradient(160deg,rgba(0,0,0,.35) 0%,rgba(0,0,0,.65) 100%)}
+.tc-cover--photo svg{display:none}
 :root[data-theme="claro"] .tc-cover,:root[data-theme="papel"] .tc-cover{
   background:radial-gradient(150px 70px at 80% -8%,hsl(calc(var(--ch) + 40) 70% 82% / .5),transparent),
              linear-gradient(140deg,hsl(var(--ch) 60% 92%),hsl(calc(var(--ch) + 55) 50% 84%))}
@@ -958,8 +965,6 @@ body:has(.reader.mode-cards) .reader-fab{z-index:82}
   fill:hsl(var(--ch) 70% 40%);filter:none}
 :root[data-theme="claro"] .tc-cover circle.speck,:root[data-theme="papel"] .tc-cover circle.speck{
   fill:hsl(var(--ch) 50% 35% / .25)}
-:root[data-theme="claro"] .tc-cover-sigla,:root[data-theme="papel"] .tc-cover-sigla{
-  color:hsl(var(--ch) 55% 34% / .3)}
 
 /* Blocos de código continuam escuros nos temas claros (padrão deliberado);
    borda para definição sobre fundo claro. */
@@ -1020,6 +1025,20 @@ body:has(.reader.mode-cards) .reader-fab{z-index:82}
 .dm-body svg{margin:auto;max-width:none;flex:none}
 .dm-hint{flex:none;text-align:center;color:var(--dim);font-size:.78rem;
   padding:0 1rem calc(.8rem + env(safe-area-inset-bottom))}
+
+/* ---- capa de trilha ------------------------------------------------------ */
+.trilha-cover{position:relative;height:240px;margin:-24px -24px 28px;background-size:cover;
+  background-position:center;overflow:hidden;border-radius:var(--radius) var(--radius) 0 0}
+.trilha-cover-overlay{position:absolute;inset:0;
+  background:linear-gradient(to bottom,rgba(0,0,0,.10) 0%,rgba(0,0,0,.72) 60%,rgba(0,0,0,.85) 100%)}
+.trilha-cover-content{position:relative;z-index:1;display:flex;flex-direction:column;
+  justify-content:flex-end;height:100%;padding:22px 26px}
+.trilha-cover-content .h1{font-size:clamp(1.4rem,3vw,.85rem + 2.4vw);
+  text-shadow:0 2px 8px rgba(0,0,0,.7),0 1px 2px rgba(0,0,0,.9)}
+.trilha-cover-content .sub{font-size:.95rem;text-shadow:0 1px 4px rgba(0,0,0,.8)}
+.trilha-cover-content .badges{margin-bottom:.6rem}
+@media(max-width:600px){.trilha-cover{height:190px;margin:-16px -16px 20px}
+  .trilha-cover-content{padding:16px 18px}}
 
 /* ---- polimentos gerais -------------------------------------------------- */
 .h1{font-size:clamp(1.65rem,3.2vw + .85rem,2.5rem)}

@@ -168,7 +168,8 @@ STREAK_REMINDERS_ENABLED = os.getenv(
 # IA (Anthropic / Claude) Configuration
 # ==============================================================================
 
-ANTHROPIC_API_KEY = os.getenv('ANTHROPIC_API_KEY', '')
+ANTHROPIC_API_KEY = os.getenv("ANTHROPIC_API_KEY", "")
+PEXELS_API_KEY = os.getenv("PEXELS_API_KEY", "")
 
 # Divisão de modelos por tarefa:
 #   - Planejamento (sumário/percurso do mentor) → Opus 4.8 (mais julgamento).

@@ -19,6 +19,8 @@ Toda chamada debita a quota de tokens do Profile do usuário.
 from __future__ import annotations
 
 import json
+import urllib.parse
+import urllib.request
 from decimal import Decimal
 
 from django.conf import settings
@@ -36,6 +38,83 @@ class IAError(Exception):
 # ---------------------------------------------------------------------------
 
 import re
+
+
+_SCHEMA_QUERY_CAPA = {
+    'type': 'object',
+    'properties': {'query': {'type': 'string'}},
+    'required': ['query'],
+    'additionalProperties': False,
+}
+
+
+def _query_capa(titulo: str, categoria: str = '', descricao: str = '', profile=None) -> str:
+    """Pede à IA um termo de busca EM INGLÊS, concreto e fotografável, para o tema.
+
+    Jogar o título em português direto no banco de imagens rende fotos aleatórias
+    ("Direito Penal" não acha nada; "courtroom gavel" acha). Fallback: heurística
+    de palavras do título.
+    """
+    try:
+        data = _gerar_json(
+            'Você escolhe termos de busca para encontrar FOTOS de banco de imagens '
+            '(Pexels) que sirvam de capa para trilhas de estudo.',
+            f'Tema da trilha: "{titulo}"'
+            + (f'\nÁrea: {categoria}' if categoria else '')
+            + (f'\nDescrição: {descricao[:300]}' if descricao else '')
+            + '\n\nRetorne em "query" um termo de busca EM INGLÊS, de 2 a 4 palavras, '
+              'que descreva uma CENA ou OBJETO concreto e fotografável que represente '
+              'visualmente esse tema (ex.: "courtroom gavel justice" para Direito '
+              'Penal; "vintage camera street" para Fotografia de Rua). Evite '
+              'conceitos abstratos, nomes próprios e a palavra "study".',
+            _SCHEMA_QUERY_CAPA, profile,
+            model=_model_geral(), effort='low', max_tokens=1000,
+        )
+        query = (data.get('query') or '').strip()
+        if query:
+            return query
+    except Exception:
+        pass
+    palavras = [w for w in (titulo + ' ' + categoria).split() if len(w) > 3][:5]
+    return ' '.join(palavras)
+
+
+def buscar_capa(titulo: str, categoria: str = '', descricao: str = '', profile=None) -> str:
+    """Busca uma imagem de capa relevante na Pexels (requer PEXELS_API_KEY no .env).
+
+    A IA traduz o tema num termo de busca visual; entre as fotos retornadas,
+    escolhe a de texto alternativo mais aderente ao termo. Retorna a URL da
+    imagem landscape, ou string vazia em caso de falha.
+    """
+    api_key = getattr(settings, 'PEXELS_API_KEY', '')
+    if not api_key:
+        return ''
+    query = _query_capa(titulo, categoria, descricao, profile)
+    if not query:
+        return ''
+    api_url = (
+        'https://api.pexels.com/v1/search?query=' + urllib.parse.quote(query)
+        + '&per_page=8&orientation=landscape'
+    )
+    try:
+        req = urllib.request.Request(
+            api_url,
+            headers={'Authorization': api_key, 'User-Agent': 'sistema_trilhas/1.0'},
+        )
+        with urllib.request.urlopen(req, timeout=8) as resp:
+            data = json.loads(resp.read())
+        photos = data.get('photos') or []
+        if not photos:
+            return ''
+        termos = {w.lower() for w in query.split() if len(w) > 2}
+        melhor = max(photos, key=lambda p: sum(
+            1 for w in termos if w in (p.get('alt') or '').lower()
+        ))
+        src = melhor.get('src', {})
+        return src.get('large2x') or src.get('original', '')
+    except Exception:
+        pass
+    return ''
 
 
 # "Trilha de Python" -> "Python": o título é o nome do assunto, sem prefixo.
@@ -202,8 +281,9 @@ def gerar_sumario(trilha, profile=None):
     trilha.emblema = (data.get('emblema') or '').strip()[:8]
     trilha.categoria = (data.get('categoria') or '').strip()[:60]
     trilha.objetivos = data.get('objetivos', []) or []
+    trilha.cover_url = buscar_capa(trilha.titulo, trilha.categoria, trilha.descricao, profile)
     trilha.save(update_fields=[
-        'titulo', 'descricao', 'emblema', 'categoria', 'objetivos', 'atualizada_em',
+        'titulo', 'descricao', 'emblema', 'categoria', 'objetivos', 'cover_url', 'atualizada_em',
     ])
 
     trilha.niveis.all().delete()
