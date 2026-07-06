@@ -948,11 +948,9 @@ body:has(.reader.mode-cards) .reader-fab{z-index:82}
 .tc-cover circle.done{fill:hsl(var(--ch) 82% 62%);stroke:none;
   filter:drop-shadow(0 0 3px hsl(var(--ch) 82% 60% / .9))}
 .tc-cover circle.speck{fill:hsl(var(--ch) 60% 72% / .3);stroke:none}
-/* card com foto real (sem border-bottom: o overlay não cobre a área da borda
-   e a foto apareceria sem escurecer, criando uma linha clara no rodapé) */
+/* card com foto real: sem overlay (nada é escrito sobre a foto) e sem
+   border-bottom (a borda ficava fora da foto e virava uma linha clara) */
 .tc-cover--photo{background-size:cover;background-position:center;border-bottom:0}
-.tc-cover--photo::before{content:'';position:absolute;inset:0;z-index:0;
-  background:linear-gradient(160deg,rgba(0,0,0,.35) 0%,rgba(0,0,0,.65) 100%)}
 .tc-cover--photo svg{display:none}
 :root[data-theme="claro"] .tc-cover,:root[data-theme="papel"] .tc-cover{
   background:radial-gradient(150px 70px at 80% -8%,hsl(calc(var(--ch) + 40) 70% 82% / .5),transparent),
@@ -1027,8 +1025,12 @@ body:has(.reader.mode-cards) .reader-fab{z-index:82}
   padding:0 1rem calc(.8rem + env(safe-area-inset-bottom))}
 
 /* ---- capa de trilha ------------------------------------------------------ */
-.trilha-cover{position:relative;height:240px;margin:-24px -24px 28px;background-size:cover;
-  background-position:center;overflow:hidden;border-radius:var(--radius) var(--radius) 0 0}
+/* Bloco independente dentro de .page (sem padding ao redor): margens
+   negativas fariam a foto transbordar a grade e colar no header. */
+.trilha-cover{position:relative;height:240px;margin:0 0 1.6rem;background-size:cover;
+  background-position:center;overflow:hidden;border-radius:var(--radius)}
+/* sem border aqui: overflow:hidden recorta o overlay no padding-box e a
+   foto apareceria crua (sem escurecer) na faixa de 1px da borda */
 .trilha-cover-overlay{position:absolute;inset:0;
   background:linear-gradient(to bottom,rgba(0,0,0,.10) 0%,rgba(0,0,0,.72) 60%,rgba(0,0,0,.85) 100%)}
 .trilha-cover-content{position:relative;z-index:1;display:flex;flex-direction:column;
@@ -1037,7 +1039,7 @@ body:has(.reader.mode-cards) .reader-fab{z-index:82}
   text-shadow:0 2px 8px rgba(0,0,0,.7),0 1px 2px rgba(0,0,0,.9)}
 .trilha-cover-content .sub{font-size:.95rem;text-shadow:0 1px 4px rgba(0,0,0,.8)}
 .trilha-cover-content .badges{margin-bottom:.6rem}
-@media(max-width:600px){.trilha-cover{height:190px;margin:-16px -16px 20px}
+@media(max-width:600px){.trilha-cover{height:190px;margin:0 0 1.2rem}
   .trilha-cover-content{padding:16px 18px}}
 
 /* ---- polimentos gerais -------------------------------------------------- */
