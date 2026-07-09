@@ -1,5 +1,5 @@
 {% extends "base.html" %}
-{% load static %}
+{% load static md %}
 {% block title %}Revisão · Trilhas de Estudo{% endblock %}
 
 {% block content %}
@@ -61,7 +61,7 @@
             {% for alt in q.alternativas %}
               <label class="opt {% if q.respondido_em %}{% if alt.letra == q.gabarito %}correct{% elif q.alternativa_escolhida == alt.letra %}wrong{% endif %}{% endif %}">
                 <input type="radio" name="rev_{{ q.pk }}" value="{{ alt.letra }}" {% if q.alternativa_escolhida == alt.letra %}checked{% endif %} {% if q.respondido_em %}disabled{% endif %}>
-                <span><strong>{{ alt.letra }})</strong> {{ alt.texto }}</span>
+                <div class="opt-texto markdown-body"><strong>{{ alt.letra }})</strong> {{ alt.texto|md_inline }}</div>
               </label>
             {% endfor %}
           </div>
@@ -74,7 +74,7 @@
               <span class="muted" style="font-size:.8rem">resposta definitiva</span>
             {% endif %}
           </div>
-          <div class="fb js-fb {% if q.respondido_em %}show {% if q.nota == 10 %}ok{% else %}no{% endif %}{% endif %}">{{ item.explicacao_html }}</div>
+          <div class="fb js-fb markdown-body {% if q.respondido_em %}show {% if q.nota == 10 %}ok{% else %}no{% endif %}{% endif %}">{{ item.explicacao_html }}</div>
         </div>
       </div>
       {% endwith %}
@@ -157,7 +157,7 @@
     if (!btn) return;
     btn.addEventListener('click', async () => {
       const sel = card.querySelector('input[type=radio]:checked');
-      if (!sel) { fb.className = 'fb js-fb show neutral'; fb.textContent = 'Escolha uma alternativa.'; return; }
+      if (!sel) { fb.className = 'fb js-fb markdown-body show neutral'; fb.textContent = 'Escolha uma alternativa.'; return; }
       const body = new URLSearchParams(); body.set('alternativa', sel.value);
       btn.disabled = true; const original = btn.innerHTML;
       btn.innerHTML = '<span class="spin-sm"></span> Verificando';
@@ -175,11 +175,11 @@
           if (v === d.gabarito) o.classList.add('correct');
           if (sel.value === v && !d.correto) o.classList.add('wrong');
         });
-        fb.className = 'fb js-fb show ' + (d.correto ? 'ok' : 'no');
+        fb.className = 'fb js-fb markdown-body show ' + (d.correto ? 'ok' : 'no');
         fb.innerHTML = (d.correto ? '✔ <strong>Correto!</strong> ' : '✘ <strong>Não foi dessa vez.</strong> ') + (d.feedback_html || '');
         refresh(d.concluida);
       } catch(e) {
-        fb.className = 'fb js-fb show no'; fb.textContent = 'Falha ao verificar. Tente de novo.';
+        fb.className = 'fb js-fb markdown-body show no'; fb.textContent = 'Falha ao verificar. Tente de novo.';
         btn.disabled = false; btn.innerHTML = original;
       }
     });

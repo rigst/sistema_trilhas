@@ -1,4 +1,5 @@
 {% extends "base.html" %}
+{% load md %}
 {% block title %}Exercícios · {{ nivel.titulo }}{% endblock %}
 
 {% block content %}
@@ -47,7 +48,7 @@
           {% for alt in ex.alternativas %}
             <label class="opt {% if ex.respondido_em %}{% if alt.letra == ex.gabarito %}correct{% elif ex.alternativa_escolhida == alt.letra %}wrong{% endif %}{% endif %}">
               <input type="radio" name="ex_{{ ex.pk }}" value="{{ alt.letra }}" {% if ex.alternativa_escolhida == alt.letra %}checked{% endif %} {% if ex.respondido_em %}disabled{% endif %}>
-              <span><strong>{{ alt.letra }})</strong> {{ alt.texto }}</span>
+              <div class="opt-texto markdown-body"><strong>{{ alt.letra }})</strong> {{ alt.texto|md_inline }}</div>
             </label>
           {% endfor %}
         </div>
@@ -60,7 +61,7 @@
             <span class="muted" style="font-size:.8rem">resposta definitiva</span>
           {% endif %}
         </div>
-        <div class="fb js-fb {% if ex.respondido_em %}show {% if ex.nota >= 6 %}ok{% else %}no{% endif %}{% endif %}">{{ item.feedback_html }}</div>
+        <div class="fb js-fb markdown-body {% if ex.respondido_em %}show {% if ex.nota >= 6 %}ok{% else %}no{% endif %}{% endif %}">{{ item.feedback_html }}</div>
       </div>
       {% endwith %}
     {% endfor %}
@@ -106,7 +107,7 @@
     if (!btn) return;  // já respondido: nada a fazer
     btn.addEventListener('click', async () => {
       const sel = card.querySelector('input[type=radio]:checked');
-      if (!sel) { fb.className = 'fb js-fb show neutral'; fb.textContent = 'Escolha uma alternativa.'; return; }
+      if (!sel) { fb.className = 'fb js-fb markdown-body show neutral'; fb.textContent = 'Escolha uma alternativa.'; return; }
       const body = new URLSearchParams(); body.set('alternativa', sel.value);
       btn.disabled = true;
       const original = btn.innerHTML;
@@ -118,7 +119,7 @@
           body,
         });
         const d = await r.json();
-        if (d.erro) { fb.className = 'fb js-fb show no'; fb.textContent = d.erro; return; }
+        if (d.erro) { fb.className = 'fb js-fb markdown-body show no'; fb.textContent = d.erro; return; }
         card.dataset.answered = '1';
         lockCard(card);
         card.querySelectorAll('.opt').forEach(o => {
@@ -126,11 +127,11 @@
           if (v === d.gabarito) o.classList.add('correct');
           if (sel.value === v && !d.correto) o.classList.add('wrong');
         });
-        fb.className = 'fb js-fb show ' + (d.correto ? 'ok' : 'no');
+        fb.className = 'fb js-fb markdown-body show ' + (d.correto ? 'ok' : 'no');
         fb.innerHTML = (d.correto ? '✔ <strong>Correto!</strong> ' : '✘ <strong>Não foi dessa vez.</strong> ') + (d.feedback_html || '');
         refreshProgress(d.concluida);
       } catch(e) {
-        fb.className = 'fb js-fb show no'; fb.textContent = 'Falha ao verificar. Tente de novo.';
+        fb.className = 'fb js-fb markdown-body show no'; fb.textContent = 'Falha ao verificar. Tente de novo.';
       } finally {
         btn.disabled = false; btn.innerHTML = original;
       }

@@ -90,7 +90,11 @@ SYSTEM_EXERCICIOS = (
     'questões objetivas (múltipla escolha), cobrindo os subtópicos, em dificuldade '
     'progressiva (das mais simples às mais difíceis). Para cada exercício, escreva '
     'uma explicação clara da resposta, que será mostrada como feedback imediato ao '
-    'aluno. Não crie questões dissertativas. Responda em português.'
+    'aluno. Não crie questões dissertativas. Responda em português. '
+    'Enunciados, alternativas e explicações são renderizados como Markdown: '
+    'NUNCA escreva código como texto corrido — no enunciado e na explicação use '
+    'blocos cercados com a linguagem (```python); nas alternativas use crases '
+    'para código inline curto ou bloco cercado se tiver mais de uma linha.'
 )
 
 SYSTEM_AVALIACAO = (
@@ -98,7 +102,11 @@ SYSTEM_AVALIACAO = (
     'aprendizado de um nível usando APENAS questões objetivas (múltipla escolha), '
     'em dificuldade progressiva (das mais simples às mais difíceis). As questões '
     'devem cobrir os subtópicos do nível e o conteúdo estudado. Não crie questões '
-    'dissertativas. Responda sempre em português.'
+    'dissertativas. Responda sempre em português. '
+    'Enunciados e alternativas são renderizados como Markdown: NUNCA escreva '
+    'código como texto corrido — no enunciado use blocos cercados com a '
+    'linguagem (```python); nas alternativas use crases para código inline '
+    'curto ou bloco cercado se tiver mais de uma linha.'
 )
 
 SYSTEM_CATEGORIA = (
@@ -126,7 +134,11 @@ SYSTEM_REVISAO = (
     'reforçar a memória. Use APENAS questões objetivas (múltipla escolha), '
     'distribuídas entre os níveis fornecidos, com dificuldade variada. Para cada '
     'questão indique em "origem" o número do nível de referência e escreva uma '
-    '"explicacao" clara da resposta. Responda em português.'
+    '"explicacao" clara da resposta. Responda em português. '
+    'Enunciados, alternativas e explicações são renderizados como Markdown: '
+    'NUNCA escreva código como texto corrido — no enunciado e na explicação use '
+    'blocos cercados com a linguagem (```python); nas alternativas use crases '
+    'para código inline curto ou bloco cercado se tiver mais de uma linha.'
 )
 
 

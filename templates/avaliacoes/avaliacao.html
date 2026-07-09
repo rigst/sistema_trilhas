@@ -1,4 +1,5 @@
 {% extends "base.html" %}
+{% load md %}
 {% block title %}Avaliação · {{ nivel.titulo }}{% endblock %}
 
 {% block content %}
@@ -39,10 +40,13 @@
     {% include 'partials/dica_descarte.html' %}
     {% for q in questoes %}
       <div class="q-block">
-        <p class="q-enun"><span class="n">{{ q.ordem }}.</span> {{ q.enunciado_md|linebreaksbr }}</p>
+        <div class="q-enun q-enun--num">
+          <span class="n">{{ q.ordem }}.</span>
+          <div class="q-enun-body markdown-body">{{ q.enunciado_md|md }}</div>
+        </div>
         <div class="opts">
           {% for alt in q.alternativas %}
-            <label class="opt"><input type="radio" name="alt_{{ q.pk }}" value="{{ alt.letra }}" required><span><strong>{{ alt.letra }})</strong> {{ alt.texto }}</span></label>
+            <label class="opt"><input type="radio" name="alt_{{ q.pk }}" value="{{ alt.letra }}" required><div class="opt-texto markdown-body"><strong>{{ alt.letra }})</strong> {{ alt.texto|md_inline }}</div></label>
           {% endfor %}
         </div>
       </div>

@@ -340,6 +340,21 @@ a.node:not(.lock):hover .nm{color:var(--teal)}
 .q-block:last-child{border-bottom:none}
 .q-enun{font-weight:600;margin:0 0 .8rem;color:var(--text)}
 .q-enun .n{color:var(--teal);font-family:var(--disp)}
+/* Enunciados/alternativas em Markdown: código destacado em vez de texto
+   corrido; o peso 600 do enunciado não vaza para dentro do código. */
+.q-enun--num{display:flex;gap:.6rem;align-items:baseline}
+.q-enun--num .n{flex:none}
+.q-enun-body{flex:1;min-width:0}
+.q-enun>p:first-child,.q-enun-body>p:first-child{margin-top:0}
+.q-enun>:last-child,.q-enun-body>:last-child{margin-bottom:0}
+.q-enun pre,.q-enun code{font-weight:400}
+.opt-texto{flex:1;min-width:0}
+.opt-texto.markdown-body,.fc-opt-texto.markdown-body{font-size:inherit;line-height:1.55}
+.opt-texto .codehilite,.fc-opt-texto .codehilite{margin:.45rem 0}
+.opt-texto>p{margin:.3rem 0}
+.fc-opt-texto{flex:1;min-width:0}
+.fc-enunciado>p{margin:.25rem 0}
+.fb .codehilite{margin:.6rem 0}
 .opts{display:flex;flex-direction:column;gap:.5rem}
 .opt{display:flex;gap:.7rem;align-items:flex-start;padding:.78rem .95rem;border:1px solid var(--line-2);border-radius:11px;cursor:pointer;transition:.15s;background:var(--glass-a)}
 .opt:hover{border-color:var(--teal);background:rgba(45,212,191,.06)}

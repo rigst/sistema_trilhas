@@ -1,4 +1,5 @@
 {% extends "base.html" %}
+{% load md %}
 {% block title %}Minhas trilhas · Trilhas de Estudo{% endblock %}
 
 {% block content %}
@@ -51,17 +52,17 @@
                  {% if questao %}data-gabarito="{{ questao.gabarito }}"{% endif %}>
           <div class="fc-tag"><span class="fc-dot"></span> Revisão devida · {{ nivel.trilha.titulo }} · {{ nivel.titulo }}</div>
           {% if questao %}
-            <div class="fc-pergunta fc-enunciado">{{ questao.enunciado }}</div>
+            <div class="fc-pergunta fc-enunciado markdown-body">{{ questao.enunciado }}</div>
             <div class="fc-opts" role="group" aria-label="Alternativas">
               {% for a in questao.alternativas %}
                 <button type="button" class="fc-opt" data-letra="{{ a.letra|upper }}">
-                  <span class="fc-opt-letra">{{ a.letra|upper }}</span> {{ a.texto }}
+                  <span class="fc-opt-letra">{{ a.letra|upper }}</span> <span class="fc-opt-texto markdown-body">{{ a.texto|md_inline }}</span>
                 </button>
               {% endfor %}
             </div>
             <div class="fc-verso" hidden>
               <p class="fc-resultado" aria-live="polite"></p>
-              {% if questao.explicacao %}<div class="fc-resumo">{{ questao.explicacao }}</div>{% endif %}
+              {% if questao.explicacao %}<div class="fc-resumo markdown-body">{{ questao.explicacao }}</div>{% endif %}
               <div class="fc-acoes">
                 <button type="button" class="btn btn-primary fc-btn" data-resposta="lembrei">Lembrei bem</button>
                 <button type="button" class="btn btn-ghost fc-btn" data-resposta="rever">Preciso rever</button>
