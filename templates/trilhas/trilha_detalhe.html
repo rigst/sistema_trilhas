@@ -21,63 +21,48 @@
 
 {% else %}
   {% if trilha.cover_url %}
-  <div class="trilha-cover" style="background-image:url('{{ trilha.cover_url }}')">
-    <div class="trilha-cover-overlay"></div>
-    <div class="trilha-cover-content">
-      <div class="badges">
-        <span class="status-badge status-badge--{{ trilha.status }}">{{ trilha.get_status_display }}</span>
-        {% if not trilha.ativa %}<span class="status-badge status-badge--off">Desativada</span>{% endif %}
-      </div>
-      <h1 class="h1" style="color:#fff">{{ trilha.titulo }}</h1>
-      {% if trilha.descricao %}<p class="sub" style="color:rgba(255,255,255,.88);max-width:64ch;margin:.35rem 0 0">{{ trilha.descricao }}</p>{% endif %}
-    </div>
-  </div>
-  <div class="spread" style="margin-bottom:1rem;align-items:center">
-    <div></div>
-    <div class="inline-actions" style="display:flex;gap:.5rem;align-items:center;flex-wrap:wrap">
-      {% if trilha.status == 'concluida' %}
-        <a class="btn btn-primary" href="{% url 'trilhas:certificado' trilha.pk %}" target="_blank"><svg class="ic" aria-hidden="true"><use href="#ic-cap"/></svg> Certificado</a>
-      {% endif %}
-      <form method="post" action="{% url 'trilhas:alternar_ativa' trilha.pk %}">
-        {% csrf_token %}
-        {% if trilha.ativa %}
-          <button type="submit" class="btn btn-ghost" title="Some da revisão, do mentor e do Estudar agora">Desativar</button>
-        {% else %}
-          <button type="submit" class="btn btn-primary">Reativar</button>
-        {% endif %}
-      </form>
-      <form method="post" action="{% url 'trilhas:excluir' trilha.pk %}" onsubmit="return confirm('Excluir esta trilha e todo o progresso?');">
-        {% csrf_token %}<button type="submit" class="btn btn-danger">Excluir</button>
-      </form>
-    </div>
+  <div class="trilha-hero" role="img" aria-label="Capa da trilha {{ trilha.titulo }}">
+    <div class="trilha-hero-blur" style="background-image:url('{{ trilha.cover_url }}')" aria-hidden="true"></div>
+    <div class="trilha-hero-foto" style="background-image:url('{{ trilha.cover_url }}')"></div>
   </div>
   {% endif %}
-  <div class="spread page-head" {% if trilha.cover_url %}style="display:none"{% endif %}>
-    <div>
-      <div class="badges">
-        <span class="status-badge status-badge--{{ trilha.status }}">{{ trilha.get_status_display }}</span>
-        {% if not trilha.ativa %}<span class="status-badge status-badge--off">Desativada</span>{% endif %}
+  <header class="trilha-head{% if trilha.cover_url %} com-foto{% endif %}">
+    <div class="trilha-kicker">
+      <span class="trilha-emblema" aria-hidden="true">{{ trilha.emblema_display }}</span>
+      <span class="trilha-cat">{{ trilha.categoria_display }}</span>
+      <span class="status-badge status-badge--{{ trilha.status }}">{{ trilha.get_status_display }}</span>
+      {% if not trilha.ativa %}<span class="status-badge status-badge--off">Desativada</span>{% endif %}
+    </div>
+    <div class="spread">
+      <div>
+        <h1 class="trilha-titulo">{{ trilha.titulo }}</h1>
+        <span class="trilha-fio" aria-hidden="true"></span>
+        {% if trilha.descricao %}<p class="sub trilha-desc">{{ trilha.descricao }}</p>{% endif %}
       </div>
-      <h1 class="h1">{{ trilha.titulo }}</h1>
-      {% if trilha.descricao %}<p class="sub">{{ trilha.descricao }}</p>{% endif %}
-    </div>
-    <div class="inline-actions" style="display:flex;gap:.5rem;align-items:center;flex-wrap:wrap">
-      {% if trilha.status == 'concluida' %}
-        <a class="btn btn-primary" href="{% url 'trilhas:certificado' trilha.pk %}" target="_blank"><svg class="ic" aria-hidden="true"><use href="#ic-cap"/></svg> Certificado</a>
-      {% endif %}
-      <form method="post" action="{% url 'trilhas:alternar_ativa' trilha.pk %}">
-        {% csrf_token %}
-        {% if trilha.ativa %}
-          <button type="submit" class="btn btn-ghost" title="Some da revisão, do mentor e do Estudar agora">Desativar</button>
-        {% else %}
-          <button type="submit" class="btn btn-primary">Reativar</button>
+      <div class="inline-actions" style="display:flex;gap:.5rem;align-items:center;flex-wrap:wrap">
+        {% if trilha.status == 'concluida' %}
+          <a class="btn btn-primary" href="{% url 'trilhas:certificado' trilha.pk %}" target="_blank"><svg class="ic" aria-hidden="true"><use href="#ic-cap"/></svg> Certificado</a>
         {% endif %}
-      </form>
-      <form method="post" action="{% url 'trilhas:excluir' trilha.pk %}" onsubmit="return confirm('Excluir esta trilha e todo o progresso?');">
-        {% csrf_token %}<button type="submit" class="btn btn-danger">Excluir</button>
-      </form>
+        <form method="post" action="{% url 'trilhas:nova_capa' trilha.pk %}">
+          {% csrf_token %}
+          <button type="submit" class="btn btn-ghost" title="Buscar outra foto de capa para esta trilha">
+            <svg class="ic" aria-hidden="true"><use href="#ic-refresh"/></svg> Nova capa
+          </button>
+        </form>
+        <form method="post" action="{% url 'trilhas:alternar_ativa' trilha.pk %}">
+          {% csrf_token %}
+          {% if trilha.ativa %}
+            <button type="submit" class="btn btn-ghost" title="Some da revisão, do mentor e do Estudar agora">Desativar</button>
+          {% else %}
+            <button type="submit" class="btn btn-primary">Reativar</button>
+          {% endif %}
+        </form>
+        <form method="post" action="{% url 'trilhas:excluir' trilha.pk %}" onsubmit="return confirm('Excluir esta trilha e todo o progresso?');">
+          {% csrf_token %}<button type="submit" class="btn btn-danger">Excluir</button>
+        </form>
+      </div>
     </div>
-  </div>
+  </header>
 
   {% if not trilha.ativa %}
     <div class="card pad" style="border-color:var(--line-2);margin-bottom:1.4rem">
@@ -132,7 +117,7 @@
             <div class="medal medal--{{ m.tier }}" style="width:100%;flex-direction:row;justify-content:flex-start;gap:1rem;margin-top:1.1rem">
               <span class="medal-trophy" style="width:76px;height:76px;flex:none">
                 <svg class="trophy-svg" viewBox="0 0 64 64" style="width:76px;height:76px"><use href="#ic-trophy"/></svg>
-                <span class="medal-mono" style="font-size:1.55rem">{{ m.sigla }}</span>
+                <span class="medal-mono">{{ m.sigla }}</span>
               </span>
               <span style="text-align:left">
                 <span class="title-chip title-chip--{{ m.tier }}">{{ m.tier_label }}</span>

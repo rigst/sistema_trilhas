@@ -34,7 +34,7 @@
   </div>
 
 {% else %}
-  <form method="post" action="{% url 'avaliacoes:submeter' avaliacao.pk %}" class="card pad">
+  <form method="post" action="{% url 'avaliacoes:submeter' avaliacao.pk %}">
     {% csrf_token %}
     {% include 'partials/dica_descarte.html' %}
     {% for q in questoes %}

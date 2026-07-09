@@ -14,8 +14,8 @@
     {% if nivel.resumo %}<p class="sub">{{ nivel.resumo }}</p>{% endif %}
   </div>
 
-  <!-- Progresso de leitura -->
-  <div class="card pad">
+  <!-- Progresso de leitura (sem card externo: os tópicos já são caixas) -->
+  <section class="nivel-topicos">
     <div class="spread" style="align-items:center;margin-bottom:.4rem">
       <h3 class="h3" style="margin:0">Tópicos do nível</h3>
       <span class="muted" style="font-size:.85rem">{{ nivel.subtopicos_lidos }}/{{ nivel.total_subtopicos }} lidos</span>
@@ -25,7 +25,6 @@
     <ol class="topico-index">
       {% for s in subtopicos %}
         <li>
-          {% if s.desbloqueado %}
           <a class="topico-item {% if s.lido %}done{% endif %}" href="{% url 'trilhas:topico' nivel.pk s.ordem %}">
             <span class="ti-num">{% if s.lido %}✓{% else %}{{ s.ordem }}{% endif %}</span>
             <span class="ti-main">
@@ -34,15 +33,6 @@
             </span>
             <span class="ti-cta">{% if s.lido %}Reler{% else %}Ler{% endif %} →</span>
           </a>
-          {% else %}
-          <div class="topico-item locked" aria-disabled="true">
-            <span class="ti-num"><svg class="ic" aria-hidden="true"><use href="#ic-lock"/></svg></span>
-            <span class="ti-main">
-              <span class="ti-title">{{ s.titulo }}</span>
-              <span class="ti-desc">Leia o tópico anterior para desbloquear</span>
-            </span>
-          </div>
-          {% endif %}
         </li>
       {% endfor %}
     </ol>
@@ -52,7 +42,7 @@
         {% if nivel.subtopicos_lidos %}Continuar leitura{% else %}Começar a estudar{% endif %} →
       </a>
     {% endif %}
-  </div>
+  </section>
 
   <!-- Etapas do nível -->
   <div class="card pad etapas">
@@ -64,22 +54,22 @@
       </li>
       <li class="etapa {% if exercicios_concluidos %}done{% elif nivel.conteudo_lido %}now{% endif %}">
         <span class="etapa-ic">{% if exercicios_concluidos %}✓{% else %}2{% endif %}</span>
-        <span class="etapa-txt"><strong>Praticar os exercícios</strong><small>5 questões · liberadas após ler tudo</small></span>
+        <span class="etapa-txt"><strong>Praticar os exercícios</strong><small>opcional · 5 questões para aquecer antes da avaliação</small></span>
         {% if nivel.conteudo_lido %}
           <a class="btn btn-ghost etapa-btn" href="{% url 'avaliacoes:exercicios' nivel.pk %}"><svg class="ic" aria-hidden="true"><use href="#ic-pencil"/></svg> {% if exercicios_concluidos %}Revisar{% else %}Praticar{% endif %}</a>
         {% else %}
           <span class="etapa-lock"><svg class="ic" aria-hidden="true"><use href="#ic-lock"/></svg> leia todos os tópicos</span>
         {% endif %}
       </li>
-      <li class="etapa {% if nivel.status == 'aprovado' %}done{% elif exercicios_concluidos and nivel.conteudo_lido %}now{% endif %}">
+      <li class="etapa {% if nivel.status == 'aprovado' %}done{% elif nivel.conteudo_lido %}now{% endif %}">
         <span class="etapa-ic">{% if nivel.status == 'aprovado' %}✓{% else %}3{% endif %}</span>
         <span class="etapa-txt"><strong>Fazer a avaliação</strong><small>vale o título {{ nivel.titulo_concedido }}</small></span>
-        {% if nivel.conteudo_lido and exercicios_concluidos %}
+        {% if nivel.conteudo_lido %}
           <form method="post" action="{% url 'avaliacoes:iniciar' nivel.pk %}" class="etapa-btn">{% csrf_token %}
             <button type="submit" class="btn btn-primary"><svg class="ic" aria-hidden="true"><use href="#ic-sword"/></svg> {% if nivel.status == 'aprovado' %}Refazer{% else %}Avaliação{% endif %}</button>
           </form>
         {% else %}
-          <span class="etapa-lock"><svg class="ic" aria-hidden="true"><use href="#ic-lock"/></svg> conclua as etapas acima</span>
+          <span class="etapa-lock"><svg class="ic" aria-hidden="true"><use href="#ic-lock"/></svg> leia todos os tópicos</span>
         {% endif %}
       </li>
     </ol>

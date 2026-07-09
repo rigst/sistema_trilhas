@@ -27,7 +27,7 @@
   </div>
   <div class="card pad-sm" style="margin-bottom:1.2rem"><strong>Tema:</strong> <span class="muted">{{ trilha.tema_livre }}</span></div>
 
-  <form method="post" action="{% url 'trilhas:perguntas' trilha.pk %}" class="card pad">
+  <form method="post" action="{% url 'trilhas:perguntas' trilha.pk %}">
     {% csrf_token %}
     {% for p in trilha.perguntas.all %}
       <div class="field">

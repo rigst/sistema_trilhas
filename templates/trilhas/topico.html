@@ -138,6 +138,7 @@
   const weight = (el) => {
     const len = (el.textContent || "").length;
     if (el.matches("pre,.codehilite,table")) return Math.max(len, 380);
+    if (el.querySelector && el.querySelector("img")) return Math.max(len, 320);
     return len;
   };
 
@@ -232,6 +233,7 @@
   window.TrilhasDeck(root, {
     posKey: "story-pos-{{ subtopico.pk }}",
     modeKey: "trilhas-leitura",
+    autoKey: "trilhas-autoplay",
     // Diagramas só medem certo quando visíveis: renderiza ao abrir o card.
     onShow: (i, card) => {
       if (window.__mermaidRefresh) window.__mermaidRefresh(card);

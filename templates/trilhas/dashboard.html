@@ -27,7 +27,7 @@
 
   {% if continuar %}
     <a class="continue-hero" href="{% url 'trilhas:topico' continuar.nivel.pk continuar.sub.ordem %}">
-      <span class="ch-emblem">{{ continuar.trilha.sigla }}</span>
+      <span class="ch-emblem" aria-hidden="true">{{ continuar.trilha.emblema_display }}</span>
       <span class="ch-main">
         <span class="ch-eyebrow">Continuar de onde parou</span>
         <span class="ch-title">{{ continuar.sub.titulo }}</span>
@@ -46,25 +46,45 @@
         <span class="muted" style="font-size:.85rem">memória se constrói voltando — 30 segundos por card</span>
       </div>
 
-      {% for nivel in feed_revisao %}
-        <article class="flashcard" data-url="{% url 'avaliacoes:revisao_rapida' nivel.pk %}">
-          <div class="fc-tag"><span class="fc-dot"></span> Revisão devida · {{ nivel.trilha.titulo }}</div>
-          <h3 class="fc-pergunta">O que você lembra de “{{ nivel.titulo }}”?</h3>
-          <p class="fc-hint">Tente responder de cabeça antes de virar o card.</p>
-          <button type="button" class="btn btn-ghost fc-virar">Virar o card</button>
-          <div class="fc-verso" hidden>
-            {% if nivel.resumo %}<p class="fc-resumo">{{ nivel.resumo }}</p>{% endif %}
-            <ul class="fc-topicos">
-              {% for s in nivel.subtopicos.all %}<li>{{ s.titulo }}</li>{% endfor %}
-            </ul>
-            <div class="fc-acoes">
-              <button type="button" class="btn btn-primary fc-btn" data-resposta="lembrei">Lembrei bem</button>
-              <button type="button" class="btn btn-ghost fc-btn" data-resposta="rever">Preciso rever</button>
+      {% for item in feed_revisao %}{% with nivel=item.nivel questao=item.questao %}
+        <article class="flashcard" data-url="{% url 'avaliacoes:revisao_rapida' nivel.pk %}"
+                 {% if questao %}data-gabarito="{{ questao.gabarito }}"{% endif %}>
+          <div class="fc-tag"><span class="fc-dot"></span> Revisão devida · {{ nivel.trilha.titulo }} · {{ nivel.titulo }}</div>
+          {% if questao %}
+            <div class="fc-pergunta fc-enunciado">{{ questao.enunciado }}</div>
+            <div class="fc-opts" role="group" aria-label="Alternativas">
+              {% for a in questao.alternativas %}
+                <button type="button" class="fc-opt" data-letra="{{ a.letra|upper }}">
+                  <span class="fc-opt-letra">{{ a.letra|upper }}</span> {{ a.texto }}
+                </button>
+              {% endfor %}
             </div>
-          </div>
+            <div class="fc-verso" hidden>
+              <p class="fc-resultado" aria-live="polite"></p>
+              {% if questao.explicacao %}<div class="fc-resumo">{{ questao.explicacao }}</div>{% endif %}
+              <div class="fc-acoes">
+                <button type="button" class="btn btn-primary fc-btn" data-resposta="lembrei">Lembrei bem</button>
+                <button type="button" class="btn btn-ghost fc-btn" data-resposta="rever">Preciso rever</button>
+              </div>
+            </div>
+          {% else %}
+            <h3 class="fc-pergunta">O que você lembra de “{{ nivel.titulo }}”?</h3>
+            <p class="fc-hint">Tente responder de cabeça antes de virar o card.</p>
+            <button type="button" class="btn btn-ghost fc-virar">Virar o card</button>
+            <div class="fc-verso" hidden>
+              {% if nivel.resumo %}<p class="fc-resumo">{{ nivel.resumo }}</p>{% endif %}
+              <ul class="fc-topicos">
+                {% for s in nivel.subtopicos.all %}<li>{{ s.titulo }}</li>{% endfor %}
+              </ul>
+              <div class="fc-acoes">
+                <button type="button" class="btn btn-primary fc-btn" data-resposta="lembrei">Lembrei bem</button>
+                <button type="button" class="btn btn-ghost fc-btn" data-resposta="rever">Preciso rever</button>
+              </div>
+            </div>
+          {% endif %}
           <div class="fc-feito" hidden></div>
         </article>
-      {% endfor %}
+      {% endwith %}{% endfor %}
 
       {% if pode_revisar and not quiz_feito_hoje %}
         <article class="flashcard flashcard--quiz">
@@ -216,6 +236,23 @@
       virar.remove();
       card.classList.add("virado");
     });
+    // Questão objetiva: responder revela certo/errado + explicação + SM-2.
+    card.querySelectorAll(".fc-opt").forEach((opt) => opt.addEventListener("click", () => {
+      if (card.classList.contains("virado")) return;
+      card.classList.add("virado");
+      const certa = (card.dataset.gabarito || "").toUpperCase();
+      const acertou = opt.dataset.letra === certa;
+      card.querySelectorAll(".fc-opt").forEach((o) => {
+        o.disabled = true;
+        if (o.dataset.letra === certa) o.classList.add("certa");
+      });
+      if (!acertou) opt.classList.add("errada");
+      const res = card.querySelector(".fc-resultado");
+      if (res) res.innerHTML = acertou
+        ? "✓ <strong>Acertou!</strong>"
+        : "✗ Não foi dessa vez — a correta é a <strong>" + certa + "</strong>.";
+      verso.hidden = false;
+    }));
     card.querySelectorAll(".fc-btn").forEach((btn) => btn.addEventListener("click", async () => {
       card.querySelectorAll(".fc-btn").forEach((b) => (b.disabled = true));
       try {

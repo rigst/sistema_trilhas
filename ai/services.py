@@ -79,22 +79,14 @@ def _query_capa(titulo: str, categoria: str = '', descricao: str = '', profile=N
     return ' '.join(palavras)
 
 
-def buscar_capa(titulo: str, categoria: str = '', descricao: str = '', profile=None) -> str:
-    """Busca uma imagem de capa relevante na Pexels (requer PEXELS_API_KEY no .env).
-
-    A IA traduz o tema num termo de busca visual; entre as fotos retornadas,
-    escolhe a de texto alternativo mais aderente ao termo. Retorna a URL da
-    imagem landscape, ou string vazia em caso de falha.
-    """
+def _pexels_search(query: str, per_page: int = 8, orientation: str = 'landscape') -> list:
+    """Busca fotos na Pexels; retorna a lista `photos` da API (ou [])."""
     api_key = getattr(settings, 'PEXELS_API_KEY', '')
-    if not api_key:
-        return ''
-    query = _query_capa(titulo, categoria, descricao, profile)
-    if not query:
-        return ''
+    if not api_key or not query:
+        return []
     api_url = (
         'https://api.pexels.com/v1/search?query=' + urllib.parse.quote(query)
-        + '&per_page=8&orientation=landscape'
+        + f'&per_page={per_page}&orientation={orientation}'
     )
     try:
         req = urllib.request.Request(
@@ -103,18 +95,174 @@ def buscar_capa(titulo: str, categoria: str = '', descricao: str = '', profile=N
         )
         with urllib.request.urlopen(req, timeout=8) as resp:
             data = json.loads(resp.read())
-        photos = data.get('photos') or []
-        if not photos:
-            return ''
-        termos = {w.lower() for w in query.split() if len(w) > 2}
-        melhor = max(photos, key=lambda p: sum(
-            1 for w in termos if w in (p.get('alt') or '').lower()
-        ))
-        src = melhor.get('src', {})
-        return src.get('large2x') or src.get('original', '')
+        return data.get('photos') or []
+    except Exception:
+        return []
+
+
+def _foto_mais_aderente(photos: list, query: str, excluir=None):
+    """A foto cujo alt mais bate com os termos da query (fallback: a 1ª)."""
+    excluir = excluir or set()
+    photos = [p for p in photos if p.get('id') not in excluir]
+    if not photos:
+        return None
+    termos = {w.lower() for w in query.split() if len(w) > 2}
+    return max(photos, key=lambda p: sum(
+        1 for w in termos if w in (p.get('alt') or '').lower()
+    ))
+
+
+_SCHEMA_ESCOLHA_FOTO = {
+    'type': 'object',
+    'properties': {'indice': {'type': 'integer'}},
+    'required': ['indice'],
+    'additionalProperties': False,
+}
+
+
+def buscar_capa(titulo: str, categoria: str = '', descricao: str = '',
+                profile=None, excluir_ids=None) -> str:
+    """Busca uma imagem de capa relevante na Pexels (requer PEXELS_API_KEY no .env).
+
+    A IA traduz o tema num termo de busca visual; entre as fotos retornadas,
+    a própria IA escolhe pela descrição (alt) a mais representativa do tema —
+    com fallback na heurística de aderência à query. `excluir_ids` evita repetir
+    a capa de outra trilha (temas afins convergem na mesma busca). Retorna a
+    URL da imagem landscape, ou string vazia em caso de falha.
+    """
+    query = _query_capa(titulo, categoria, descricao, profile)
+    photos = _pexels_search(query, per_page=12)
+    if excluir_ids:
+        photos = [p for p in photos if p.get('id') not in excluir_ids]
+    if not photos:
+        return ''
+    melhor = None
+    alts = [
+        f'{i}. {(p.get("alt") or "").strip() or "(sem descrição)"}'
+        for i, p in enumerate(photos, start=1)
+    ]
+    try:
+        data = _gerar_json(
+            'Você escolhe a melhor FOTO de capa para uma trilha de estudos, '
+            'a partir das descrições das fotos candidatas.',
+            f'Tema da trilha: "{titulo}"'
+            + (f' (área: {categoria})' if categoria else '')
+            + '\n\nFotos candidatas:\n' + '\n'.join(alts)
+            + '\n\nRetorne em "indice" o número da foto que melhor representa o '
+              'TEMA da trilha (evite fotos genéricas de pessoas estudando, telas '
+              'desfocadas ou objetos sem relação direta).',
+            _SCHEMA_ESCOLHA_FOTO, profile,
+            model=_model_geral(), effort='low', max_tokens=800,
+        )
+        i = int(data.get('indice') or 0)
+        if 1 <= i <= len(photos):
+            melhor = photos[i - 1]
     except Exception:
         pass
-    return ''
+    if melhor is None:
+        melhor = _foto_mais_aderente(photos, query)
+    src = (melhor or {}).get('src', {})
+    # Usa o variante large2x (940×650): o pré-corte da Pexels centraliza o
+    # assunto da foto muito melhor do que recortar o arquivo original em CSS
+    # (testado lado a lado — o original deixa rostos/objetos cortados na borda).
+    return src.get('large2x') or src.get('original', '')
+
+
+# Marcador de foto que a IA insere no conteúdo: {{foto: query em inglês | legenda}}.
+# O modelo não conhece URLs reais de banco de imagens (inventaria links quebrados);
+# ele só marca ONDE uma foto ajuda e O QUE ela deve mostrar — a busca é feita aqui.
+_FOTO_MARCADOR_RE = re.compile(r'\{\{\s*foto:\s*([^|{}]+?)\s*(?:\|\s*([^{}]*?))?\s*\}\}')
+
+
+_SCHEMA_AUDITORIA_FOTOS = {
+    'type': 'object',
+    'properties': {'aprovadas': {'type': 'array', 'items': {'type': 'integer'}}},
+    'required': ['aprovadas'],
+    'additionalProperties': False,
+}
+
+_SYSTEM_AUDITORIA_FOTOS = (
+    'Você audita fotos de banco de imagens escolhidas para material didático. '
+    'Aprove uma foto SOMENTE se a descrição dela mostra de fato o que a legenda '
+    'e o pedido afirmam — mesmo assunto, mesmo objeto, sem ambiguidade. Foto '
+    'genérica, apenas "relacionada" ou que poderia induzir o aluno a erro deve '
+    'ser REPROVADA. Na dúvida, reprove. Responda em português.'
+)
+
+
+def _auditar_fotos(itens, contexto='', profile=None):
+    """IA aprova/reprova cada foto encontrada (a descrição `alt` da foto deve
+    condizer com o que o marcador pediu). Retorna o set de índices aprovados;
+    em caso de falha da chamada, aprova todas (não trava a geração)."""
+    if not itens:
+        return set()
+    linhas = []
+    for i, it in enumerate(itens, start=1):
+        linhas.append(
+            f'{i}. Pedido: "{it["query"]}" — legenda: "{it["legenda"] or "(sem)"}"\n'
+            f'   Foto encontrada (descrição do banco): "{it["alt"] or "(sem descrição)"}"'
+        )
+    try:
+        data = _gerar_json(
+            _SYSTEM_AUDITORIA_FOTOS,
+            (f'Material: {contexto}\n\n' if contexto else '')
+            + 'Fotos candidatas:\n\n' + '\n'.join(linhas)
+            + '\n\nRetorne em "aprovadas" apenas os números das fotos cuja descrição '
+              'confirma que mostram exatamente o que foi pedido.',
+            _SCHEMA_AUDITORIA_FOTOS, profile,
+            model=_model_geral(), effort='low', max_tokens=1500,
+        )
+        return {int(i) for i in data.get('aprovadas', [])}
+    except Exception:
+        return set(range(1, len(itens) + 1))
+
+
+def inserir_fotos_conteudo(texto: str, contexto: str = '', profile=None) -> str:
+    """Troca cada marcador {{foto: …}} por uma fotografia real da Pexels.
+
+    A foto só entra se passar na auditoria da IA (a descrição da foto precisa
+    condizer com o pedido — imagem errada é pior que nenhuma). Marcador sem
+    foto aprovada é removido; fotos não se repetem no mesmo texto. A legenda
+    vira uma linha em itálico abaixo da imagem, com o crédito do fotógrafo
+    (diretriz da Pexels)."""
+    if not texto or '{{' not in texto:
+        return texto
+    usadas = set()
+    itens = []
+    for m in _FOTO_MARCADOR_RE.finditer(texto):
+        query = m.group(1).strip()
+        legenda = (m.group(2) or '').strip().rstrip('.')
+        foto = _foto_mais_aderente(_pexels_search(query, per_page=6), query, excluir=usadas)
+        if foto:
+            usadas.add(foto.get('id'))
+        itens.append({
+            'query': query,
+            'legenda': legenda,
+            'foto': foto,
+            'alt': ((foto or {}).get('alt') or '').strip(),
+        })
+    com_foto = [it for it in itens if it['foto']]
+    aprovadas = _auditar_fotos(com_foto, contexto, profile)
+    for i, it in enumerate(com_foto, start=1):
+        it['aprovada'] = i in aprovadas
+
+    fila = iter(itens)
+
+    def _rep(m):
+        it = next(fila)
+        foto = it['foto']
+        if not foto or not it.get('aprovada'):
+            return ''
+        src = foto.get('src', {})
+        url = src.get('large') or src.get('original', '')
+        if not url:
+            return ''
+        alt = it['legenda'] or it['alt'] or it['query']
+        fotografo = (foto.get('photographer') or '').strip()
+        credito = f' · foto de {fotografo} (Pexels)' if fotografo else ''
+        return f'![{alt}]({url})\n*{it["legenda"] or alt}{credito}*'
+
+    return _FOTO_MARCADOR_RE.sub(_rep, texto)
 
 
 # "Trilha de Python" -> "Python": o título é o nome do assunto, sem prefixo.
@@ -353,7 +501,11 @@ def gerar_conteudo_subtopico(subtopico, profile=None):
         final = stream.get_final_message()
 
     _debitar(profile, final.usage, model)
-    return _texto(final.content)
+    return inserir_fotos_conteudo(
+        _texto(final.content),
+        contexto=f'{trilha.titulo} — tópico "{subtopico.titulo}"',
+        profile=profile,
+    )
 
 
 # ---------------------------------------------------------------------------

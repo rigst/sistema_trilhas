@@ -9,7 +9,7 @@
     <p class="sub">Descreva livremente — pode ser amplo. A IA vai fazer algumas perguntas para afinar o plano.</p>
   </div>
 
-  <form method="post" action="{% url 'trilhas:criar' %}" class="card pad">
+  <form method="post" action="{% url 'trilhas:criar' %}">
     {% csrf_token %}
     <div class="field">
       <label for="tema_livre">Tema</label>

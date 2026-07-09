@@ -1,0 +1,20 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 210 900">
+  <!-- Máscara decorativa (alfa): o motivo da marca — caminho pontilhado, nós
+       e estrelas — desenhado em branco; a cor real vem do CSS que a usa.
+       Tileável na vertical: o caminho entra em (60,0) e sai em (60,900). -->
+  <g fill="none" stroke="#fff" stroke-width="2.6" stroke-linecap="round">
+    <path stroke-dasharray=".1 15" d="M60 0C130 75 155 160 100 232C45 304 52 388 116 452C180 516 78 610 92 678C106 746 28 828 60 900"/>
+  </g>
+  <g fill="#fff">
+    <circle cx="100" cy="232" r="5"/>
+    <circle cx="116" cy="452" r="4.4"/>
+    <circle cx="92" cy="678" r="5"/>
+    <path d="M156 118l3.4 8.2 8.2 3.4-8.2 3.4-3.4 8.2-3.4-8.2-8.2-3.4 8.2-3.4z"/>
+    <path d="M42 350l2.6 6.2 6.2 2.6-6.2 2.6-2.6 6.2-2.6-6.2-6.2-2.6 6.2-2.6z"/>
+    <path d="M158 560l2.2 5.4 5.4 2.2-5.4 2.2-2.2 5.4-2.2-5.4-5.4-2.2 5.4-2.2z"/>
+    <path d="M48 790l3 7.2 7.2 3-7.2 3-3 7.2-3-7.2-7.2-3 7.2-3z"/>
+    <circle cx="170" cy="40" r="1.6"/><circle cx="30" cy="150" r="1.4"/>
+    <circle cx="182" cy="300" r="1.4"/><circle cx="26" cy="500" r="1.6"/>
+    <circle cx="176" cy="700" r="1.5"/><circle cx="36" cy="860" r="1.4"/>
+  </g>
+</svg>

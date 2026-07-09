@@ -363,15 +363,9 @@ class Subtopico(models.Model):
 
     @property
     def desbloqueado(self):
-        """Um tópico só abre depois que o anterior foi lido (leitura em ordem).
-        O primeiro tópico e os já lidos ficam sempre disponíveis."""
-        if self.lido:
-            return True
-        anterior = (
-            self.nivel.subtopicos.filter(ordem__lt=self.ordem)
-            .order_by('-ordem').first()
-        )
-        return anterior is None or anterior.lido
+        """Leitura livre: todo tópico do nível fica disponível em qualquer
+        ordem (a progressão da trilha continua sendo por NÍVEL, via avaliação)."""
+        return True
 
 
 class CardSalvo(models.Model):

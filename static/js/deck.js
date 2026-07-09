@@ -13,6 +13,7 @@ window.TrilhasDeck = function (root, opts) {
   const list = Array.from(root.querySelectorAll(".story-card"));
   if (!stage || !bars || !list.length) return null;
   let idx = 0;
+  let rearm = null; // reinicia o cronômetro do autoplay a cada card exibido
 
   list.forEach((_, i) => {
     const b = document.createElement("button");
@@ -46,6 +47,7 @@ window.TrilhasDeck = function (root, opts) {
     if (nextBtn) nextBtn.disabled = idx === list.length - 1;
     if (opts.posKey) try { sessionStorage.setItem(opts.posKey, idx); } catch (e) {}
     if (opts.onShow) opts.onShow(idx, list[idx]);
+    if (rearm) rearm();
   }
   const emCards = () => root.classList.contains("mode-cards");
   const next = () => { if (emCards()) show(idx + 1, "fwd"); };
@@ -85,6 +87,77 @@ window.TrilhasDeck = function (root, opts) {
   let mode = "cards";
   if (opts.modeKey) try { mode = localStorage.getItem(opts.modeKey) || "cards"; } catch (e) {}
   setMode(mode, false);
+
+  /* ---- Passagem automática (autoplay) -----------------------------------
+     O FAB (irmão do "Aa") sempre abre o painel, com TODOS os controles à
+     vista: iniciar/pausar, parar e a velocidade — que pode ser ajustada a
+     qualquer momento, inclusive tocando. A preferência de tempo persiste em
+     opts.autoKey; navegação manual reinicia a contagem. */
+  const apBtn = document.getElementById("autoplay-btn");
+  const apPanel = document.getElementById("autoplay-panel");
+  if (opts.autoKey && apBtn && apPanel) {
+    apBtn.hidden = false;
+    const chips = Array.from(apPanel.querySelectorAll("[data-autoplay]"));
+    const apToggle = apPanel.querySelector("#ap-toggle");
+    const apStop = apPanel.querySelector("#ap-stop");
+    const apLabel = apPanel.querySelector(".ap-label");
+    let delay = 8;
+    try { delay = parseInt(localStorage.getItem(opts.autoKey), 10) || 8; } catch (e) {}
+    let playing = false, timer = null;
+
+    const sync = () => {
+      chips.forEach((b) => b.setAttribute("aria-pressed", +b.dataset.autoplay === delay ? "true" : "false"));
+      apBtn.classList.toggle("on", playing);
+      apPanel.classList.toggle("tocando", playing);
+      if (apLabel) apLabel.textContent = playing ? "Pausar" : "Iniciar";
+      if (apToggle) apToggle.setAttribute("aria-pressed", playing ? "true" : "false");
+      root.classList.toggle("autoplay-on", playing);
+      root.style.setProperty("--ap-dur", delay + "s");
+    };
+    const stop = () => { playing = false; clearTimeout(timer); timer = null; sync(); };
+    const arm = () => {
+      clearTimeout(timer);
+      if (!playing || !delay) return;
+      timer = setTimeout(() => {
+        if (!emCards() || idx >= list.length - 1) { stop(); return; }
+        next(); // show() chama rearm(), que rearma o próximo passo
+      }, delay * 1000);
+    };
+    const play = () => {
+      if (!emCards() || idx >= list.length - 1) return;
+      playing = true; sync(); arm();
+    };
+    rearm = () => { if (playing) (idx >= list.length - 1 ? stop : arm)(); };
+
+    const openPanel = (open) => {
+      apPanel.toggleAttribute("hidden", !open);
+      apBtn.setAttribute("aria-expanded", open ? "true" : "false");
+      if (open) { // um painel de cada vez ao lado do "Aa"
+        const rp = document.getElementById("reader-panel");
+        if (rp) rp.setAttribute("hidden", "");
+      }
+    };
+    apBtn.addEventListener("click", () => openPanel(apPanel.hasAttribute("hidden")));
+    document.addEventListener("click", (e) => {
+      if (!e.target.closest("#reader-fab") && !apPanel.hasAttribute("hidden")) openPanel(false);
+    });
+    if (apToggle) apToggle.addEventListener("click", () => { playing ? stop() : play(); });
+    if (apStop) apStop.addEventListener("click", () => { stop(); openPanel(false); });
+    chips.forEach((b) => b.addEventListener("click", () => {
+      delay = +b.dataset.autoplay || 8;
+      try { localStorage.setItem(opts.autoKey, delay); } catch (e) {}
+      sync();
+      if (playing) arm(); // ajusta o ritmo sem interromper a leitura
+    }));
+    // Aba em segundo plano não deve "ler sozinha": pausa e retoma.
+    document.addEventListener("visibilitychange", () => {
+      if (document.hidden) clearTimeout(timer);
+      else if (playing) arm();
+    });
+    // Trocar para o modo Artigo encerra o passador.
+    toggles.forEach((b) => b.addEventListener("click", () => { if (b.dataset.mode !== "cards") stop(); }));
+    sync();
+  }
 
   let pos0 = 0;
   if (opts.posKey) try { pos0 = parseInt(sessionStorage.getItem(opts.posKey), 10) || 0; } catch (e) {}

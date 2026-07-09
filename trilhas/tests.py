@@ -55,22 +55,17 @@ class SiglaTests(TestCase):
         self.assertEqual(self._sigla(''), '★')
 
 
-class DesbloqueioSequencialTests(TestCase):
+class LeituraLivreTests(TestCase):
+    """Os tópicos de um nível não travam em ordem: leitura livre."""
+
     def setUp(self):
         self.user = User.objects.create_user('u', password='x')
         self.trilha = criar_trilha(self.user)
         self.subs = list(self.trilha.niveis.get(ordem=1).subtopicos.order_by('ordem'))
 
-    def test_apenas_o_primeiro_abre_no_inicio(self):
-        self.assertTrue(self.subs[0].desbloqueado)
-        self.assertFalse(self.subs[1].desbloqueado)
-        self.assertFalse(self.subs[2].desbloqueado)
-
-    def test_ler_um_libera_o_proximo(self):
-        self.subs[0].lido = True
-        self.subs[0].save(update_fields=['lido'])
-        self.assertTrue(self.subs[1].desbloqueado)
-        self.assertFalse(self.subs[2].desbloqueado)
+    def test_todos_os_topicos_abrem_desde_o_inicio(self):
+        for s in self.subs:
+            self.assertTrue(s.desbloqueado)
 
 
 class DashboardTests(TestCase):

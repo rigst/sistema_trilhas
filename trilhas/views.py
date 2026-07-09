@@ -31,6 +31,33 @@ def _pre_gerar_exercicios(nivel):
 # Dashboard
 # ---------------------------------------------------------------------------
 
+def _questao_do_dia(nivel, hoje):
+    """Uma questão objetiva do nível para revisar direto no dashboard —
+    determinística por dia (a mesma pergunta o dia inteiro). Preferência:
+    exercícios e questões de revisão (têm explicação) → questões de avaliação.
+    Retorna None se o nível ainda não tem questão objetiva aproveitável."""
+    from avaliacoes.models import Exercicio, Questao, QuestaoRevisao
+
+    fontes = [
+        Exercicio.objects.filter(lista__nivel=nivel),
+        QuestaoRevisao.objects.filter(nivel=nivel),
+        Questao.objects.filter(avaliacao__nivel=nivel),
+    ]
+    for qs in fontes:
+        qs = list(qs.exclude(gabarito='').order_by('pk'))
+        candidatas = [q for q in qs if q.alternativas]
+        if not candidatas:
+            continue
+        q = candidatas[(hoje.toordinal() * 31 + nivel.pk) % len(candidatas)]
+        return {
+            'enunciado': render_md(q.enunciado_md),
+            'alternativas': q.alternativas,
+            'gabarito': (q.gabarito or '').strip().upper(),
+            'explicacao': render_md(getattr(q, 'explicacao_md', '') or ''),
+        }
+    return None
+
+
 @login_required
 def dashboard(request):
     trilhas = list(
@@ -74,10 +101,11 @@ def dashboard(request):
             continuar = {'trilha': t, 'nivel': alvo[0], 'sub': alvo[1]}
             break
 
-    # Feed "para hoje": flashcards dos níveis com revisão espaçada devida
-    # (autoavaliação lembrei/rever, direto no SM-2) + quiz do dia.
+    # Feed "para hoje": flashcards dos níveis com revisão espaçada devida.
+    # Cada card traz uma QUESTÃO OBJETIVA do nível (revisão ativa responde-se
+    # na hora); a autoavaliação lembrei/rever alimenta o SM-2. + quiz do dia.
     hoje = timezone.localdate()
-    feed_revisao = list(
+    niveis_devidos = list(
         Nivel.objects
         .filter(trilha__user=request.user, trilha__ativa=True,
                 status=Nivel.Status.APROVADO, revisao_proxima__lte=hoje)
@@ -85,6 +113,9 @@ def dashboard(request):
         .prefetch_related('subtopicos')
         .order_by('revisao_proxima')[:3]
     )
+    feed_revisao = [
+        {'nivel': n, 'questao': _questao_do_dia(n, hoje)} for n in niveis_devidos
+    ]
     quiz_feito_hoje = request.user.revisoes.filter(criada_em__date=hoje).exists()
 
     aprovados = Nivel.objects.filter(
@@ -121,6 +152,38 @@ def trilha_alternar_ativa(request, pk):
         messages.success(request, 'Trilha reativada — de volta à revisão e ao mentor.')
     else:
         messages.info(request, 'Trilha desativada — fora da revisão, do mentor e do “Estudar agora”.')
+    return redirect('trilhas:detalhe', pk=pk)
+
+
+@login_required
+@require_POST
+def trilha_nova_capa(request, pk):
+    """Busca outra foto de capa na Pexels (excluindo a atual e as das demais
+    trilhas do usuário, para a troca sempre render uma imagem diferente)."""
+    import re as _re
+
+    from ai.services import buscar_capa
+
+    trilha = get_object_or_404(Trilha, pk=pk, user=request.user)
+    if sem_quota_ia(request.user):
+        messages.error(request, MSG_SEM_QUOTA)
+        return redirect('trilhas:detalhe', pk=pk)
+    usadas = set()
+    for url in Trilha.objects.filter(user=request.user).exclude(cover_url='') \
+                             .values_list('cover_url', flat=True):
+        m = _re.search(r'/photos/(\d+)/', url)
+        if m:
+            usadas.add(int(m.group(1)))
+    url = buscar_capa(
+        trilha.titulo, trilha.categoria, trilha.descricao,
+        profile=getattr(request.user, 'profile', None), excluir_ids=usadas,
+    )
+    if url:
+        trilha.cover_url = url
+        trilha.save(update_fields=['cover_url', 'atualizada_em'])
+        messages.success(request, 'Capa trocada — nova foto encontrada para o tema.')
+    else:
+        messages.info(request, 'Não achei outra foto boa para este tema agora. Tente de novo em instantes.')
     return redirect('trilhas:detalhe', pk=pk)
 
 
@@ -317,13 +380,6 @@ def topico(request, nivel_pk, ordem):
     if atual is None:
         raise Http404('Tópico não encontrado.')
     idx = subs.index(atual)
-
-    # Leitura em ordem: um tópico só abre depois que o anterior foi lido.
-    desbloqueado = idx == 0 or subs[idx - 1].lido
-    if not desbloqueado:
-        messages.info(request, 'Leia os tópicos anteriores primeiro.')
-        alvo = next((s for s in subs if not s.lido), subs[0])
-        return redirect('trilhas:topico', nivel_pk=nivel.pk, ordem=alvo.ordem)
 
     # Geração sob demanda deste tópico.
     if atual.status == Subtopico.Status.PENDENTE:

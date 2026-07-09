@@ -31,7 +31,7 @@
         <div class="container">
             <nav class="nav">
                 <div class="nav-top">
-                    <a href="{% url 'dashboard' %}" class="brand"><span class="logo">T</span> Trilhas</a>
+                    <a href="{% url 'dashboard' %}" class="brand"><span class="logo" aria-hidden="true"><svg><use href="#logo-trilhas"/></svg></span> Trilhas</a>
                     {% if user.is_authenticated %}
                     <button class="nav-toggle js-nav-toggle" type="button" aria-expanded="false" aria-controls="nav-links nav-hud">
                         <span class="visually-hidden">Abrir menu</span>
@@ -73,6 +73,35 @@
     </main>
 
     <div class="reader-fab" id="reader-fab">
+      <!-- Passagem automática de cards: só aparece no leitor (deck.js exibe). -->
+      <button class="reader-fab-btn reader-fab-btn--auto" id="autoplay-btn" type="button" aria-expanded="false" aria-controls="autoplay-panel" title="Passagem automática" hidden>
+        <svg class="ic ap-ic-play" aria-hidden="true"><use href="#ic-play"/></svg>
+        <svg class="ic ap-ic-pause" aria-hidden="true"><use href="#ic-pause"/></svg>
+        <span class="visually-hidden">Passagem automática dos cards</span>
+      </button>
+      <div class="reader-panel" id="autoplay-panel" role="dialog" aria-label="Passagem automática" hidden>
+        <div class="rp-block">
+          <span class="rp-title">Passagem automática</span>
+          <div class="rp-ap-controls">
+            <button type="button" id="ap-toggle" class="rp-ap-main">
+              <svg class="ic ap-ic-play" aria-hidden="true"><use href="#ic-play"/></svg>
+              <svg class="ic ap-ic-pause" aria-hidden="true"><use href="#ic-pause"/></svg>
+              <span class="ap-label">Iniciar</span>
+            </button>
+            <button type="button" id="ap-stop">Parar</button>
+          </div>
+        </div>
+        <div class="rp-block">
+          <span class="rp-title">Tempo em cada card</span>
+          <div class="rp-autoplay" role="group" aria-label="Tempo em cada card">
+            <button type="button" data-autoplay="5">5s</button>
+            <button type="button" data-autoplay="8">8s</button>
+            <button type="button" data-autoplay="12">12s</button>
+            <button type="button" data-autoplay="20">20s</button>
+          </div>
+          <p class="rp-hint">O leitor avança ao fim do tempo. Navegar manualmente reinicia a contagem.</p>
+        </div>
+      </div>
       <button class="reader-fab-btn js-reader-toggle" type="button" aria-expanded="false" aria-controls="reader-panel" title="Aparência e leitura">
         <span aria-hidden="true">Aa</span><span class="visually-hidden">Ajustar aparência e tamanho do texto</span>
       </button>
@@ -248,12 +277,16 @@
           n.removeAttribute("data-processed");
           n.textContent = n.dataset.src || n.textContent;
         });
-        window.mermaid.run({ nodes }).then(() => {
+        window.mermaid.run({ nodes, suppressErrors: true }).then(() => {
           // Apara o SVG ao desenho real (o Mermaid deixa margens enormes em
           // alguns tipos, ex.: timeline) e ajusta à largura do contêiner —
           // nunca há rolagem lateral; diagramas encolhidos ganham o botão
           // de ampliar em tela cheia.
           nodes.forEach((n) => {
+            if (!n.querySelector("svg")) {
+              n.innerHTML = '<span class="mermaid-err-msg">⚠ Diagrama indisponível</span>';
+              return;
+            }
             const svg = n.querySelector("svg");
             if (!svg) return;
             try {

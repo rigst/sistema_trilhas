@@ -79,6 +79,23 @@ body{
 a{color:inherit;text-decoration:none}
 img{max-width:100%}
 
+/* Trilhas decorativas nas laterais vazias (telas largas): o motivo da marca
+   — o caminho pontilhado até a estrela — tingido pelas cores do tema, bem
+   leve, atrás de tudo (z-index negativo sobre o fundo propagado do body). */
+@media(min-width:1280px){
+  body::before,body::after{content:"";position:fixed;top:0;bottom:0;z-index:-1;
+    width:max(90px,calc(50vw - 590px));pointer-events:none;
+    background:linear-gradient(180deg,var(--teal),var(--violet));
+    opacity:var(--lado-op,.16);
+    -webkit-mask:url("../img/trilha-lado.svg") center top/190px auto repeat-y;
+    mask:url("../img/trilha-lado.svg") center top/190px auto repeat-y}
+  body::before{left:0}
+  body::after{right:0;transform:scaleX(-1)}
+}
+:root[data-theme="claro"]{--lado-op:.28}
+:root[data-theme="papel"]{--lado-op:.3}
+:root[data-theme="preto"]{--lado-op:.17}
+
 /* Foco visível por teclado (acessibilidade) */
 :focus-visible{outline:2px solid var(--teal);outline-offset:2px;border-radius:5px}
 .opt:focus-within{border-color:var(--teal);box-shadow:0 0 0 3px var(--teal-glow)}
@@ -114,7 +131,8 @@ h1,h2,h3,h4{font-family:var(--disp);letter-spacing:-.01em;line-height:1.15}
 .nav{display:flex;align-items:center;justify-content:space-between;height:70px;gap:1rem}
 .nav-top{display:flex;align-items:center;gap:1rem}
 .brand{font-family:var(--disp);font-weight:800;font-size:1.28rem;display:flex;align-items:center;gap:.6rem;letter-spacing:-.01em}
-.brand .logo{width:30px;height:30px;border-radius:9px;background:linear-gradient(135deg,var(--teal),var(--violet));display:grid;place-items:center;color:#0b1020;font-weight:800;box-shadow:0 0 22px var(--teal-glow)}
+.brand .logo{width:30px;height:30px;border-radius:9px;background:linear-gradient(135deg,var(--teal),var(--violet));display:grid;place-items:center;color:#0b1020;box-shadow:0 0 22px var(--teal-glow)}
+.brand .logo svg{width:19px;height:19px}
 .nav-links{display:flex;gap:.3rem;list-style:none;margin:0;padding:0}
 .nav-links a{font-size:.9rem;font-weight:500;color:var(--muted);padding:.45rem .85rem;border-radius:9px;display:block}
 .nav-links a:hover{color:var(--text)}
@@ -286,6 +304,13 @@ a.node:not(.lock):hover .nm{color:var(--teal)}
   color:transparent;min-height:60px} /* texto-fonte invisível até renderizar */
 .markdown-body .mermaid[data-processed]{color:var(--text)}
 .markdown-body .mermaid svg{max-width:100%;flex:none;height:auto}
+.mermaid-err-msg{font-size:.85rem;color:var(--muted);padding:.5rem 1rem}
+
+/* fotos reais dentro do conteúdo (buscadas na Pexels via {{foto: …}}) */
+.markdown-body img{display:block;width:100%;height:auto;max-height:340px;object-fit:cover;
+  border-radius:12px;border:1px solid var(--line);margin:.45rem 0 .1rem}
+.markdown-body p:has(> img) em{display:block;font-size:.78rem;color:var(--dim);
+  line-height:1.4;margin-top:.35rem}
 
 /* admonitions / callouts */
 .markdown-body .admonition{margin:1.4rem 0;padding:1rem 1.15rem;border-radius:14px;border:1px solid var(--line);background:var(--panel);border-left:3px solid var(--muted)}
@@ -357,7 +382,8 @@ a.node:not(.lock):hover .nm{color:var(--teal)}
 .auth-card{width:100%;max-width:420px}
 .auth-card .pad{padding:34px}
 .auth-head{margin-bottom:1.6rem;text-align:center}
-.auth-head .logo-lg{width:52px;height:52px;border-radius:15px;margin:0 auto 1rem;background:linear-gradient(135deg,var(--teal),var(--violet));display:grid;place-items:center;color:#0b1020;font-weight:800;font-size:1.4rem;box-shadow:0 0 30px var(--teal-glow)}
+.auth-head .logo-lg{width:52px;height:52px;border-radius:15px;margin:0 auto 1rem;background:linear-gradient(135deg,var(--teal),var(--violet));display:grid;place-items:center;color:#0b1020;box-shadow:0 0 30px var(--teal-glow)}
+.auth-head .logo-lg svg{width:32px;height:32px}
 .auth-head h1{font-size:1.6rem;margin:0 0 .4rem}
 .auth-head p{color:var(--muted);font-size:.92rem;margin:0}
 .auth-sep{display:flex;align-items:center;gap:.8rem;color:var(--dim);font-size:.8rem;margin:1.3rem 0}
@@ -449,9 +475,16 @@ a.node:not(.lock):hover .nm{color:var(--teal)}
 .medal--ouro .trophy-svg{fill:url(#mg-ouro);stroke:#93670f;--m-fglow:drop-shadow(0 0 9px rgba(245,181,74,.5))}
 .medal--platina .trophy-svg{fill:url(#mg-platina);stroke:#7e91a5;--m-fglow:drop-shadow(0 0 10px rgba(160,200,230,.55))}
 .medal--diamante .trophy-svg{fill:url(#mg-diamante);stroke:#349fc2;--m-fglow:drop-shadow(0 0 13px rgba(120,230,245,.65))}
-.medal-mono{position:absolute;top:32px;left:50%;transform:translate(-50%,-50%);
-  font-family:var(--disp);font-weight:800;font-size:1.5rem;line-height:1;color:var(--m-ink);
-  letter-spacing:.01em;text-shadow:0 1px 0 rgba(255,255,255,.45),0 -1px 1px rgba(0,0,0,.22)}
+/* Medalhão gravado no centro da taça: um disco rebaixado, cunhado no metal,
+   com a sigla em relevo — tamanhos em % da altura do troféu (cqh), então a
+   gravação cai no mesmo lugar em qualquer escala. */
+.medal-mono{position:absolute;top:36%;left:50%;transform:translate(-50%,-50%);
+  width:44cqh;height:44cqh;border-radius:50%;display:grid;place-items:center;
+  font-family:var(--disp);font-weight:800;font-size:16cqh;line-height:1;color:var(--m-ink);
+  letter-spacing:.02em;text-shadow:0 1px 0 rgba(255,255,255,.4),0 -1px 1px rgba(0,0,0,.25);
+  background:radial-gradient(circle at 36% 28%,rgba(255,255,255,.3),rgba(255,255,255,.04) 46%,rgba(0,0,0,.2));
+  box-shadow:inset 0 2px 4px rgba(0,0,0,.3),inset 0 -1px 2px rgba(255,255,255,.35),0 1px 1px rgba(255,255,255,.28)}
+.medal-trophy{container-type:size}
 .medal-tier-label{font-family:var(--disp);font-weight:700;font-size:.62rem;letter-spacing:.16em;
   text-transform:uppercase;color:var(--m-accent)}
 .medal-stars{display:flex;gap:4px;margin-top:.05rem}
@@ -592,6 +625,37 @@ a.node:not(.lock):hover .nm{color:var(--teal)}
 .rp-theme--preto::before{background:#000000}
 @media(max-width:820px){.reader-fab{right:12px;bottom:12px}.reader-panel{width:min(260px,78vw)}}
 
+/* Passagem automática de cards: FAB irmão do "Aa" */
+.reader-fab-btn--auto{display:grid;place-items:center}
+.reader-fab-btn--auto[hidden]{display:none} /* display próprio não pode vencer o hidden */
+.reader-fab-btn--auto .ic{width:17px;height:17px}
+.ap-ic-pause{display:none}
+.reader-fab-btn--auto.on{opacity:1;border-color:var(--teal);color:var(--teal);
+  box-shadow:0 0 0 2px var(--teal-glow),0 4px 14px rgba(0,0,0,.18)}
+.reader-fab-btn--auto.on .ap-ic-play,.tocando .rp-ap-main .ap-ic-play{display:none}
+.reader-fab-btn--auto.on .ap-ic-pause,.tocando .rp-ap-main .ap-ic-pause{display:block}
+/* controles dentro do painel: iniciar/pausar + parar sempre visíveis */
+.rp-ap-controls{display:grid;grid-template-columns:1.6fr 1fr;gap:.4rem}
+.rp-ap-controls button{display:flex;align-items:center;justify-content:center;gap:.45rem;
+  padding:.55rem 0;border:1px solid var(--line-2);border-radius:9px;background:var(--bg-2);
+  color:var(--text);font:600 .85rem var(--sans);cursor:pointer;transition:.15s}
+.rp-ap-controls button:hover{border-color:var(--teal);color:var(--teal)}
+.rp-ap-controls .ic{width:14px;height:14px}
+.rp-ap-main[aria-pressed="true"]{border-color:var(--teal);color:var(--teal);box-shadow:0 0 0 2px var(--teal-glow)}
+.rp-autoplay{display:grid;grid-template-columns:repeat(4,1fr);gap:.4rem}
+.rp-autoplay button{padding:.5rem 0;border:1px solid var(--line-2);border-radius:9px;background:var(--bg-2);
+  color:var(--text);font:600 .8rem var(--sans);cursor:pointer;transition:.15s;font-variant-numeric:tabular-nums}
+.rp-autoplay button:hover{border-color:var(--teal);color:var(--teal)}
+.rp-autoplay button[aria-pressed="true"]{border-color:var(--teal);color:var(--teal);box-shadow:0 0 0 2px var(--teal-glow)}
+.rp-hint{margin:0;font-size:.78rem;color:var(--dim);line-height:1.45}
+/* Com o passador ligado, o segmento atual da barra "enche" no ritmo escolhido
+   (como stories); ::before livre — ::after já é a área de toque ampliada. */
+.autoplay-on .story-bars button.cur{background:var(--panel-2);box-shadow:none;overflow:hidden}
+.autoplay-on .story-bars button.cur::before{content:"";position:absolute;inset:0;border-radius:99px;
+  background:linear-gradient(90deg,var(--teal),var(--amber));transform-origin:left;
+  animation:ap-fill var(--ap-dur,8s) linear forwards}
+@keyframes ap-fill{from{transform:scaleX(0)}to{transform:scaleX(1)}}
+
 /* =========================================================================
    Leitor em cards ("stories"): o conteúdo do tópico vira um deck deslizável
    com barra segmentada; o modo Artigo mantém a leitura corrida completa.
@@ -703,8 +767,9 @@ a.node:not(.lock):hover .nm{color:var(--teal)}
   box-shadow:var(--shadow);transition:transform .2s,border-color .2s}
 .continue-hero:hover{transform:translateY(-2px);border-color:var(--teal)}
 .ch-emblem{width:54px;height:54px;border-radius:15px;flex:none;display:grid;place-items:center;
-  font-family:var(--disp);font-weight:800;font-size:1.15rem;color:#0b1020;
-  background:linear-gradient(135deg,var(--teal),var(--violet));box-shadow:0 0 22px var(--teal-glow)}
+  font-size:1.7rem;line-height:1;
+  background:linear-gradient(180deg,var(--glass-a),var(--glass-b));border:1px solid var(--line);
+  backdrop-filter:blur(8px);box-shadow:0 0 22px var(--teal-glow)}
 .ch-main{flex:1;min-width:0;display:flex;flex-direction:column;gap:.15rem}
 .ch-eyebrow{font-size:.68rem;font-weight:700;letter-spacing:.13em;text-transform:uppercase;color:var(--teal)}
 .ch-title{font-family:var(--disp);font-weight:600;font-size:1.12rem;line-height:1.25}
@@ -731,6 +796,21 @@ a.node:not(.lock):hover .nm{color:var(--teal)}
 .fc-dot--quiz{background:var(--violet);box-shadow:0 0 8px rgba(139,124,246,.5)}
 .fc-pergunta{font-family:var(--disp);font-weight:600;font-size:1.15rem;margin:0 0 .3rem;line-height:1.3}
 .fc-hint{color:var(--muted);font-size:.88rem;margin:0 0 .9rem}
+/* questão objetiva dentro do flashcard de revisão */
+.fc-enunciado{margin-bottom:.75rem}
+.fc-enunciado p{margin:.2rem 0}
+.fc-opts{display:flex;flex-direction:column;gap:.45rem;margin-bottom:.35rem}
+.fc-opt{display:flex;align-items:baseline;gap:.6rem;text-align:left;width:100%;
+  padding:.55rem .8rem;border:1px solid var(--line-2);border-radius:10px;background:var(--bg-2);
+  color:var(--text);font:inherit;font-size:.92rem;line-height:1.45;cursor:pointer;transition:.15s}
+.fc-opt:hover:not(:disabled){border-color:var(--teal)}
+.fc-opt:disabled{cursor:default;opacity:.75}
+.fc-opt-letra{font-family:var(--disp);font-weight:700;font-size:.8rem;color:var(--muted);flex:none}
+.fc-opt.certa{border-color:rgba(52,211,153,.55);background:rgba(52,211,153,.08);opacity:1}
+.fc-opt.certa .fc-opt-letra{color:var(--green)}
+.fc-opt.errada{border-color:rgba(248,113,113,.55);background:rgba(248,113,113,.07);opacity:1}
+.fc-opt.errada .fc-opt-letra{color:var(--red)}
+.fc-resultado{margin:0 0 .5rem;font-size:.95rem}
 .fc-verso{border-top:1px solid var(--line);padding-top:.9rem;margin-top:.2rem}
 .fc-resumo{color:var(--text);font-size:.94rem;margin:0 0 .6rem}
 .fc-topicos{margin:0 0 1rem;padding-left:1.2rem;color:var(--muted);font-size:.88rem}
@@ -949,8 +1029,11 @@ body:has(.reader.mode-cards) .reader-fab{z-index:82}
   filter:drop-shadow(0 0 3px hsl(var(--ch) 82% 60% / .9))}
 .tc-cover circle.speck{fill:hsl(var(--ch) 60% 72% / .3);stroke:none}
 /* card com foto real: sem overlay (nada é escrito sobre a foto) e sem
-   border-bottom (a borda ficava fora da foto e virava uma linha clara) */
-.tc-cover--photo{background-size:cover;background-position:center;border-bottom:0}
+   border-bottom (a borda ficava fora da foto e virava uma linha clara).
+   aspect-ratio idêntico ao pré-corte 940×650 da Pexels: a foto aparece
+   INTEIRA no card, sem nenhum recorte adicional do CSS. */
+.tc-cover--photo{background-size:cover;background-position:center;border-bottom:0;
+  height:auto;aspect-ratio:940/650}
 .tc-cover--photo svg{display:none}
 :root[data-theme="claro"] .tc-cover,:root[data-theme="papel"] .tc-cover{
   background:radial-gradient(150px 70px at 80% -8%,hsl(calc(var(--ch) + 40) 70% 82% / .5),transparent),
@@ -1025,25 +1108,42 @@ body:has(.reader.mode-cards) .reader-fab{z-index:82}
   padding:0 1rem calc(.8rem + env(safe-area-inset-bottom))}
 
 /* ---- capa de trilha ------------------------------------------------------ */
-/* Bloco independente dentro de .page (sem padding ao redor): margens
-   negativas fariam a foto transbordar a grade e colar no header. */
-/* min-height (não height): título/descrição longos ou fonte ampliada
-   crescem o bloco em vez de estourar e cortar no overflow:hidden.
-   Sem border aqui: overflow:hidden recorta o overlay no padding-box e a
-   foto apareceria crua (sem escurecer) na faixa de 1px da borda. */
-.trilha-cover{position:relative;min-height:240px;margin:0 0 1.6rem;background-size:cover;
-  background-position:center;overflow:hidden;border-radius:var(--radius);
-  display:flex;flex-direction:column;justify-content:flex-end}
-.trilha-cover-overlay{position:absolute;inset:0;
-  background:linear-gradient(to bottom,rgba(0,0,0,.10) 0%,rgba(0,0,0,.72) 60%,rgba(0,0,0,.85) 100%)}
-/* padding-top alto garante uma faixa de foto visível acima do texto */
-.trilha-cover-content{position:relative;z-index:1;padding:72px 26px 22px}
-.trilha-cover-content .h1{font-size:clamp(1.4rem,3vw,.85rem + 2.4vw);
-  text-shadow:0 2px 8px rgba(0,0,0,.7),0 1px 2px rgba(0,0,0,.9)}
-.trilha-cover-content .sub{font-size:.95rem;text-shadow:0 1px 4px rgba(0,0,0,.8)}
-.trilha-cover-content .badges{margin-bottom:.6rem}
-@media(max-width:600px){.trilha-cover{min-height:190px;margin:0 0 1.2rem}
-  .trilha-cover-content{padding:52px 18px 16px}}
+/* Foto em faixa full-bleed que se dissolve (mask) no fundo da página — sem
+   overlay escuro nem texto branco com sombra: o título vive no plano da
+   página, sobre o próprio tema, legível em qualquer um dos 4 temas. */
+html{overflow-x:clip} /* o full-bleed usa 100vw; nunca gera rolagem lateral */
+/* A foto aparece INTEIRA (contain), centrada na faixa; as laterais são a
+   própria foto desfocada, então nada é cortado e a faixa segue full-bleed. */
+.trilha-hero{
+  position:relative;overflow:hidden;
+  height:clamp(220px,34vw,430px);
+  margin:-34px calc(50% - 50vw) 0; /* -34px = padding-top de .page */
+  -webkit-mask-image:linear-gradient(to bottom,#000 58%,rgba(0,0,0,.55) 82%,transparent 100%);
+  mask-image:linear-gradient(to bottom,#000 58%,rgba(0,0,0,.55) 82%,transparent 100%);
+}
+.trilha-hero-blur{position:absolute;inset:0;background-size:cover;background-position:center;
+  filter:blur(30px) saturate(1.08);transform:scale(1.15);opacity:.6}
+.trilha-hero-foto{position:absolute;inset:0;background-size:contain;
+  background-repeat:no-repeat;background-position:center top}
+.trilha-head{position:relative;margin:0 0 2rem}
+/* Sobe o título só até a zona já quase transparente da máscara (~12% final):
+   composição em camadas sem sacrificar contraste. */
+.trilha-head.com-foto{margin-top:clamp(-64px,-6vw,-34px)}
+.trilha-kicker{display:flex;align-items:center;gap:.7rem;flex-wrap:wrap;margin-bottom:.85rem}
+.trilha-emblema{display:grid;place-items:center;width:46px;height:46px;border-radius:13px;
+  font-size:1.4rem;background:linear-gradient(180deg,var(--glass-a),var(--glass-b));
+  border:1px solid var(--line);backdrop-filter:blur(8px);box-shadow:0 6px 18px rgba(0,0,0,.22)}
+.trilha-cat{font-size:.74rem;letter-spacing:.18em;text-transform:uppercase;font-weight:700;color:var(--teal)}
+.trilha-titulo{font-size:clamp(1.9rem,3.4vw + .9rem,3.1rem);font-weight:800;
+  letter-spacing:-.028em;line-height:1.05;margin:0;max-width:22ch;text-wrap:balance}
+.trilha-fio{display:block;width:58px;height:4px;border-radius:99px;margin:.9rem 0 .95rem;
+  background:linear-gradient(90deg,var(--teal),var(--amber))}
+.trilha-desc{max-width:68ch;margin:0}
+.trilha-head .inline-actions{margin-top:.35rem}
+@media(max-width:600px){
+  .trilha-hero{height:clamp(180px,58vw,280px)}
+  .trilha-head.com-foto{margin-top:-26px}
+}
 
 /* ---- polimentos gerais -------------------------------------------------- */
 .h1{font-size:clamp(1.65rem,3.2vw + .85rem,2.5rem)}

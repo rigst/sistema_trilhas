@@ -23,14 +23,11 @@ def avaliacao_iniciar(request, nivel_pk):
     nivel = get_object_or_404(Nivel, pk=nivel_pk, trilha__user=request.user)
     if nivel.status == Nivel.Status.BLOQUEADO:
         return redirect('trilhas:detalhe', pk=nivel.trilha_id)
-    # Pré-requisitos: ler todos os tópicos e concluir os exercícios de prática.
+    # Pré-requisito: ler todos os tópicos. Os exercícios de prática são
+    # opcionais — aquecem, mas não travam a avaliação.
     if not nivel.conteudo_lido:
         messages.info(request, 'Leia todos os tópicos do nível antes de fazer a avaliação.')
         return redirect('trilhas:nivel', pk=nivel.pk)
-    lista = getattr(nivel, 'lista_exercicios', None)
-    if not (lista and lista.concluida):
-        messages.info(request, 'Responda todos os exercícios de prática antes de liberar a avaliação.')
-        return redirect('avaliacoes:exercicios', nivel_pk=nivel.pk)
 
     ultima = nivel.avaliacoes.order_by('-criada_em').first()
     if ultima and ultima.status in (
