@@ -1016,7 +1016,7 @@ body:has(.reader.mode-cards) .reader-fab{z-index:82}
    (nós = níveis; acesos = aprovados; linha pontilhada = a trilha).
    Cores via --ch (matiz própria de cada trilha), sensíveis ao tema.
    ========================================================================= */
-.tc-cover{position:relative;height:96px;margin:-22px -24px 16px;overflow:hidden;
+.tc-cover{position:relative;height:130px;margin:-22px -24px 16px;overflow:hidden;
   border-radius:calc(var(--radius) - 1px) calc(var(--radius) - 1px) 0 0;
   border-bottom:1px solid var(--line);
   background:radial-gradient(150px 70px at 80% -8%,hsl(calc(var(--ch) + 40) 70% 32% / .4),transparent),
@@ -1028,12 +1028,13 @@ body:has(.reader.mode-cards) .reader-fab{z-index:82}
 .tc-cover circle.done{fill:hsl(var(--ch) 82% 62%);stroke:none;
   filter:drop-shadow(0 0 3px hsl(var(--ch) 82% 60% / .9))}
 .tc-cover circle.speck{fill:hsl(var(--ch) 60% 72% / .3);stroke:none}
-/* card com foto real: sem overlay (nada é escrito sobre a foto) e sem
-   border-bottom (a borda ficava fora da foto e virava uma linha clara).
-   aspect-ratio idêntico ao pré-corte 940×650 da Pexels: a foto aparece
-   INTEIRA no card, sem nenhum recorte adicional do CSS. */
-.tc-cover--photo{background-size:cover;background-position:center;border-bottom:0;
-  height:auto;aspect-ratio:940/650}
+/* card com foto real: <img> na proporção NATURAL da foto (a Pexels entrega
+   w=940&h=650 sem fit=crop, ou seja, cada foto vem numa razão diferente —
+   um aspect-ratio fixo cortava as laterais das mais largas). O max-height
+   só apara o que realmente não cabe (fotos quase quadradas/retrato). */
+.tc-cover--photo{border-bottom:0;height:auto}
+.tc-cover--photo img{display:block;width:100%;height:auto;max-height:320px;
+  object-fit:cover;object-position:center}
 .tc-cover--photo svg{display:none}
 :root[data-theme="claro"] .tc-cover,:root[data-theme="papel"] .tc-cover{
   background:radial-gradient(150px 70px at 80% -8%,hsl(calc(var(--ch) + 40) 70% 82% / .5),transparent),
@@ -1118,17 +1119,17 @@ html{overflow-x:clip} /* o full-bleed usa 100vw; nunca gera rolagem lateral */
   position:relative;overflow:hidden;
   height:clamp(220px,34vw,430px);
   margin:-34px calc(50% - 50vw) 0; /* -34px = padding-top de .page */
-  -webkit-mask-image:linear-gradient(to bottom,#000 58%,rgba(0,0,0,.55) 82%,transparent 100%);
-  mask-image:linear-gradient(to bottom,#000 58%,rgba(0,0,0,.55) 82%,transparent 100%);
+  -webkit-mask-image:linear-gradient(to bottom,#000 38%,rgba(0,0,0,.5) 62%,rgba(0,0,0,.12) 84%,transparent 96%);
+  mask-image:linear-gradient(to bottom,#000 38%,rgba(0,0,0,.5) 62%,rgba(0,0,0,.12) 84%,transparent 96%);
 }
 .trilha-hero-blur{position:absolute;inset:0;background-size:cover;background-position:center;
-  filter:blur(30px) saturate(1.08);transform:scale(1.15);opacity:.6}
-.trilha-hero-foto{position:absolute;inset:0;background-size:contain;
-  background-repeat:no-repeat;background-position:center top}
+  filter:blur(24px) saturate(1.1);transform:scale(1.12);opacity:.45}
+.trilha-hero-foto{position:absolute;inset:0;background-size:cover;
+  background-position:center;background-repeat:no-repeat}
 .trilha-head{position:relative;margin:0 0 2rem}
-/* Sobe o título só até a zona já quase transparente da máscara (~12% final):
-   composição em camadas sem sacrificar contraste. */
-.trilha-head.com-foto{margin-top:clamp(-64px,-6vw,-34px)}
+/* O título entra na zona final da máscara, onde a foto já está ≤12% visível:
+   a composição fica entrelaçada com a imagem sem texto ilegível sobre foto. */
+.trilha-head.com-foto{margin-top:clamp(-110px,-10vw,-56px)}
 .trilha-kicker{display:flex;align-items:center;gap:.7rem;flex-wrap:wrap;margin-bottom:.85rem}
 .trilha-emblema{display:grid;place-items:center;width:46px;height:46px;border-radius:13px;
   font-size:1.4rem;background:linear-gradient(180deg,var(--glass-a),var(--glass-b));
@@ -1142,7 +1143,7 @@ html{overflow-x:clip} /* o full-bleed usa 100vw; nunca gera rolagem lateral */
 .trilha-head .inline-actions{margin-top:.35rem}
 @media(max-width:600px){
   .trilha-hero{height:clamp(180px,58vw,280px)}
-  .trilha-head.com-foto{margin-top:-26px}
+  .trilha-head.com-foto{margin-top:-48px}
 }
 
 /* ---- polimentos gerais -------------------------------------------------- */
