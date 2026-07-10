@@ -159,7 +159,10 @@ EMAIL_HOST = os.getenv('EMAIL_HOST', '')
 EMAIL_PORT = int(os.getenv('EMAIL_PORT', '587'))
 EMAIL_HOST_USER = os.getenv('EMAIL_HOST_USER', '')
 EMAIL_HOST_PASSWORD = os.getenv('EMAIL_HOST_PASSWORD', '')
+# Porta 587 → STARTTLS (EMAIL_USE_TLS). Porta 465 → SSL implícito (EMAIL_USE_SSL).
+# São mutuamente exclusivos; defina apenas um como True conforme a porta.
 EMAIL_USE_TLS = os.getenv('EMAIL_USE_TLS', 'True').lower() in ('true', '1', 'yes')
+EMAIL_USE_SSL = os.getenv('EMAIL_USE_SSL', 'False').lower() in ('true', '1', 'yes')
 DEFAULT_FROM_EMAIL = os.getenv(
     'DEFAULT_FROM_EMAIL', 'Trilhas de Estudo <no-reply@trilhas.stolben.com>'
 )
