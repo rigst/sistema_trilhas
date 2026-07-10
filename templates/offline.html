@@ -1,0 +1,15 @@
+{% extends "base.html" %}
+{% block title %}Sem conexão · Trilhas de Estudo{% endblock %}
+
+{% block content %}
+<div class="auth-wrap">
+  <div class="auth-card card">
+    <div class="pad" style="text-align:center">
+      <div class="logo-lg" aria-hidden="true"><svg><use href="#logo-trilhas"/></svg></div>
+      <h1 style="margin:.4rem 0">Você está offline</h1>
+      <p>Sem conexão no momento. Os tópicos que você já abriu continuam disponíveis; o resto volta assim que a internet voltar.</p>
+      <button class="btn btn-primary btn-block" type="button" onclick="location.reload()" style="margin-top:1rem">Tentar de novo</button>
+    </div>
+  </div>
+</div>
+{% endblock %}

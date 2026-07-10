@@ -113,6 +113,12 @@ LOGIN_URL = 'login'
 LOGIN_REDIRECT_URL = 'dashboard'
 LOGOUT_REDIRECT_URL = 'login'
 
+# Auto-cadastro por e-mail — implementado, porém DESLIGADO por padrão. As rotas
+# de cadastro respondem 404 e o link some do login enquanto isto for False.
+SIGNUP_ENABLED = os.getenv('SIGNUP_ENABLED', 'False').lower() in ('true', '1', 'yes')
+# Validade do link de confirmação de e-mail / reset de senha (segundos).
+PASSWORD_RESET_TIMEOUT = int(os.getenv('PASSWORD_RESET_TIMEOUT', str(3 * 24 * 3600)))
+
 
 # ==============================================================================
 # Celery Configuration

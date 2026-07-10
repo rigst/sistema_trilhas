@@ -26,6 +26,7 @@
         </div>
         <input type="hidden" name="next" value="{{ next }}">
         <button type="submit" class="btn btn-primary btn-block">Entrar</button>
+        <p class="auth-note"><a href="{% url 'password_reset' %}">Esqueceu a senha?</a></p>
       </form>
 
       <div class="auth-sep">ou</div>
@@ -35,6 +36,12 @@
         <button type="submit" class="btn btn-ghost btn-block">Entrar como visitante</button>
         <p class="auth-note">Acesso temporário para experimentar. Suas trilhas expiram por inatividade.</p>
       </form>
+
+      {% if signup_enabled %}
+      <p class="auth-note" style="text-align:center;margin-top:1rem">
+        Ainda não tem conta? <a href="{% url 'accounts:cadastro' %}">Criar conta</a>
+      </p>
+      {% endif %}
     </div>
   </div>
 </div>

@@ -18,6 +18,19 @@ urlpatterns = [
     path('accounts/', include('accounts.urls')),
     path('login/', auth_views.LoginView.as_view(), name='login'),
     path('logout/', auth_views.LogoutView.as_view(), name='logout'),
+    # Página estática de fallback offline (pré-cacheada pelo service worker).
+    path('offline/', TemplateView.as_view(template_name='offline.html'), name='offline'),
+    # Reset de senha — views nativas do Django; templates em registration/.
+    path('senha/reset/', auth_views.PasswordResetView.as_view(
+        email_template_name='registration/password_reset_email.html',
+        subject_template_name='registration/password_reset_subject.txt',
+    ), name='password_reset'),
+    path('senha/reset/enviado/', auth_views.PasswordResetDoneView.as_view(),
+         name='password_reset_done'),
+    path('senha/reset/<uidb64>/<token>/', auth_views.PasswordResetConfirmView.as_view(),
+         name='password_reset_confirm'),
+    path('senha/reset/completo/', auth_views.PasswordResetCompleteView.as_view(),
+         name='password_reset_complete'),
     path('', trilhas_views.dashboard, name='dashboard'),
     path('trilhas/', include('trilhas.urls')),
     path('avaliacoes/', include('avaliacoes.urls')),
