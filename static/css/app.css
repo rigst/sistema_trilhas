@@ -796,6 +796,14 @@ a.node:not(.lock):hover .nm{color:var(--teal)}
 .ch-cta .ic{width:19px;height:19px}
 @media(max-width:560px){.continue-hero{gap:.85rem}.ch-emblem{display:none}}
 
+/* Barra de cota de IA */
+.quota-bar{margin-top:1.25rem;padding:.7rem .95rem;border:1px solid var(--border);border-radius:14px;background:var(--panel)}
+.quota-bar-head{display:flex;justify-content:space-between;align-items:baseline;margin-bottom:.45rem}
+.quota-bar-label{font-size:.82rem;color:var(--muted)}
+.quota-bar-pct{font-size:.82rem;font-weight:600;color:var(--ink)}
+.quota-bar-track{height:6px;border-radius:99px;background:var(--panel-2);overflow:hidden}
+.quota-bar-track>i{display:block;height:100%;border-radius:99px;background:linear-gradient(90deg,var(--teal),var(--amber));transition:width .4s ease}
+
 /* =========================================================================
    Feed "Para hoje": flashcards de revisão rápida + quiz do dia.
    ========================================================================= */

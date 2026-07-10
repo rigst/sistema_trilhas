@@ -7,6 +7,8 @@ anthropic>=0.40
 # Renderização de Markdown do conteúdo dos níveis (+ destaque de sintaxe)
 markdown>=3.5
 Pygments>=2.17
+# Sanitização por allowlist do HTML gerado (conteúdo vindo da IA)
+nh3>=0.2
 # Certificado em PDF (fase futura) — opcional
 weasyprint>=60
 # Produção

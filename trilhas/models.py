@@ -52,6 +52,9 @@ class Trilha(models.Model):
     objetivos = models.JSONField('objetivos de aprendizagem', default=list, blank=True)
     emblema = models.CharField('emblema (emoji)', max_length=8, blank=True)
     cover_url = models.URLField('imagem de capa', max_length=500, blank=True)
+    # ID da foto na Pexels, guardado à parte porque a capa é baixada para /media
+    # (a URL local não carrega o ID); permite não repetir foto ao trocar a capa.
+    cover_pexels_id = models.PositiveBigIntegerField('foto Pexels (id)', null=True, blank=True)
     categoria = models.CharField('categoria', max_length=60, blank=True, db_index=True)
     ativa = models.BooleanField('ativa', default=True, db_index=True)
 

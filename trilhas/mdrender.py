@@ -5,6 +5,8 @@ import html
 import re
 
 import markdown as _md
+import nh3
+from django.core.cache import cache
 from django.utils.safestring import mark_safe
 
 _EXTENSIONS = ['extra', 'admonition', 'codehilite', 'sane_lists', 'nl2br']
@@ -122,16 +124,76 @@ def _extrair_mermaid(texto):
     return _MERMAID_RE.sub(_rep, texto)
 
 
+# O python-markdown NÃO escapa HTML cru (e a extensão `extra` permite HTML
+# inline), então todo HTML gerado passa por uma allowlist antes do mark_safe.
+# O conteúdo vem da IA a partir de tema livre do usuário — prompt injection
+# não pode virar <script> armazenado.
+_TAGS_PERMITIDAS = {
+    'a', 'abbr', 'b', 'blockquote', 'br', 'caption', 'code', 'dd', 'del',
+    'div', 'dl', 'dt', 'em', 'figcaption', 'figure', 'h1', 'h2', 'h3', 'h4',
+    'h5', 'h6', 'hr', 'i', 'img', 'ins', 'kbd', 'li', 'mark', 'ol', 'p',
+    'pre', 'q', 's', 'small', 'span', 'strong', 'sub', 'sup', 'table',
+    'tbody', 'td', 'tfoot', 'th', 'thead', 'tr', 'ul',
+}
+_ATTRS_PERMITIDOS = {
+    '*': {'class', 'title'},
+    # data-src preserva a fonte do diagrama Mermaid em cards salvos; o SVG
+    # renderizado e o data-processed são descartados e o cliente re-renderiza.
+    'div': {'data-src'},
+    # 'rel' é gerido por link_rel='noopener noreferrer' no nh3.clean.
+    'a': {'href', 'target'},
+    'img': {'src', 'alt', 'loading', 'width', 'height'},
+    'td': {'colspan', 'rowspan', 'align', 'data-label'},
+    'th': {'colspan', 'rowspan', 'align', 'scope'},
+    'ol': {'start', 'type'},
+}
+_URLS_PERMITIDAS = {'http', 'https', 'mailto'}
+
+
+def _sanitizar(html_out):
+    return nh3.clean(
+        html_out,
+        tags=_TAGS_PERMITIDAS,
+        attributes=_ATTRS_PERMITIDOS,
+        url_schemes=_URLS_PERMITIDAS,
+        link_rel='noopener noreferrer',
+    )
+
+
 def render_md(texto):
     """Converte Markdown em HTML seguro para exibição.
 
     Suporta caixas de destaque (admonitions): `!!! conceito "Título"`, blocos de
     código com destaque de sintaxe via Pygments (classe .codehilite) e diagramas
-    Mermaid (```mermaid), renderizados no navegador.
+    Mermaid (```mermaid), renderizados no navegador. A saída é sanitizada por
+    allowlist (nh3) — HTML cru vindo do modelo nunca chega ativo ao DOM.
     """
     if not texto:
         return ''
     texto = _extrair_mermaid(texto)
     texto = _normalizar_admonitions(texto)
     html_out = _md.markdown(texto, extensions=_EXTENSIONS, extension_configs=_CONFIG)
-    return mark_safe(html_out)
+    return mark_safe(_sanitizar(html_out))
+
+
+# TTL longo: o conteúdo do subtópico é imutável depois de gerado; a chave inclui
+# gerado_em, então uma eventual regeração invalida naturalmente o cache.
+_CACHE_RENDER_TTL = 60 * 60 * 24 * 30
+
+
+def render_subtopico(subtopico):
+    """render_md do conteúdo do subtópico, memorizado no Redis por (pk, gerado_em).
+
+    Markdown + Pygments + regex + sanitização são caros e rodavam a cada request
+    sobre conteúdo que nunca muda. Cacheia o HTML final já seguro.
+    """
+    if not subtopico.conteudo_md:
+        return ''
+    carimbo = subtopico.gerado_em.isoformat() if subtopico.gerado_em else 'sem'
+    chave = f'md:sub:{subtopico.pk}:{carimbo}'
+    cached = cache.get(chave)
+    if cached is not None:
+        return mark_safe(cached)
+    html_out = render_md(subtopico.conteudo_md)
+    cache.set(chave, str(html_out), _CACHE_RENDER_TTL)
+    return html_out

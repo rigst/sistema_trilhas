@@ -118,8 +118,9 @@ LOGOUT_REDIRECT_URL = 'login'
 # Celery Configuration
 # ==============================================================================
 
-CELERY_BROKER_URL = os.getenv('REDIS_URL', 'redis://localhost:6379/3')
-CELERY_RESULT_BACKEND = os.getenv('REDIS_URL', 'redis://localhost:6379/3')
+# Broker/backend em DB Redis próprio (/3), separado de cache (/1) e sessões (/2).
+CELERY_BROKER_URL = os.getenv('CELERY_BROKER_URL', os.getenv('REDIS_URL', 'redis://localhost:6379/3'))
+CELERY_RESULT_BACKEND = os.getenv('CELERY_RESULT_BACKEND', os.getenv('REDIS_URL', 'redis://localhost:6379/3'))
 CELERY_ACCEPT_CONTENT = ['json']
 CELERY_TASK_SERIALIZER = 'json'
 CELERY_RESULT_SERIALIZER = 'json'
@@ -173,9 +174,10 @@ PEXELS_API_KEY = os.getenv("PEXELS_API_KEY", "")
 
 # Divisão de modelos por tarefa:
 #   - Planejamento (sumário/percurso do mentor) → Opus 4.8 (mais julgamento).
-#   - Demais tarefas (perguntas, conteúdo, avaliação, exercícios) → Sonnet 4.6 (rápido/barato).
+#   - Demais tarefas (perguntas, conteúdo, avaliação, exercícios) → Sonnet 5 (rápido/barato,
+#     qualidade quase-Opus em conteúdo/agentic; ~30% mais tokens no tokenizador novo).
 #   - Correção de avaliação é determinística (gabarito), não usa IA.
-AI_MODEL_GERAL = os.getenv('AI_MODEL', 'claude-sonnet-4-6')
+AI_MODEL_GERAL = os.getenv('AI_MODEL', 'claude-sonnet-5')
 AI_MODEL_PLANEJAMENTO = os.getenv('AI_MODEL_PLANEJAMENTO', 'claude-opus-4-8')
 # Compatibilidade: alguns lugares ainda leem AI_MODEL.
 AI_MODEL = AI_MODEL_GERAL
@@ -192,8 +194,12 @@ AI_MAX_TOKENS_CONTEUDO = int(os.getenv('AI_MAX_TOKENS_CONTEUDO', '32000'))
 # Preços por 1M tokens (USD) por modelo. Fallback = Opus.
 AI_PRICE_INPUT_PER_MTOK = float(os.getenv('AI_PRICE_INPUT_PER_MTOK', '5.0'))
 AI_PRICE_OUTPUT_PER_MTOK = float(os.getenv('AI_PRICE_OUTPUT_PER_MTOK', '25.0'))
+# Preços por 1M tokens (input, output) em USD. Sonnet 5 tem preço promocional
+# de US$2/US$10 até 2026-08-31; usamos o preço-cheio (US$3/US$15) para a quota
+# não subestimar o custo quando a promoção acabar.
 AI_PRICES = {
     'claude-opus-4-8': (5.0, 25.0),
+    'claude-sonnet-5': (3.0, 15.0),
     'claude-sonnet-4-6': (3.0, 15.0),
 }
 

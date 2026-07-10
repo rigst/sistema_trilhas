@@ -1,12 +1,8 @@
 """Busca imagens de capa para trilhas que ainda não têm uma."""
-import re
-
 from django.core.management.base import BaseCommand
 
-from ai.services import buscar_capa
+from ai.services import baixar_para_media, buscar_capa, pexels_id_da_url
 from trilhas.models import Trilha
-
-_FOTO_ID_RE = re.compile(r'/photos/(\d+)/')
 
 
 class Command(BaseCommand):
@@ -26,20 +22,21 @@ class Command(BaseCommand):
         self.stdout.write(f'Buscando capa para {total} trilha(s)…')
         # Capas já usadas (de qualquer trilha) não se repetem: temas afins
         # convergiriam na mesma foto e o dashboard ficaria com cards clonados.
-        usadas = set()
-        for outra in Trilha.objects.exclude(cover_url='').exclude(pk__in=[t.pk for t in qs]):
-            m = _FOTO_ID_RE.search(outra.cover_url)
-            if m:
-                usadas.add(int(m.group(1)))
+        usadas = set(
+            Trilha.objects.filter(cover_pexels_id__isnull=False)
+            .exclude(pk__in=[t.pk for t in qs])
+            .values_list('cover_pexels_id', flat=True)
+        )
         ok = 0
         for t in qs:
             url = buscar_capa(t.titulo, t.categoria, t.descricao, excluir_ids=usadas)
-            m = _FOTO_ID_RE.search(url or '')
-            if m:
-                usadas.add(int(m.group(1)))
+            foto_id = pexels_id_da_url(url)
+            if foto_id:
+                usadas.add(foto_id)
             if url:
-                t.cover_url = url
-                t.save(update_fields=['cover_url'])
+                t.cover_pexels_id = foto_id
+                t.cover_url = baixar_para_media(url)
+                t.save(update_fields=['cover_url', 'cover_pexels_id'])
                 self.stdout.write(f'  ✓ {t.titulo[:60]}')
                 ok += 1
             else:

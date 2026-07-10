@@ -5,7 +5,7 @@ from django.shortcuts import get_object_or_404, redirect, render
 from django.utils import timezone
 from django.views.decorators.http import require_POST
 
-from accounts.quota import MSG_SEM_QUOTA, sem_quota_ia
+from accounts.quota import bloqueio_ia
 from ai import tasks as ai_tasks
 from trilhas.mdrender import render_md
 from trilhas.models import Nivel
@@ -35,8 +35,9 @@ def avaliacao_iniciar(request, nivel_pk):
     ):
         return redirect('avaliacoes:detalhe', pk=ultima.pk)
 
-    if sem_quota_ia(request.user):
-        messages.error(request, MSG_SEM_QUOTA)
+    erro = bloqueio_ia(request.user, tokens_estimados=15000)
+    if erro:
+        messages.error(request, erro)
         return redirect('trilhas:nivel', pk=nivel.pk)
     tentativa = (ultima.tentativa + 1) if ultima else 1
     avaliacao = Avaliacao.objects.create(
@@ -259,8 +260,9 @@ def revisar_iniciar(request):
     ):
         return redirect('avaliacoes:revisao', pk=ultima.pk)
 
-    if sem_quota_ia(request.user):
-        messages.error(request, MSG_SEM_QUOTA)
+    erro = bloqueio_ia(request.user, tokens_estimados=15000)
+    if erro:
+        messages.error(request, erro)
         return redirect('dashboard')
     revisao = Revisao.objects.create(user=request.user, status=Revisao.Status.GERANDO)
     ai_tasks.task_gerar_revisao.delay(revisao.pk)

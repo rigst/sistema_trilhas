@@ -26,6 +26,20 @@
     </div>
   </div>
 
+  {% if quota %}
+    <div class="quota-bar" title="Uso mensal de geração por IA">
+      <div class="quota-bar-head">
+        <span class="quota-bar-label">
+          {% if quota.is_visitor %}Cota de visitante{% else %}Cota de IA deste mês{% endif %}
+        </span>
+        <span class="quota-bar-pct">{{ quota.pct }}%</span>
+      </div>
+      <div class="quota-bar-track" role="progressbar" aria-valuenow="{{ quota.pct }}" aria-valuemin="0" aria-valuemax="100">
+        <i style="width:{{ quota.pct }}%{% if quota.pct >= 90 %};background:var(--danger,#c0392b){% endif %}"></i>
+      </div>
+    </div>
+  {% endif %}
+
   {% if continuar %}
     <a class="continue-hero" href="{% url 'trilhas:topico' continuar.nivel.pk continuar.sub.ordem %}">
       <span class="ch-emblem" aria-hidden="true">{{ continuar.trilha.emblema_display }}</span>

@@ -57,14 +57,28 @@ class Profile(models.Model):
     def tem_quota(self, tokens_estimados=0):
         return self.tokens_restantes >= tokens_estimados
 
-    def registrar_uso(self, input_tokens, output_tokens, custo_usd):
-        """Debita o uso de IA da quota do usuário."""
+    @property
+    def quota_pct_usado(self):
+        """% da quota mensal de tokens já consumido (0–100), para a barra na UI."""
+        if not self.quota_tokens_mes:
+            return 0
         self._rollover_se_novo_mes()
-        self.tokens_usados_mes += int(input_tokens) + int(output_tokens)
-        self.custo_acumulado = (self.custo_acumulado or 0) + custo_usd
-        self.save(update_fields=[
-            'tokens_usados_mes', 'custo_acumulado', 'atualizado_em',
-        ])
+        return min(round(self.tokens_usados_mes / self.quota_tokens_mes * 100), 100)
+
+    def registrar_uso(self, input_tokens, output_tokens, custo_usd):
+        """Debita o uso de IA da quota do usuário.
+
+        Débito atômico no banco (F expressions): gerações concorrentes não se
+        sobrescrevem (lost update) — cada task Celery soma sobre o valor atual.
+        """
+        self._rollover_se_novo_mes()
+        total = int(input_tokens) + int(output_tokens)
+        Profile.objects.filter(pk=self.pk).update(
+            tokens_usados_mes=models.F('tokens_usados_mes') + total,
+            custo_acumulado=models.F('custo_acumulado') + custo_usd,
+            atualizado_em=timezone.now(),
+        )
+        self.refresh_from_db(fields=['tokens_usados_mes', 'custo_acumulado'])
 
     # -- Gamificação -----------------------------------------------------
     # Faixa de XP por atividade
@@ -100,7 +114,13 @@ class Profile(models.Model):
         return bool(self.is_visitor and self.expires_at and self.expires_at < timezone.now())
 
     def renovar_expiracao(self):
-        if self.is_visitor:
-            horas = getattr(settings, 'VISITOR_EXPIRY_HOURS', 48)
-            self.expires_at = timezone.now() + timezone.timedelta(hours=horas)
-            self.save(update_fields=['expires_at', 'atualizado_em'])
+        if not self.is_visitor:
+            return
+        horas = getattr(settings, 'VISITOR_EXPIRY_HOURS', 48)
+        novo = timezone.now() + timezone.timedelta(hours=horas)
+        # Evita um UPDATE por request: só grava se a janela avançou >30 min
+        # (o middleware chama isto a cada acesso do visitante).
+        if self.expires_at and (novo - self.expires_at) < timezone.timedelta(minutes=30):
+            return
+        self.expires_at = novo
+        self.save(update_fields=['expires_at', 'atualizado_em'])

@@ -37,18 +37,27 @@ DATABASES = {
     }
 }
 
+# Redis dividido por responsabilidade para que um flush/estouro de um domínio
+# não derrube os demais: cache /1, sessões /2, broker Celery /3 (em base.py).
 CACHES = {
     'default': {
         'BACKEND': 'django_redis.cache.RedisCache',
-        'LOCATION': os.getenv('REDIS_URL', 'redis://localhost:6379/3'),
+        'LOCATION': os.getenv('CACHE_REDIS_URL', 'redis://localhost:6379/1'),
         'OPTIONS': {
             'CLIENT_CLASS': 'django_redis.client.DefaultClient',
         },
-    }
+    },
+    'sessions': {
+        'BACKEND': 'django_redis.cache.RedisCache',
+        'LOCATION': os.getenv('SESSION_REDIS_URL', 'redis://localhost:6379/2'),
+        'OPTIONS': {
+            'CLIENT_CLASS': 'django_redis.client.DefaultClient',
+        },
+    },
 }
 
 SESSION_ENGINE = 'django.contrib.sessions.backends.cache'
-SESSION_CACHE_ALIAS = 'default'
+SESSION_CACHE_ALIAS = 'sessions'
 
 # Segurança
 SECURE_SSL_REDIRECT = True

@@ -1,0 +1,12 @@
+# Rotação dos logs do sistema_trilhas.
+# Instalar com: sudo cp deploy/logrotate/trilhas /etc/logrotate.d/trilhas
+/var/www/sistema_trilhas/logs/*.log {
+    weekly
+    rotate 8
+    compress
+    delaycompress
+    missingok
+    notifempty
+    create 0640 rod www-data
+    copytruncate
+}

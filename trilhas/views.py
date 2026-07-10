@@ -6,10 +6,10 @@ from django.template.loader import render_to_string
 from django.utils import timezone
 from django.views.decorators.http import require_POST
 
-from accounts.quota import MSG_SEM_QUOTA, sem_quota_ia
+from accounts.quota import bloqueio_ia
 from ai import tasks as ai_tasks
 
-from .mdrender import render_md
+from .mdrender import render_md, render_subtopico
 from .models import (
     CardSalvo, Nivel, Percurso, PerguntaDirecionadora, Subtopico, Trilha,
 )
@@ -138,7 +138,21 @@ def dashboard(request):
         'quiz_feito_hoje': quiz_feito_hoje,
         'pode_revisar': pode_revisar,
         'revisoes_devidas': revisoes_devidas,
+        'quota': _quota_ctx(request.user),
     })
+
+
+def _quota_ctx(user):
+    """Uso da quota mensal de IA para a barra no painel (None se sem quota)."""
+    profile = getattr(user, 'profile', None)
+    if profile is None or not profile.quota_tokens_mes:
+        return None
+    return {
+        'pct': profile.quota_pct_usado,
+        'restantes': profile.tokens_restantes,
+        'total': profile.quota_tokens_mes,
+        'is_visitor': profile.is_visitor,
+    }
 
 
 @login_required
@@ -160,27 +174,25 @@ def trilha_alternar_ativa(request, pk):
 def trilha_nova_capa(request, pk):
     """Busca outra foto de capa na Pexels (excluindo a atual e as das demais
     trilhas do usuário, para a troca sempre render uma imagem diferente)."""
-    import re as _re
-
-    from ai.services import buscar_capa
+    from ai.services import baixar_para_media, buscar_capa, pexels_id_da_url
 
     trilha = get_object_or_404(Trilha, pk=pk, user=request.user)
-    if sem_quota_ia(request.user):
-        messages.error(request, MSG_SEM_QUOTA)
+    erro = bloqueio_ia(request.user, tokens_estimados=2000)
+    if erro:
+        messages.error(request, erro)
         return redirect('trilhas:detalhe', pk=pk)
-    usadas = set()
-    for url in Trilha.objects.filter(user=request.user).exclude(cover_url='') \
-                             .values_list('cover_url', flat=True):
-        m = _re.search(r'/photos/(\d+)/', url)
-        if m:
-            usadas.add(int(m.group(1)))
+    usadas = set(
+        Trilha.objects.filter(user=request.user, cover_pexels_id__isnull=False)
+        .values_list('cover_pexels_id', flat=True)
+    )
     url = buscar_capa(
         trilha.titulo, trilha.categoria, trilha.descricao,
         profile=getattr(request.user, 'profile', None), excluir_ids=usadas,
     )
     if url:
-        trilha.cover_url = url
-        trilha.save(update_fields=['cover_url', 'atualizada_em'])
+        trilha.cover_pexels_id = pexels_id_da_url(url)
+        trilha.cover_url = baixar_para_media(url)
+        trilha.save(update_fields=['cover_url', 'cover_pexels_id', 'atualizada_em'])
         messages.success(request, 'Capa trocada — nova foto encontrada para o tema.')
     else:
         messages.info(request, 'Não achei outra foto boa para este tema agora. Tente de novo em instantes.')
@@ -213,8 +225,9 @@ def estudar_agora(request):
 def mentor(request):
     percurso = request.user.percursos.first()
     if percurso is None:
-        if sem_quota_ia(request.user):
-            messages.error(request, MSG_SEM_QUOTA)
+        erro = bloqueio_ia(request.user, tokens_estimados=8000)
+        if erro:
+            messages.error(request, erro)
             return redirect('dashboard')
         percurso = Percurso.objects.create(
             user=request.user, status=Percurso.Status.GERANDO
@@ -229,8 +242,9 @@ def mentor(request):
 @login_required
 @require_POST
 def mentor_atualizar(request):
-    if sem_quota_ia(request.user):
-        messages.error(request, MSG_SEM_QUOTA)
+    erro = bloqueio_ia(request.user, tokens_estimados=8000)
+    if erro:
+        messages.error(request, erro)
         return redirect('trilhas:mentor')
     percurso = Percurso.objects.create(
         user=request.user, status=Percurso.Status.GERANDO
@@ -256,8 +270,9 @@ def trilha_criar(request):
         if not tema:
             messages.error(request, 'Descreva o que você quer aprender.')
             return render(request, 'trilhas/trilha_nova.html')
-        if sem_quota_ia(request.user):
-            messages.error(request, MSG_SEM_QUOTA)
+        erro = bloqueio_ia(request.user, tokens_estimados=30000)
+        if erro:
+            messages.error(request, erro)
             return redirect('dashboard')
         trilha = Trilha.objects.create(
             user=request.user,
@@ -305,7 +320,8 @@ def perguntas(request, pk):
 @login_required
 def trilha_detalhe(request, pk):
     trilha = get_object_or_404(
-        Trilha.objects.prefetch_related('niveis', 'titulos'), pk=pk, user=request.user
+        Trilha.objects.prefetch_related('niveis', 'titulos__nivel'),
+        pk=pk, user=request.user,
     )
     if trilha.status in (
         Trilha.Status.RASCUNHO, Trilha.Status.GERANDO_PERGUNTAS,
@@ -416,7 +432,7 @@ def topico(request, nivel_pk, ordem):
         'trilha': nivel.trilha,
         'subtopico': atual,
         'subtopicos': subs,
-        'conteudo_html': render_md(atual.conteudo_md) if atual.conteudo_md else '',
+        'conteudo_html': render_subtopico(atual),
         'passo': idx + 1,
         'total': len(subs),
         'anterior': subs[idx - 1] if idx > 0 else None,
@@ -477,7 +493,10 @@ def salvo_toggle(request):
         existente.delete()
         return JsonResponse({'salvo': False})
 
-    html = (request.POST.get('html') or '').strip()
+    # O cliente envia o innerHTML do card, mas o endpoint aceita qualquer POST:
+    # sanitiza com a mesma allowlist do renderizador antes de persistir.
+    from .mdrender import _sanitizar
+    html = _sanitizar((request.POST.get('html') or '').strip())
     if not html:
         return JsonResponse({'erro': 'Card vazio.'}, status=400)
     CardSalvo.objects.create(

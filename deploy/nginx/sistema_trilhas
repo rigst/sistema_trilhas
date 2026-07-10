@@ -5,6 +5,14 @@ server {
 
     client_max_body_size 20M;
 
+    # Headers de segurança. O CSP admite 'unsafe-inline' porque os templates
+    # ainda têm JS/CSS inline; mesmo assim bloqueia scripts/conexões de
+    # origens externas (exfiltração) — só fontes do Google e fotos da Pexels.
+    add_header Content-Security-Policy "default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com; img-src 'self' data: https://images.pexels.com; connect-src 'self'; object-src 'none'; base-uri 'self'; frame-ancestors 'none'" always;
+    add_header Referrer-Policy "strict-origin-when-cross-origin" always;
+    add_header Permissions-Policy "camera=(), microphone=(), geolocation=(), payment=()" always;
+    add_header X-Content-Type-Options "nosniff" always;
+
     location /static/ {
         alias /var/www/sistema_trilhas/staticfiles/;
         expires 30d;

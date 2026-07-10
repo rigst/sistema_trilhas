@@ -19,8 +19,11 @@ Toda chamada debita a quota de tokens do Profile do usuário.
 from __future__ import annotations
 
 import json
+import os
+import re
 import urllib.parse
 import urllib.request
+import uuid
 from decimal import Decimal
 
 from django.conf import settings
@@ -98,6 +101,45 @@ def _pexels_search(query: str, per_page: int = 8, orientation: str = 'landscape'
         return data.get('photos') or []
     except Exception:
         return []
+
+
+_PEXELS_ID_RE = re.compile(r'/photos/(\d+)/')
+
+
+def pexels_id_da_url(url: str):
+    """Extrai o ID numérico da foto de uma URL da Pexels (ou None)."""
+    if not url:
+        return None
+    m = _PEXELS_ID_RE.search(url)
+    return int(m.group(1)) if m else None
+
+
+def baixar_para_media(url: str, subpasta: str = 'covers') -> str:
+    """Baixa uma imagem remota para MEDIA_ROOT/<subpasta> e devolve a URL local.
+
+    Remove a dependência de hotlink da Pexels (imagem servida por nós, cacheável
+    pelo nginx). Em qualquer falha devolve a URL original — nunca quebra a capa.
+    """
+    if not url or not url.startswith('http'):
+        return url
+    try:
+        req = urllib.request.Request(url, headers={'User-Agent': 'sistema_trilhas/1.0'})
+        with urllib.request.urlopen(req, timeout=10) as resp:
+            ctype = (resp.headers.get('Content-Type') or '').lower()
+            if not ctype.startswith('image/'):
+                return url
+            dados = resp.read(8 * 1024 * 1024)  # teto de 8 MB
+        ext = {'image/jpeg': '.jpg', 'image/png': '.png', 'image/webp': '.webp'}.get(
+            ctype.split(';')[0].strip(), '.jpg'
+        )
+        nome = f'{uuid.uuid4().hex}{ext}'
+        destino_dir = os.path.join(settings.MEDIA_ROOT, subpasta)
+        os.makedirs(destino_dir, exist_ok=True)
+        with open(os.path.join(destino_dir, nome), 'wb') as fh:
+            fh.write(dados)
+        return f'{settings.MEDIA_URL}{subpasta}/{nome}'
+    except Exception:
+        return url
 
 
 def _foto_mais_aderente(photos: list, query: str, excluir=None):
@@ -316,12 +358,30 @@ def custo_usd(model, input_tokens, output_tokens):
            (Decimal(output_tokens) / 1_000_000 * Decimal(str(pout)))
 
 
+def _system_cache(system):
+    """Empacota o system prompt num bloco com cache_control ephemeral.
+
+    O prompt do sistema é estável e reenviado em toda geração; caching de prefixo
+    corta ~90% do custo de input nas chamadas seguintes (mínimo ~2048 tokens de
+    prefixo no Sonnet 5 — abaixo disso o cache é ignorado, sem erro).
+    """
+    return [{'type': 'text', 'text': system, 'cache_control': {'type': 'ephemeral'}}]
+
+
 def _debitar(profile, usage, model):
     if profile is None or usage is None:
         return
     it = getattr(usage, 'input_tokens', 0) or 0
     ot = getattr(usage, 'output_tokens', 0) or 0
-    profile.registrar_uso(it, ot, custo_usd(model, it, ot))
+    cr = getattr(usage, 'cache_read_input_tokens', 0) or 0
+    cw = getattr(usage, 'cache_creation_input_tokens', 0) or 0
+    pin, _ = _precos(model)
+    # Cache: leitura ~0,1x e escrita ~1,25x do preço de input.
+    custo_cache = (Decimal(cr) * Decimal('0.1') + Decimal(cw) * Decimal('1.25')) \
+        / 1_000_000 * Decimal(str(pin))
+    custo = custo_usd(model, it, ot) + custo_cache
+    # Todos os tokens de entrada (inclusive cache) contam para a quota do mês.
+    profile.registrar_uso(it + cr + cw, ot, custo)
 
 
 def _texto(content):
@@ -334,7 +394,7 @@ def _gerar_json(system, user, schema, profile, model, effort, max_tokens=None):
     resp = client.messages.create(
         model=model,
         max_tokens=max_tokens or getattr(settings, 'AI_MAX_TOKENS', 16000),
-        system=system,
+        system=_system_cache(system),
         messages=[{'role': 'user', 'content': user}],
         thinking={'type': 'adaptive'},
         output_config={
@@ -429,9 +489,12 @@ def gerar_sumario(trilha, profile=None):
     trilha.emblema = (data.get('emblema') or '').strip()[:8]
     trilha.categoria = (data.get('categoria') or '').strip()[:60]
     trilha.objetivos = data.get('objetivos', []) or []
-    trilha.cover_url = buscar_capa(trilha.titulo, trilha.categoria, trilha.descricao, profile)
+    _cover_pexels = buscar_capa(trilha.titulo, trilha.categoria, trilha.descricao, profile)
+    trilha.cover_pexels_id = pexels_id_da_url(_cover_pexels)
+    trilha.cover_url = baixar_para_media(_cover_pexels)
     trilha.save(update_fields=[
-        'titulo', 'descricao', 'emblema', 'categoria', 'objetivos', 'cover_url', 'atualizada_em',
+        'titulo', 'descricao', 'emblema', 'categoria', 'objetivos',
+        'cover_url', 'cover_pexels_id', 'atualizada_em',
     ])
 
     trilha.niveis.all().delete()
@@ -493,7 +556,7 @@ def gerar_conteudo_subtopico(subtopico, profile=None):
     with client.messages.stream(
         model=model,
         max_tokens=max_tokens,
-        system=prompts.SYSTEM_SUBTOPICO,
+        system=_system_cache(prompts.SYSTEM_SUBTOPICO),
         messages=[{'role': 'user', 'content': user}],
         thinking={'type': 'adaptive'},
         output_config={'effort': getattr(settings, 'AI_EFFORT_GERAL', 'medium')},
