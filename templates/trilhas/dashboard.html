@@ -53,6 +53,33 @@
     </a>
   {% endif %}
 
+  {% if medalhas %}
+    <section class="medal-case">
+      <div class="medal-case-head">
+        <div>
+          <div class="eyebrow">Suas conquistas</div>
+          <h2 class="h3" style="margin:0">Sala de troféus</h2>
+        </div>
+        <span class="muted" style="font-size:.85rem">{{ medalhas|length }} troféu{{ medalhas|length|pluralize }}</span>
+      </div>
+      <div class="medal-shelf">
+        {% for m in medalhas %}
+          <a class="medal medal--{{ m.tier }}" href="{% url 'trilhas:detalhe' m.trilha.pk %}" title="{{ m.nome }} — {{ m.tier_label }}">
+            <span class="medal-trophy" aria-hidden="true">
+              <svg class="trophy-svg" viewBox="0 0 64 64"><use href="#ic-trophy"/></svg>
+              <span class="medal-mono">{{ m.sigla }}</span>
+            </span>
+            <span class="medal-tier-label">{{ m.tier_label }}</span>
+            <span class="medal-stars" aria-label="{{ m.estrelas }} de {{ m.total }} níveis">
+              {% for on in m.pips %}<i class="{% if on %}on{% endif %}"></i>{% endfor %}
+            </span>
+            <span class="medal-name">{{ m.nome }}</span>
+          </a>
+        {% endfor %}
+      </div>
+    </section>
+  {% endif %}
+
   {% if feed_revisao or pode_revisar and not quiz_feito_hoje %}
     <section class="feed-hoje" id="feed-hoje">
       {% csrf_token %}
@@ -111,30 +138,6 @@
           </form>
         </article>
       {% endif %}
-    </section>
-  {% endif %}
-
-  {% if medalhas %}
-    <section class="medal-case">
-      <div class="medal-case-head">
-        <h2 class="h3" style="margin:0">Sala de troféus</h2>
-        <span class="muted" style="font-size:.85rem">{{ medalhas|length }} troféu{{ medalhas|length|pluralize }}</span>
-      </div>
-      <div class="medal-shelf">
-        {% for m in medalhas %}
-          <a class="medal medal--{{ m.tier }}" href="{% url 'trilhas:detalhe' m.trilha.pk %}" title="{{ m.nome }} — {{ m.tier_label }}">
-            <span class="medal-trophy" aria-hidden="true">
-              <svg class="trophy-svg" viewBox="0 0 64 64"><use href="#ic-trophy"/></svg>
-              <span class="medal-mono">{{ m.sigla }}</span>
-            </span>
-            <span class="medal-tier-label">{{ m.tier_label }}</span>
-            <span class="medal-stars" aria-label="{{ m.estrelas }} de {{ m.total }} níveis">
-              {% for on in m.pips %}<i class="{% if on %}on{% endif %}"></i>{% endfor %}
-            </span>
-            <span class="medal-name">{{ m.nome }}</span>
-          </a>
-        {% endfor %}
-      </div>
     </section>
   {% endif %}
 

@@ -297,7 +297,14 @@
               svg.setAttribute("viewBox", `${b.x - 8} ${b.y - 8} ${w} ${h}`);
               svg.dataset.natW = Math.ceil(w);
               svg.dataset.natH = Math.ceil(h);
-              const cw = (n.clientWidth || 340) - 16;
+              // Largura ÚTIL real: clientWidth ainda inclui o padding lateral
+              // do contêiner. Descontá-lo por um valor fixo deixava o SVG uns
+              // 3px mais largo que a caixa de conteúdo e, como o contêiner tem
+              // overflow:hidden e alinha à esquerda quando estoura, a borda
+              // direita do diagrama era aparada.
+              const cs = getComputedStyle(n);
+              const padX = parseFloat(cs.paddingLeft) + parseFloat(cs.paddingRight);
+              const cw = Math.max(120, (n.clientWidth || 340) - padX);
               const scale = Math.min(1, cw / w);
               svg.setAttribute("width", Math.floor(w * scale));
               svg.setAttribute("height", Math.floor(h * scale));

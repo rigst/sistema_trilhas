@@ -304,6 +304,12 @@ a.node:not(.lock):hover .nm{color:var(--teal)}
   color:transparent;min-height:60px} /* texto-fonte invisível até renderizar */
 .markdown-body .mermaid[data-processed]{color:var(--text)}
 .markdown-body .mermaid svg{max-width:100%;flex:none;height:auto}
+/* Rótulos dos nós: o Mermaid dimensiona cada <foreignObject> na largura EXATA
+   do texto medido, e o foreignObject recorta o que passa dessa caixa. Quando o
+   diagrama é reduzido para caber no celular, a escala fracionária faz o último
+   glifo encostar na borda e ser cortado ("customer_order|s"). Sem recorte, o
+   texto sai inteiro — a folga é sub-pixel e não desalinha o desenho. */
+.markdown-body .mermaid foreignObject{overflow:visible}
 .mermaid-err-msg{font-size:.85rem;color:var(--muted);padding:.5rem 1rem}
 
 /* fotos reais dentro do conteúdo (buscadas na Pexels via {{foto: …}}) */
@@ -472,18 +478,24 @@ a.node:not(.lock):hover .nm{color:var(--teal)}
 .topico-nav{display:flex;justify-content:space-between;align-items:center;gap:1rem;margin-top:2.4rem;padding-top:1.6rem;border-top:1px solid var(--line)}
 
 /* ---- estante de conquistas / medalhas ---------------------------------- */
-.medal-case{margin-top:1.6rem;padding:1.4rem 1.5rem;border:1px solid var(--line-2);border-radius:var(--radius);
-  background:linear-gradient(180deg,var(--glass-a),transparent),var(--panel);box-shadow:var(--shadow)}
+/* Vitrine: fica logo abaixo do "continuar", então carrega um brilho dourado
+   próprio para se destacar dos demais painéis da home. */
+.medal-case{margin-top:1.6rem;padding:1.5rem 1.6rem 1.2rem;border:1px solid rgba(245,181,74,.3);
+  border-radius:var(--radius);
+  background:radial-gradient(720px 260px at 10% -40%,rgba(245,181,74,.14),transparent),
+             linear-gradient(180deg,var(--glass-a),transparent),var(--panel);
+  box-shadow:var(--shadow),inset 0 1px 0 rgba(245,181,74,.14)}
+.medal-case .eyebrow{color:var(--amber)}
 .medal-case-head{display:flex;justify-content:space-between;align-items:baseline;gap:1rem;flex-wrap:wrap;margin-bottom:1rem}
 .medal-shelf{display:flex;gap:1.5rem;overflow-x:auto;padding:.6rem .2rem 1rem;scroll-snap-type:x proximity}
 .medal-shelf::-webkit-scrollbar{height:8px}
 .medal-shelf::-webkit-scrollbar-thumb{background:var(--line-2);border-radius:99px}
-.medal{flex:0 0 auto;width:128px;display:flex;flex-direction:column;align-items:center;gap:.5rem;text-align:center;scroll-snap-align:start;transition:transform .2s}
+.medal{flex:0 0 auto;width:140px;display:flex;flex-direction:column;align-items:center;gap:.5rem;text-align:center;scroll-snap-align:start;transition:transform .2s}
 .medal:hover{transform:translateY(-4px)}
 
 /* Troféu por trilha: taça no metal do patamar, com o monograma gravado. */
-.medal-trophy{position:relative;width:96px;height:96px;display:grid;place-items:center}
-.trophy-svg{width:90px;height:90px;overflow:visible;
+.medal-trophy{position:relative;width:108px;height:108px;display:grid;place-items:center}
+.trophy-svg{width:102px;height:102px;overflow:visible;
   filter:drop-shadow(0 7px 12px rgba(0,0,0,.35)) var(--m-fglow,drop-shadow(0 0 0 transparent))}
 .medal--bronze .trophy-svg{fill:url(#mg-bronze);stroke:#8a5220}
 .medal--prata .trophy-svg{fill:url(#mg-prata);stroke:#7d8794;--m-fglow:drop-shadow(0 0 7px rgba(200,210,225,.35))}
@@ -1022,7 +1034,11 @@ body:has(.reader.mode-cards) .reader-fab{z-index:82}
   padding:.3rem 1rem calc(1rem + env(safe-area-inset-bottom))}
 .reader.mode-cards .story-tap{display:none}
 
-/* Modo Artigo: leitura corrida, sem overlay — a barra some e volta o documento. */
+/* Modo Artigo: leitura corrida, sem overlay — a barra some e volta o documento.
+   O leitor ignora o `.narrow` (640px) e usa a largura padrão da página — a
+   mesma do cabeçalho, da marca ao botão "Sair" —, para que aumentar o corpo
+   do texto ganhe espaço de verdade em vez de apertar a coluna do meio. */
+.reader.mode-artigo{max-width:none}
 .reader.mode-artigo .story-shell{position:static;background:none;padding:0}
 .reader.mode-artigo .story-frame{max-width:none;height:auto;border:0;border-radius:0;box-shadow:none;background:none}
 .reader.mode-artigo .story-close,
@@ -1112,10 +1128,14 @@ body:has(.reader.mode-cards) .reader-fab{z-index:82}
   .markdown-body tbody td[data-label=""]::before{display:none}
 }
 
-/* Ampliar diagrama: botão no canto + visualizador em tela cheia. */
+/* Ampliar diagrama: botão no canto + visualizador em tela cheia.
+   Quando o botão existe, o contêiner abre uma faixa no topo para ele — senão
+   ele fica por cima do primeiro nó e esconde o rótulo (some justo nos
+   diagramas reduzidos no celular, que são os que mais precisam do botão). */
+.markdown-body .mermaid:has(.mermaid-expand){padding-top:3rem}
 .mermaid-expand{position:absolute;right:8px;top:8px;z-index:3;width:34px;height:34px;border-radius:50%;
   display:grid;place-items:center;border:1px solid var(--line-2);cursor:pointer;
-  background:color-mix(in srgb,var(--panel) 82%,transparent);color:var(--muted);transition:.15s}
+  background:var(--panel);color:var(--muted);transition:.15s}
 .mermaid-expand:hover{color:var(--teal);border-color:var(--teal)}
 .mermaid-expand .ic{width:16px;height:16px}
 .diagram-modal{position:fixed;inset:0;z-index:130;display:flex;flex-direction:column;
