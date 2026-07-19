@@ -20,9 +20,7 @@
     <link rel="manifest" href="{% static 'manifest.webmanifest' %}">
     <link rel="apple-touch-icon" href="{% static 'img/icon-192.png' %}">
     <meta name="theme-color" content="#10152A">
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Sora:wght@500;600;700;800&family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="{% static 'fonts/fonts.css' %}">
     <link rel="stylesheet" href="{% static 'css/app.css' %}">
     <link rel="stylesheet" href="{% static 'css/pygments.css' %}">
 </head>
@@ -151,7 +149,7 @@
         <div class="container footer-in">
             <div>
                 <p class="footer-brand">Trilhas de Estudo</p>
-                <p class="footer-copy">Um app <a href="https://stolben.com/" target="_blank" rel="noopener" style="color:var(--teal)">Stölben</a> · &copy; 2026</p>
+                <p class="footer-copy">Um app <a href="https://stolben.com/" target="_blank" rel="noopener" style="color:var(--teal)">Stölben</a> · &copy; 2026 · <a href="{% url 'privacidade' %}">Privacidade</a> · <a href="{% url 'termos' %}">Termos</a></p>
             </div>
             <ul class="footer-points">
                 <li>Planejamento por IA</li><li>Do básico ao avançado</li><li>Títulos por nível</li>

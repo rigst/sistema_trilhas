@@ -20,6 +20,10 @@ urlpatterns = [
     path('logout/', auth_views.LogoutView.as_view(), name='logout'),
     # Página estática de fallback offline (pré-cacheada pelo service worker).
     path('offline/', TemplateView.as_view(template_name='offline.html'), name='offline'),
+    # Páginas legais (LGPD): acessíveis sem login.
+    path('privacidade/', TemplateView.as_view(template_name='legal/privacidade.html'),
+         name='privacidade'),
+    path('termos/', TemplateView.as_view(template_name='legal/termos.html'), name='termos'),
     # Reset de senha — views nativas do Django; templates em registration/.
     path('senha/reset/', auth_views.PasswordResetView.as_view(
         email_template_name='registration/password_reset_email.html',

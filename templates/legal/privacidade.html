@@ -1,0 +1,57 @@
+{% extends "base.html" %}
+{% block title %}Política de Privacidade · Trilhas de Estudo{% endblock %}
+
+{% block content %}
+<div class="container" style="max-width:760px;padding-top:1.5rem;padding-bottom:3rem">
+  <div class="card">
+    <div class="pad">
+      <h1 style="margin-bottom:.25rem">Política de Privacidade</h1>
+      <p class="footer-copy" style="margin-bottom:1.5rem">Última atualização: 19 de julho de 2026</p>
+
+      <p>Esta política descreve como o <strong>Trilhas de Estudo</strong> (trilhas.stolben.com) trata dados pessoais, em conformidade com a Lei Geral de Proteção de Dados — LGPD (Lei nº 13.709/2018).</p>
+
+      <h2>Quem é o responsável</h2>
+      <p>O controlador dos dados é Rodrigo Stölben. Contato para qualquer assunto de privacidade: <a href="mailto:rodrigo.stolben@gmail.com">rodrigo.stolben@gmail.com</a>.</p>
+
+      <h2>Quais dados coletamos</h2>
+      <ul>
+        <li><strong>Dados de conta:</strong> nome de usuário, e-mail e senha (armazenada com hash). Base legal: execução de contrato (art. 7º, V).</li>
+        <li><strong>Conteúdo de estudo:</strong> temas que você digita, respostas a perguntas, trilhas geradas, avaliações respondidas, cards salvos e progresso (XP, sequência de dias). Base legal: execução de contrato.</li>
+        <li><strong>Dados técnicos:</strong> registros de acesso (endereço IP, data/hora, página acessada e navegador), exigidos pelo Marco Civil da Internet e usados para segurança. Base legal: cumprimento de obrigação legal e legítimo interesse (art. 7º, II e IX).</li>
+      </ul>
+      <p>Não coletamos CPF, telefone, endereço ou dados de pagamento. Contas de visitante são temporárias e apagadas automaticamente ao expirar.</p>
+
+      <h2>Cookies</h2>
+      <p>Usamos apenas cookies essenciais de sessão e de proteção contra fraude (CSRF), necessários para o login funcionar. Não há cookies de publicidade, análise ou rastreamento de terceiros.</p>
+
+      <h2>Com quem os dados são compartilhados</h2>
+      <p>Não vendemos nem compartilhamos seus dados para fins de marketing. Usamos os seguintes operadores para o funcionamento do serviço:</p>
+      <ul>
+        <li><strong>Anthropic (EUA):</strong> o texto que você digita ao criar uma trilha (tema, respostas às perguntas) é enviado à API do Claude para gerar o conteúdo de estudo e as avaliações. A Anthropic processa esses dados como operadora, conforme seus termos comerciais, e eles não são usados para treinar modelos.</li>
+        <li><strong>Pexels (EUA):</strong> recebemos imagens de capa a partir de termos de busca genéricos gerados pela IA; nenhum dado pessoal seu é enviado.</li>
+        <li><strong>Sentry (EUA):</strong> monitoramento de erros do sistema; relatórios de erro podem conter dados técnicos da requisição.</li>
+        <li><strong>Provedor de e-mail:</strong> envio de mensagens transacionais (redefinição de senha, lembretes).</li>
+      </ul>
+      <p>Esses envios configuram transferência internacional de dados (arts. 33–36 da LGPD), amparada em cláusulas contratuais dos provedores e limitada ao mínimo necessário.</p>
+
+      <h2>Por quanto tempo guardamos</h2>
+      <ul>
+        <li>Dados de conta e conteúdo: enquanto a conta existir. Você pode pedir a exclusão a qualquer momento.</li>
+        <li>Contas de visitante: apagadas automaticamente após a expiração.</li>
+        <li>Registros de acesso (logs): mantidos por até 8 semanas e então apagados por rotação automática.</li>
+      </ul>
+
+      <h2>Seus direitos (art. 18 da LGPD)</h2>
+      <p>Você pode solicitar, a qualquer momento: confirmação do tratamento, acesso aos dados, correção, anonimização, portabilidade, informação sobre compartilhamentos, revogação de consentimento e <strong>exclusão da conta e dos dados</strong>. Basta escrever para <a href="mailto:rodrigo.stolben@gmail.com">rodrigo.stolben@gmail.com</a> — respondemos em até 15 dias.</p>
+
+      <h2>Segurança</h2>
+      <p>O acesso é sempre por HTTPS, as senhas são armazenadas com hash, as chaves de acesso ficam fora do código-fonte e o banco de dados não é exposto à internet.</p>
+
+      <h2>Alterações</h2>
+      <p>Se esta política mudar, a data no topo será atualizada e mudanças relevantes serão destacadas no próprio app.</p>
+
+      <p style="margin-top:1.5rem"><a href="{% url 'termos' %}">Ver também os Termos de Uso</a></p>
+    </div>
+  </div>
+</div>
+{% endblock %}
