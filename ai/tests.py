@@ -1,6 +1,8 @@
 """Testes das utilidades de IA que não tocam a API."""
 
-from django.test import SimpleTestCase
+from unittest.mock import patch
+
+from django.test import SimpleTestCase, TestCase
 
 from ai.services import limpar_titulo
 
@@ -29,3 +31,89 @@ class LimparTituloTests(SimpleTestCase):
     def test_nao_devolve_vazio(self):
         self.assertEqual(limpar_titulo('Trilha'), 'Trilha')
         self.assertEqual(limpar_titulo(''), '')
+
+
+def _q(ordem, letras=('A', 'B', 'C', 'D'), gabarito='A', enunciado='Enunciado da questão?'):
+    return {
+        'ordem': ordem,
+        'tipo': 'objetiva',
+        'enunciado': enunciado,
+        'alternativas': [{'letra': l, 'texto': f'Alternativa {l}'} for l in letras],
+        'gabarito': gabarito,
+        'peso': 1.0,
+    }
+
+
+class QuestoesValidasTests(SimpleTestCase):
+    def test_aceita_questao_completa(self):
+        from ai.services import _questoes_validas
+
+        self.assertEqual(len(_questoes_validas([_q(1)])), 1)
+
+    def test_descarta_degeneradas(self):
+        from ai.services import _questoes_validas
+
+        itens = [
+            _q(1),
+            _q(2, letras=('A',)),                      # 1 alternativa só
+            _q(3, gabarito='Z'),                       # gabarito fora das letras
+            _q(4, enunciado='  '),                     # sem enunciado
+            _q(5, enunciado='[Duplicidade evitada]', letras=('A',)),  # caso real
+        ]
+        validas = _questoes_validas(itens)
+        self.assertEqual([q['ordem'] for q in validas], [1])
+
+    def test_normaliza_gabarito_minusculo(self):
+        from ai.services import _questoes_validas
+
+        validas = _questoes_validas([_q(1, gabarito='c')])
+        self.assertEqual(validas[0]['gabarito'], 'C')
+
+    def test_lista_vazia_ou_none(self):
+        from ai.services import _questoes_validas
+
+        self.assertEqual(_questoes_validas(None), [])
+        self.assertEqual(_questoes_validas([]), [])
+
+
+class GerarAvaliacaoTests(TestCase):
+    def setUp(self):
+        from django.contrib.auth import get_user_model
+        from avaliacoes.models import Avaliacao
+        from trilhas.models import Nivel, Trilha
+
+        user = get_user_model().objects.create_user(username='aval_user', password='x')
+        trilha = Trilha.objects.create(user=user, tema_livre='tema', titulo='Trilha')
+        nivel = Nivel.objects.create(trilha=trilha, ordem=1, titulo='Nível 1', resumo='r')
+        self.avaliacao = Avaliacao.objects.create(nivel=nivel)
+
+    @patch('ai.services._gerar_json')
+    def test_retenta_uma_vez_e_publica_10_renumeradas(self, gerar_json):
+        from ai import services
+
+        incompleta = {'questoes': [_q(i) for i in range(1, 7)]}
+        completa = {'questoes': [_q(5) for _ in range(12)]}  # ordens duplicadas de propósito
+        gerar_json.side_effect = [incompleta, completa]
+
+        services.gerar_avaliacao(self.avaliacao)
+
+        self.assertEqual(gerar_json.call_count, 2)
+        ordens = list(self.avaliacao.questoes.order_by('ordem').values_list('ordem', flat=True))
+        self.assertEqual(ordens, list(range(1, 11)))
+
+    @patch('ai.services._gerar_json')
+    def test_falha_apos_duas_tentativas_sem_apagar_questoes(self, gerar_json):
+        from ai import services
+        from avaliacoes.models import Questao
+
+        Questao.objects.create(
+            avaliacao=self.avaliacao, ordem=1, tipo='objetiva',
+            enunciado_md='antiga', alternativas=[], gabarito='A',
+        )
+        gerar_json.return_value = {'questoes': [_q(i) for i in range(1, 7)]}
+
+        with self.assertRaises(services.IAError):
+            services.gerar_avaliacao(self.avaliacao)
+
+        self.assertEqual(gerar_json.call_count, 2)
+        self.assertEqual(self.avaliacao.questoes.count(), 1)  # conjunto antigo preservado

@@ -403,6 +403,8 @@ def _gerar_json(system, user, schema, profile, model, effort, max_tokens=None):
         },
     )
     _debitar(profile, resp.usage, model)
+    if resp.stop_reason == 'max_tokens':
+        raise IAError('Resposta da IA truncada pelo limite de tokens (max_tokens).')
     try:
         return json.loads(_texto(resp.content))
     except json.JSONDecodeError as exc:
@@ -575,6 +577,26 @@ def gerar_conteudo_subtopico(subtopico, profile=None):
 # 4. Avaliação (Sonnet gera; correção objetiva determinística por gabarito)
 # ---------------------------------------------------------------------------
 
+def _questoes_validas(items):
+    """Filtra questões estruturalmente completas: enunciado preenchido,
+    4+ alternativas com letra/texto e gabarito apontando para uma delas.
+    O JSON schema dos structured outputs não impõe minItems, então modelos
+    ocasionalmente devolvem menos itens ou itens degenerados."""
+    validas = []
+    for q in items or []:
+        enunciado = (q.get('enunciado') or '').strip()
+        alts = [
+            a for a in (q.get('alternativas') or [])
+            if isinstance(a, dict)
+            and str(a.get('letra', '')).strip() and str(a.get('texto', '')).strip()
+        ]
+        letras = {str(a['letra']).strip().upper() for a in alts}
+        gabarito = (q.get('gabarito') or '').strip().upper()
+        if enunciado and len(alts) >= 4 and gabarito in letras:
+            validas.append({**q, 'alternativas': alts, 'gabarito': gabarito})
+    return validas
+
+
 def gerar_avaliacao(avaliacao, profile=None):
     from avaliacoes.models import Questao
 
@@ -590,23 +612,35 @@ def gerar_avaliacao(avaliacao, profile=None):
         'da mais simples (questão 1) à mais difícil (questão 10). Preencha '
         '"alternativas" com objetos {letra, texto} e "gabarito" com a letra correta. '
         'Use "peso" 1.0 em todas. Não crie questões dissertativas. Numere em '
-        '"ordem" de 1 a 10.'
-    )
-    data = _gerar_json(
-        prompts.SYSTEM_AVALIACAO, user, prompts.SCHEMA_AVALIACAO, profile,
-        model=_model_geral(), effort=getattr(settings, 'AI_EFFORT_GERAL', 'medium'),
+        '"ordem" de 1 a 10. Não repita questões nem insira itens de aviso ou '
+        'placeholder: cada item deve ser uma questão completa e distinta.'
     )
 
+    questoes = []
+    for _tentativa in range(2):  # 1 chamada + 1 nova tentativa se vier incompleta
+        data = _gerar_json(
+            prompts.SYSTEM_AVALIACAO, user, prompts.SCHEMA_AVALIACAO, profile,
+            model=_model_geral(), effort=getattr(settings, 'AI_EFFORT_GERAL', 'medium'),
+        )
+        questoes = _questoes_validas(data.get('questoes'))
+        if len(questoes) >= 10:
+            break
+    if len(questoes) < 10:
+        raise IAError(
+            f'A IA retornou {len(questoes)} questões válidas em vez de 10; avaliação não publicada.'
+        )
+
+    # Só substitui as questões existentes depois de validar o novo conjunto.
     avaliacao.questoes.all().delete()
     objs = []
-    for i, q in enumerate(data.get('questoes', []), start=1):
+    for i, q in enumerate(questoes[:10], start=1):
         objs.append(Questao(
             avaliacao=avaliacao,
-            ordem=q.get('ordem') or i,
+            ordem=i,  # renumera em sequência; a "ordem" do modelo pode vir duplicada
             tipo=q.get('tipo', 'objetiva'),
             enunciado_md=(q.get('enunciado') or '').strip(),
-            alternativas=q.get('alternativas', []) or [],
-            gabarito=(q.get('gabarito') or '').strip(),
+            alternativas=q['alternativas'],
+            gabarito=q['gabarito'],
             peso=q.get('peso') or 1.0,
         ))
     Questao.objects.bulk_create(objs)
