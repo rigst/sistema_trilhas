@@ -16,7 +16,6 @@
       {% endif %}
       {% if trilhas %}
         <a class="btn btn-mentor" href="{% url 'trilhas:mentor' %}"><svg class="ic" aria-hidden="true"><use href="#ic-compass"/></svg> Mentor</a>
-        <a class="btn btn-ghost" href="{% url 'trilhas:sugestoes' %}"><svg class="ic" aria-hidden="true"><use href="#ic-spark"/></svg> Sugerir trilhas</a>
       {% endif %}
       {% if pode_revisar %}
         <form method="post" action="{% url 'avaliacoes:revisar' %}">{% csrf_token %}
@@ -24,6 +23,9 @@
         </form>
       {% endif %}
       <a class="btn btn-ghost" href="{% url 'trilhas:criar' %}"><svg class="ic" aria-hidden="true"><use href="#ic-plus"/></svg> Nova trilha</a>
+      {% if trilhas %}
+        <a class="btn btn-ghost" href="{% url 'trilhas:sugestoes' %}"><svg class="ic" aria-hidden="true"><use href="#ic-spark"/></svg> Sugestões de trilhas</a>
+      {% endif %}
     </div>
   </div>
 

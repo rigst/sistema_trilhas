@@ -280,8 +280,25 @@ def _trilhas_base_ctx(user):
 
 @login_required
 def sugestoes(request):
+    """Página de Sugestões de trilhas: mostra a última rodada gerada, que fica
+    salva aqui até o usuário pedir novas."""
+    sessao = (
+        request.user.sessoes_sugestao
+        .prefetch_related('sugestoes')
+        .first()
+    )
+    if sessao is None:
+        return redirect('trilhas:sugestoes_nova')
+    return render(request, 'trilhas/sugestoes.html', {
+        'sessao': sessao,
+        'sugestoes': sessao.sugestoes.all(),
+    })
+
+
+@login_required
+def sugestoes_nova(request):
     """Formulário para escolher quais trilhas a IA deve considerar e gerar
-    sugestões de novas trilhas."""
+    uma nova rodada de sugestões."""
     candidatas = list(_trilhas_base_ctx(request.user))
 
     if request.method == 'POST':
@@ -293,24 +310,15 @@ def sugestoes(request):
         erro = bloqueio_ia(request.user, tokens_estimados=12000)
         if erro:
             messages.error(request, erro)
-            return redirect('trilhas:sugestoes')
+            return redirect('trilhas:sugestoes_nova')
         sessao = SessaoSugestao.objects.create(
             user=request.user, status=SessaoSugestao.Status.GERANDO
         )
         sessao.trilhas_base.set(escolhidas)
         ai_tasks.task_gerar_sugestoes.delay(sessao.pk)
-        return redirect('trilhas:sugestoes_detalhe', pk=sessao.pk)
+        return redirect('trilhas:sugestoes')
 
     return render(request, 'trilhas/sugestoes_nova.html', {'candidatas': candidatas})
-
-
-@login_required
-def sugestoes_detalhe(request, pk):
-    sessao = get_object_or_404(SessaoSugestao, pk=pk, user=request.user)
-    return render(request, 'trilhas/sugestoes.html', {
-        'sessao': sessao,
-        'sugestoes': sessao.sugestoes.all(),
-    })
 
 
 @login_required
@@ -333,7 +341,7 @@ def sugestao_aceitar(request, pk):
     erro = bloqueio_ia(request.user, tokens_estimados=30000)
     if erro:
         messages.error(request, erro)
-        return redirect('trilhas:sugestoes_detalhe', pk=sugestao.sessao_id)
+        return redirect('trilhas:sugestoes')
 
     trilha = Trilha.objects.create(
         user=request.user,
