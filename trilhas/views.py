@@ -11,7 +11,8 @@ from ai import tasks as ai_tasks
 
 from .mdrender import render_md, render_subtopico
 from .models import (
-    CardSalvo, Nivel, Percurso, PerguntaDirecionadora, Subtopico, Trilha,
+    CardSalvo, Nivel, Percurso, PerguntaDirecionadora, SessaoSugestao,
+    Subtopico, Trilha, TrilhaSugerida,
 )
 
 
@@ -257,6 +258,93 @@ def mentor_atualizar(request):
 def percurso_status(request, pk):
     percurso = get_object_or_404(Percurso, pk=pk, user=request.user)
     return JsonResponse({'status': percurso.status, 'erro': percurso.erro})
+
+
+# ---------------------------------------------------------------------------
+# Sugestões de novas trilhas — a IA propõe, o usuário aceita com um clique
+# ---------------------------------------------------------------------------
+
+def _trilhas_base_ctx(user):
+    """Trilhas que podem servir de base para as sugestões (as com sumário)."""
+    return (
+        user.trilhas
+        .filter(ativa=True)
+        .exclude(status__in=[
+            Trilha.Status.RASCUNHO, Trilha.Status.GERANDO_PERGUNTAS,
+            Trilha.Status.AGUARDANDO_RESPOSTAS, Trilha.Status.GERANDO_SUMARIO,
+            Trilha.Status.ERRO,
+        ])
+        .order_by('-atualizada_em')
+    )
+
+
+@login_required
+def sugestoes(request):
+    """Formulário para escolher quais trilhas a IA deve considerar e gerar
+    sugestões de novas trilhas."""
+    candidatas = list(_trilhas_base_ctx(request.user))
+
+    if request.method == 'POST':
+        if not candidatas:
+            messages.info(request, 'Crie ao menos uma trilha antes de pedir sugestões.')
+            return redirect('dashboard')
+        ids = {int(i) for i in request.POST.getlist('trilha') if i.isdigit()}
+        escolhidas = [t for t in candidatas if t.pk in ids] or candidatas
+        erro = bloqueio_ia(request.user, tokens_estimados=12000)
+        if erro:
+            messages.error(request, erro)
+            return redirect('trilhas:sugestoes')
+        sessao = SessaoSugestao.objects.create(
+            user=request.user, status=SessaoSugestao.Status.GERANDO
+        )
+        sessao.trilhas_base.set(escolhidas)
+        ai_tasks.task_gerar_sugestoes.delay(sessao.pk)
+        return redirect('trilhas:sugestoes_detalhe', pk=sessao.pk)
+
+    return render(request, 'trilhas/sugestoes_nova.html', {'candidatas': candidatas})
+
+
+@login_required
+def sugestoes_detalhe(request, pk):
+    sessao = get_object_or_404(SessaoSugestao, pk=pk, user=request.user)
+    return render(request, 'trilhas/sugestoes.html', {
+        'sessao': sessao,
+        'sugestoes': sessao.sugestoes.all(),
+    })
+
+
+@login_required
+def sugestoes_status(request, pk):
+    sessao = get_object_or_404(SessaoSugestao, pk=pk, user=request.user)
+    return JsonResponse({'status': sessao.status, 'erro': sessao.erro})
+
+
+@login_required
+@require_POST
+def sugestao_aceitar(request, pk):
+    """Aceita uma sugestão: cria a trilha (com contexto rico) e segue o fluxo
+    normal de geração de perguntas."""
+    sugestao = get_object_or_404(
+        TrilhaSugerida, pk=pk, sessao__user=request.user
+    )
+    if sugestao.trilha_id:
+        return redirect('trilhas:perguntas', pk=sugestao.trilha_id)
+
+    erro = bloqueio_ia(request.user, tokens_estimados=30000)
+    if erro:
+        messages.error(request, erro)
+        return redirect('trilhas:sugestoes_detalhe', pk=sugestao.sessao_id)
+
+    trilha = Trilha.objects.create(
+        user=request.user,
+        tema_livre=sugestao.como_tema(),
+        titulo=sugestao.titulo,
+        status=Trilha.Status.GERANDO_PERGUNTAS,
+    )
+    sugestao.trilha = trilha
+    sugestao.save(update_fields=['trilha'])
+    ai_tasks.task_gerar_perguntas.delay(trilha.pk)
+    return redirect('trilhas:perguntas', pk=trilha.pk)
 
 
 # ---------------------------------------------------------------------------

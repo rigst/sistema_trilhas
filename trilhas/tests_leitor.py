@@ -58,7 +58,6 @@ class TopicoRenderTests(TestCase):
         html = resp.content.decode()
         self.assertIn('continue-hero', html)
         self.assertIn('Continuar de onde parou', html)
-        self.assertIn('app-tabbar', html)
 
 
 class SalvosTests(TestCase):

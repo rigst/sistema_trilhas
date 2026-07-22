@@ -1,0 +1,65 @@
+{% extends "base.html" %}
+{% block title %}Sugestões de trilhas · Trilhas de Estudo{% endblock %}
+
+{% block content %}
+<section class="page" id="sugestoes-page">
+  <div class="page-head">
+    <a class="back-link" href="{% url 'dashboard' %}">← Minhas trilhas</a>
+    <div class="badges"><span class="pill"><svg class="ic" aria-hidden="true"><use href="#ic-spark"/></svg> Sugestões por IA</span></div>
+    <h1 class="h1">Novas trilhas para você</h1>
+    <p class="sub">Toque em uma sugestão para aceitá-la e criar a trilha. Ela seguirá o fluxo normal de calibração.</p>
+  </div>
+
+{% if sessao.status == 'gerando' %}
+  <div class="card pad gen-center" role="status" aria-live="polite">
+    <span class="orb"></span>
+    <h2 class="h2">A IA está pensando em novos caminhos…</h2>
+    <p class="sub" style="margin:.4rem auto 1.2rem">Analisando suas trilhas para propor por onde aprofundar e que direções novas explorar.</p>
+    <div class="pbar"><i></i></div>
+  </div>
+
+{% elif sessao.status == 'erro' %}
+  <div class="card pad gen-center" role="status" aria-live="polite">
+    <h2 class="h2">Não foi possível gerar as sugestões</h2>
+    <p class="sub" style="margin:.4rem auto 1.2rem">{{ sessao.erro|default:"Tente novamente em instantes." }}</p>
+    <a class="btn btn-primary" href="{% url 'trilhas:sugestoes' %}">Tentar novamente</a>
+  </div>
+
+{% else %}
+  <div class="sugg-grid">
+    {% for s in sugestoes %}
+      <form class="sugg-card sugg-card--{{ s.tipo }}" method="post" action="{% url 'trilhas:sugestao_aceitar' s.pk %}">
+        {% csrf_token %}
+        <div class="sugg-tag">
+          {% if s.tipo == 'aprofundar' %}<svg class="ic" aria-hidden="true"><use href="#ic-target"/></svg> Aprofundar
+          {% else %}<svg class="ic" aria-hidden="true"><use href="#ic-compass"/></svg> Nova direção{% endif %}
+        </div>
+        <h3 class="sugg-titulo">{{ s.titulo }}</h3>
+        {% if s.enfoque %}<p class="sugg-enfoque">{{ s.enfoque }}</p>{% endif %}
+        {% if s.topicos %}
+          <ul class="sugg-topicos">
+            {% for t in s.topicos %}<li>{{ t }}</li>{% endfor %}
+          </ul>
+        {% endif %}
+        <button type="submit" class="btn btn-primary sugg-cta">
+          {% if s.trilha_id %}Ver trilha ▸{% else %}Criar esta trilha ▸{% endif %}
+        </button>
+      </form>
+    {% empty %}
+      <p class="muted">A IA não retornou sugestões desta vez.</p>
+    {% endfor %}
+  </div>
+
+  <div class="form-actions" style="justify-content:center;margin-top:1.8rem">
+    <a class="btn btn-ghost" href="{% url 'trilhas:sugestoes' %}"><svg class="ic" aria-hidden="true"><use href="#ic-refresh"/></svg> Gerar outras sugestões</a>
+  </div>
+{% endif %}
+</section>
+{% endblock %}
+
+{% block scripts %}
+{% if sessao.status == 'gerando' %}
+  {% url 'trilhas:sugestoes_status' sessao.pk as poll_url %}
+  {% include 'partials/poll.html' with poll_url=poll_url poll_status='gerando' %}
+{% endif %}
+{% endblock %}

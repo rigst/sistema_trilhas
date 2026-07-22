@@ -918,6 +918,73 @@ def gerar_percurso(percurso, profile=None):
 
 
 # ---------------------------------------------------------------------------
+# 6b. Sugestões de novas trilhas (Opus — planejamento)
+# ---------------------------------------------------------------------------
+
+def _catalogo_sugestoes(trilhas):
+    """Resume as trilhas escolhidas como base, para a IA propor novas trilhas."""
+    linhas = []
+    for t in trilhas:
+        titulo = (t.titulo or t.tema_livre or '').strip()
+        cat = t.categoria_display
+        partes = [f'- "{titulo}" (área: {cat})']
+        if t.descricao:
+            partes.append(f'  resumo: {t.descricao.strip()[:300]}')
+        objetivos = [str(o).strip() for o in (t.objetivos or []) if str(o).strip()]
+        if objetivos:
+            partes.append('  objetivos: ' + '; '.join(objetivos[:6]))
+        atual = t.titulo_atual
+        if atual:
+            partes.append(f'  progresso: já alcançou o título "{atual.nome}".')
+        linhas.append('\n'.join(partes))
+    return '\n'.join(linhas)
+
+
+def gerar_sugestoes(sessao, profile=None):
+    from trilhas.models import TrilhaSugerida
+
+    trilhas = list(sessao.trilhas_base.all())
+    if not trilhas:
+        raise IAError('Escolha ao menos uma trilha para basear as sugestões.')
+
+    texto = _catalogo_sugestoes(trilhas)
+    user = (
+        'Trilhas que a pessoa já estuda (leve-as em consideração):\n\n'
+        f'{texto}\n\n'
+        'Proponha de 6 a 8 sugestões de novas trilhas, equilibrando os tipos '
+        '"aprofundar" (ir mais fundo no que ela já estuda) e "direcao" (novas '
+        'direções adjacentes). Para cada uma dê "titulo", "tipo", "enfoque" '
+        '(1-2 frases) e "topicos" (4 a 7 tópicos principais). Não repita as '
+        'trilhas acima.'
+    )
+    data = _gerar_json(
+        prompts.SYSTEM_SUGESTOES, user, prompts.SCHEMA_SUGESTOES, profile,
+        model=_model_planejamento(), effort=getattr(settings, 'AI_EFFORT', 'high'),
+    )
+
+    sessao.sugestoes.all().delete()
+    objs = []
+    for i, s in enumerate(data.get('sugestoes', []), start=1):
+        titulo = (s.get('titulo') or '').strip()
+        if not titulo:
+            continue
+        tipo = s.get('tipo') if s.get('tipo') in ('aprofundar', 'direcao') else 'direcao'
+        topicos = [str(t).strip() for t in (s.get('topicos') or []) if str(t).strip()]
+        objs.append(TrilhaSugerida(
+            sessao=sessao,
+            ordem=i,
+            tipo=tipo,
+            titulo=titulo[:200],
+            enfoque=(s.get('enfoque') or '').strip(),
+            topicos=topicos,
+        ))
+    if not objs:
+        raise IAError('A IA não devolveu sugestões válidas.')
+    TrilhaSugerida.objects.bulk_create(objs)
+    return objs
+
+
+# ---------------------------------------------------------------------------
 # 7. Revisão espaçada (Sonnet — quiz misto sobre níveis já concluídos)
 # ---------------------------------------------------------------------------
 

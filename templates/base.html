@@ -125,26 +125,6 @@
       </div>
     </div>
 
-    {% if user.is_authenticated %}
-    <nav class="app-tabbar" aria-label="Navegação rápida">
-        <a class="tab-item {% if request.resolver_match.url_name == 'dashboard' %}active{% endif %}" href="{% url 'dashboard' %}">
-            <svg class="ic" aria-hidden="true"><use href="#ic-home"/></svg> Trilhas
-        </a>
-        <a class="tab-item tab-item--go" href="{% url 'trilhas:estudar_agora' %}">
-            <span class="tab-go"><svg class="ic" aria-hidden="true"><use href="#ic-play"/></svg></span> Estudar
-        </a>
-        <a class="tab-item {% if request.resolver_match.url_name == 'mentor' %}active{% endif %}" href="{% url 'trilhas:mentor' %}">
-            <svg class="ic" aria-hidden="true"><use href="#ic-compass"/></svg> Mentor
-        </a>
-        <a class="tab-item {% if request.resolver_match.url_name == 'salvos' %}active{% endif %}" href="{% url 'trilhas:salvos' %}">
-            <svg class="ic" aria-hidden="true"><use href="#ic-bookmark"/></svg> Salvos
-        </a>
-        <a class="tab-item {% if request.resolver_match.url_name == 'criar' %}active{% endif %}" href="{% url 'trilhas:criar' %}">
-            <svg class="ic" aria-hidden="true"><use href="#ic-plus"/></svg> Nova
-        </a>
-    </nav>
-    {% endif %}
-
     <footer class="site-footer">
         <div class="container footer-in">
             <div>

@@ -140,6 +140,20 @@ SYSTEM_MENTOR = (
     '"resumo" acolhedor (1-3 frases) como abertura do mentor. Responda em português.'
 )
 
+SYSTEM_SUGESTOES = (
+    'Você é um conselheiro de estudos que sugere NOVAS trilhas de aprendizado a '
+    'partir das trilhas que a pessoa já estuda. Proponha um conjunto variado de '
+    'sugestões de dois tipos: "aprofundar" (avançar, especializar ou complementar '
+    'um tema que ela já estuda, para ir mais fundo) e "direcao" (uma direção nova '
+    'e adjacente, que conversa com os interesses dela mas abre um caminho '
+    'diferente). Equilibre os dois tipos. Cada sugestão deve ter: um "titulo" '
+    'atraente e específico; o "tipo" ("aprofundar" ou "direcao"); um "enfoque" de '
+    '1 a 2 frases explicando o ângulo da trilha e por que faz sentido para esta '
+    'pessoa; e "topicos", uma lista de 4 a 7 tópicos principais que a trilha '
+    'cobriria. Evite repetir trilhas que a pessoa já tem. Seja concreto e '
+    'inspirador, sem exageros. Responda sempre em português.'
+)
+
 SYSTEM_REVISAO = (
     'Você é um tutor que cria REVISÕES espaçadas: um quiz objetivo que mistura '
     'perguntas sobre níveis que o aluno já concluiu em diferentes trilhas, para '
@@ -317,6 +331,28 @@ SCHEMA_CATEGORIA = {
         }
     },
     'required': ['categorias'],
+    'additionalProperties': False,
+}
+
+SCHEMA_SUGESTOES = {
+    'type': 'object',
+    'properties': {
+        'sugestoes': {
+            'type': 'array',
+            'items': {
+                'type': 'object',
+                'properties': {
+                    'titulo': {'type': 'string'},
+                    'tipo': {'type': 'string', 'enum': ['aprofundar', 'direcao']},
+                    'enfoque': {'type': 'string'},
+                    'topicos': {'type': 'array', 'items': {'type': 'string'}},
+                },
+                'required': ['titulo', 'tipo', 'enfoque', 'topicos'],
+                'additionalProperties': False,
+            },
+        }
+    },
+    'required': ['sugestoes'],
     'additionalProperties': False,
 }
 

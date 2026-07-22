@@ -184,6 +184,28 @@ def task_gerar_percurso(self, percurso_id):
 
 
 @shared_task(**TASK_KW)
+def task_gerar_sugestoes(self, sessao_id):
+    from trilhas.models import SessaoSugestao
+
+    try:
+        sessao = SessaoSugestao.objects.select_related('user').get(pk=sessao_id)
+    except SessaoSugestao.DoesNotExist:
+        return 'sessão inexistente'
+    try:
+        services.gerar_sugestoes(sessao, _profile(sessao.user))
+        sessao.status = SessaoSugestao.Status.PRONTO
+        sessao.erro = ''
+        sessao.save(update_fields=['status', 'erro'])
+    except Exception as exc:  # noqa: BLE001
+        if _ultima_tentativa(self):
+            sessao.status = SessaoSugestao.Status.ERRO
+            sessao.erro = str(exc)[:2000]
+            sessao.save(update_fields=['status', 'erro'])
+        raise
+    return f'sugestões geradas {sessao_id}'
+
+
+@shared_task(**TASK_KW)
 def task_gerar_revisao(self, revisao_id):
     from avaliacoes.models import Revisao
 

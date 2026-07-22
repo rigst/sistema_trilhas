@@ -428,6 +428,80 @@ class Percurso(models.Model):
         return f'Percurso {self.pk} de {self.user_id}'
 
 
+class SessaoSugestao(models.Model):
+    """Uma rodada de sugestões de novas trilhas geradas pela IA, a partir de um
+    conjunto de trilhas escolhidas pelo usuário como base (para aprofundar ou
+    abrir novas direções)."""
+
+    class Status(models.TextChoices):
+        GERANDO = 'gerando', 'Gerando'
+        PRONTO = 'pronto', 'Pronto'
+        ERRO = 'erro', 'Erro'
+
+    user = models.ForeignKey(
+        settings.AUTH_USER_MODEL, on_delete=models.CASCADE,
+        related_name='sessoes_sugestao',
+    )
+    status = models.CharField(
+        max_length=15, choices=Status.choices, default=Status.GERANDO, db_index=True
+    )
+    # Trilhas que o usuário marcou para a IA levar em consideração.
+    trilhas_base = models.ManyToManyField(Trilha, blank=True, related_name='+')
+    erro = models.TextField(blank=True)
+    criada_em = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        verbose_name = 'sessão de sugestões'
+        verbose_name_plural = 'sessões de sugestões'
+        ordering = ['-criada_em']
+
+    def __str__(self):
+        return f'Sugestões {self.pk} de {self.user_id}'
+
+
+class TrilhaSugerida(models.Model):
+    """Uma trilha proposta pela IA dentro de uma sessão de sugestões. Pode ser
+    aceita com um clique, o que cria uma Trilha de verdade."""
+
+    class Tipo(models.TextChoices):
+        APROFUNDAR = 'aprofundar', 'Aprofundar'
+        DIRECAO = 'direcao', 'Nova direção'
+
+    sessao = models.ForeignKey(
+        SessaoSugestao, on_delete=models.CASCADE, related_name='sugestoes'
+    )
+    ordem = models.PositiveIntegerField(default=0)
+    tipo = models.CharField(
+        max_length=12, choices=Tipo.choices, default=Tipo.DIRECAO
+    )
+    titulo = models.CharField(max_length=200)
+    enfoque = models.TextField('enfoque', blank=True)
+    topicos = models.JSONField('principais tópicos', default=list, blank=True)
+    # Trilha criada ao aceitar a sugestão (evita aceitar duas vezes).
+    trilha = models.ForeignKey(
+        Trilha, on_delete=models.SET_NULL, null=True, blank=True, related_name='+'
+    )
+
+    class Meta:
+        verbose_name = 'trilha sugerida'
+        verbose_name_plural = 'trilhas sugeridas'
+        ordering = ['ordem']
+
+    def __str__(self):
+        return self.titulo
+
+    def como_tema(self):
+        """Monta a descrição livre usada para criar a trilha ao aceitar — junta
+        título, enfoque e tópicos para dar contexto rico à geração."""
+        partes = [self.titulo.strip()]
+        if self.enfoque.strip():
+            partes.append(self.enfoque.strip())
+        topicos = [str(t).strip() for t in (self.topicos or []) if str(t).strip()]
+        if topicos:
+            partes.append('Principais tópicos: ' + '; '.join(topicos) + '.')
+        return '\n\n'.join(partes)
+
+
 class PassoPercurso(models.Model):
     """Um passo recomendado pelo Mentor, com o motivo e o alvo da ação."""
 

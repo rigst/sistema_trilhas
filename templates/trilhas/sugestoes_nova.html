@@ -1,0 +1,63 @@
+{% extends "base.html" %}
+{% block title %}Sugerir trilhas · Trilhas de Estudo{% endblock %}
+
+{% block content %}
+<section class="page narrow">
+  <div class="page-head">
+    <a class="back-link" href="{% url 'dashboard' %}">← Minhas trilhas</a>
+    <div class="badges"><span class="pill"><svg class="ic" aria-hidden="true"><use href="#ic-spark"/></svg> Sugestões por IA</span></div>
+    <h1 class="h1">Para onde ir agora?</h1>
+    <p class="sub">Escolha quais trilhas a IA deve levar em conta. Ela vai propor novas trilhas — para <strong>aprofundar</strong> o que você já estuda e abrir <strong>novas direções</strong>.</p>
+  </div>
+
+  {% if candidatas %}
+    <form method="post" action="{% url 'trilhas:sugestoes' %}">
+      {% csrf_token %}
+      <div class="sugg-pick">
+        <div class="sugg-pick-head">
+          <span class="rp-title">Considerar estas trilhas</span>
+          <button type="button" class="btn btn-ghost btn-sm js-toggle-all">Marcar/desmarcar todas</button>
+        </div>
+        <ul class="sugg-pick-list">
+          {% for t in candidatas %}
+            <li>
+              <label class="sugg-pick-item">
+                <input type="checkbox" name="trilha" value="{{ t.pk }}" checked>
+                <span class="spi-emblem" aria-hidden="true">{{ t.emblema_display }}</span>
+                <span class="spi-main">
+                  <span class="spi-title">{{ t.titulo|default:t.tema_livre|truncatechars:70 }}</span>
+                  <span class="spi-cat muted">{{ t.categoria_display }}</span>
+                </span>
+              </label>
+            </li>
+          {% endfor %}
+        </ul>
+      </div>
+      <div class="form-actions">
+        <a class="btn btn-ghost" href="{% url 'dashboard' %}">Cancelar</a>
+        <button type="submit" class="btn btn-primary"><svg class="ic" aria-hidden="true"><use href="#ic-spark"/></svg> Gerar sugestões</button>
+      </div>
+    </form>
+  {% else %}
+    <div class="card pad gen-center">
+      <h2 class="h2">Ainda não há trilhas para basear as sugestões</h2>
+      <p class="sub" style="margin:.4rem auto 1.2rem">Crie e avance ao menos uma trilha — aí a IA consegue sugerir bons caminhos a seguir.</p>
+      <a class="btn btn-primary" href="{% url 'trilhas:criar' %}"><svg class="ic" aria-hidden="true"><use href="#ic-plus"/></svg> Nova trilha</a>
+    </div>
+  {% endif %}
+</section>
+{% endblock %}
+
+{% block scripts %}
+<script>
+(() => {
+  const btn = document.querySelector(".js-toggle-all");
+  if (!btn) return;
+  btn.addEventListener("click", () => {
+    const boxes = document.querySelectorAll('input[name="trilha"]');
+    const anyOff = Array.from(boxes).some((b) => !b.checked);
+    boxes.forEach((b) => (b.checked = anyOff));
+  });
+})();
+</script>
+{% endblock %}
