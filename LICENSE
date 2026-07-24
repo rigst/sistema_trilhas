@@ -1,0 +1,30 @@
+Copyright (c) 2026 Rodrigo Stölben. Todos os direitos reservados.
+
+SOFTWARE PROPRIETÁRIO — LICENÇA RESTRITA
+
+Este software e seu código-fonte são propriedade exclusiva de Rodrigo Stölben e
+não são distribuídos sob licença de código aberto.
+
+É vedado, sem autorização prévia e por escrito do titular:
+
+  a) copiar, reproduzir ou armazenar o código-fonte, no todo ou em parte;
+  b) modificar, adaptar, traduzir ou criar obras derivadas;
+  c) distribuir, sublicenciar, vender, alugar ou ceder a terceiros;
+  d) realizar engenharia reversa, descompilação ou desmontagem, ressalvadas as
+     hipóteses expressamente permitidas em lei.
+
+O acesso ao serviço hospedado em trilhas.stolben.com é regido pelos Termos de Uso
+e pela Política de Privacidade publicados no próprio serviço, e não transfere
+qualquer direito sobre o código-fonte.
+
+Este software incorpora bibliotecas de terceiros, cada uma sujeita à sua própria
+licença. O inventário está em docs/LICENCAS-TERCEIROS.md e as licenças originais
+permanecem válidas para os respectivos componentes. As fontes tipográficas
+distribuídas em static/fonts/ estão sob a SIL Open Font License, cujo texto
+acompanha os arquivos em static/fonts/OFL.txt.
+
+O SOFTWARE É FORNECIDO "COMO ESTÁ", SEM GARANTIA DE QUALQUER NATUREZA, EXPRESSA
+OU IMPLÍCITA. Nada nesta licença afasta direitos irrenunciáveis previstos na
+legislação brasileira aplicável.
+
+Contato: rodrigo@stolben.com

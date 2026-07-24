@@ -48,3 +48,21 @@ Em dev o Celery roda em modo *eager* (síncrono), sem precisar de Redis.
 - `trilhas` — `Trilha`, `PerguntaDirecionadora`, `Nivel`, `Subtopico`.
 - `avaliacoes` — `Avaliacao`, `Questao`, `Resposta`, `Titulo`.
 - `ai` — `services.py` (Claude), `tasks.py` (Celery), `prompts.py`.
+
+## Licença
+
+Software **proprietário** — todos os direitos reservados (ver [LICENSE](LICENSE)).
+O código não é aberto nem redistribuível; o uso do serviço é regido pelos Termos de
+Uso publicados em trilhas.stolben.com.
+
+As bibliotecas de terceiros permanecem sob suas próprias licenças; o inventário está
+em [docs/LICENCAS-TERCEIROS.md](docs/LICENCAS-TERCEIROS.md), regenerável com:
+
+```bash
+./venv/bin/python scripts/licencas_terceiros.py
+```
+
+A geração de vídeo chama **FFmpeg** (GPL-2.0+ no build do Ubuntu) e o **Chromium** do
+Playwright como processos externos, sem linkagem com este código e sem distribuir os
+binários — a reciprocidade da GPL não alcança o projeto. As fontes em `static/fonts/`
+usam a SIL Open Font License (`OFL.txt` junto aos arquivos).
