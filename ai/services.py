@@ -574,6 +574,63 @@ def gerar_conteudo_subtopico(subtopico, profile=None):
 
 
 # ---------------------------------------------------------------------------
+# 3b. Roteiro falado para o vídeo do subtópico (Sonnet)
+# ---------------------------------------------------------------------------
+
+def gerar_roteiro_video(subtopico, profile=None):
+    """Gera a narração falada de cada seção do subtópico para o vídeo narrado.
+
+    Fatia o `conteudo_md` nas mesmas seções `---` que viram cards na leitura e
+    pede à IA uma narração por seção que cubra TODO o conteúdo (inclusive código,
+    diagramas e tabelas explicados em voz). Retorna uma lista alinhada às seções:
+    ``[{'md': <markdown da seção>, 'narracao': <texto falado>}, ...]``.
+    """
+    from trilhas.video_utils import fatiar_secoes
+
+    secoes = fatiar_secoes(subtopico.conteudo_md)
+    if not secoes:
+        return []
+
+    blocos = '\n\n'.join(
+        f'### Seção {i}\n{s}' for i, s in enumerate(secoes, start=1)
+    )
+    user = (
+        f'Tópico: "{subtopico.titulo}"'
+        f'{f" — {subtopico.descricao_curta}" if subtopico.descricao_curta else ""}.\n\n'
+        f'O material tem {len(secoes)} seções, numeradas abaixo. Escreva a narração '
+        'falada de CADA seção (uma entrada em "slides" por seção, com o mesmo número '
+        'em "ordem"), cobrindo todo o conteúdo — explicando em voz o que houver de '
+        'código, diagrama ou tabela.\n\n'
+        f'{blocos}'
+    )
+    data = _gerar_json(
+        prompts.SYSTEM_ROTEIRO_VIDEO, user, prompts.SCHEMA_ROTEIRO, profile,
+        model=_model_geral(), effort=getattr(settings, 'AI_EFFORT_GERAL', 'medium'),
+        max_tokens=getattr(settings, 'AI_MAX_TOKENS', 16000),
+    )
+
+    # Alinha por "ordem" (1-based); fallback = descrição curta ou 1ª linha da seção.
+    por_ordem = {}
+    for item in data.get('slides', []):
+        try:
+            k = int(item.get('ordem'))
+        except (TypeError, ValueError):
+            continue
+        narr = (item.get('narracao') or '').strip()
+        if narr:
+            por_ordem[k] = narr
+
+    roteiro = []
+    for i, secao in enumerate(secoes, start=1):
+        narr = por_ordem.get(i)
+        if not narr:
+            narr = (subtopico.descricao_curta or '').strip() \
+                or secao.splitlines()[0].strip('# ').strip()
+        roteiro.append({'md': secao, 'narracao': narr})
+    return roteiro
+
+
+# ---------------------------------------------------------------------------
 # 4. Avaliação (Sonnet gera; correção objetiva determinística por gabarito)
 # ---------------------------------------------------------------------------
 

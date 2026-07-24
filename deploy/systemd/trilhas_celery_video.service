@@ -1,0 +1,24 @@
+[Unit]
+# Worker dedicado à fila 'video' (geração de vídeo dos tópicos): tarefas
+# pesadas (Chromium + ffmpeg) que não podem bloquear as tasks de IA da fila
+# default, atendidas pelo trilhas_celery.service.
+Description=Trilhas de Estudo — Celery Worker (fila de vídeo)
+After=network.target redis-server.service
+
+[Service]
+Type=simple
+User=rod
+Group=www-data
+WorkingDirectory=/var/www/sistema_trilhas
+EnvironmentFile=/var/www/sistema_trilhas/.env
+Environment=DJANGO_SETTINGS_MODULE=config.settings.production
+# Só a fila 'video', concorrência 1 (um vídeo por vez), sem --beat.
+ExecStart=/var/www/sistema_trilhas/venv/bin/celery -A config worker -l info \
+    -Q video --concurrency=1 \
+    --max-tasks-per-child=20 \
+    --logfile=/var/www/sistema_trilhas/logs/celery_video.log
+Restart=always
+RestartSec=10
+
+[Install]
+WantedBy=multi-user.target

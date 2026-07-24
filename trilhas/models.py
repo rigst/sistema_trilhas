@@ -400,6 +400,56 @@ class CardSalvo(models.Model):
         return f'Card {self.indice} de {self.subtopico_id} ({self.user_id})'
 
 
+class VideoSubtopico(models.Model):
+    """Vídeo narrado gerado sob demanda a partir do conteúdo de um subtópico.
+
+    O conteúdo (Markdown, seções `---`) vira um slideshow: cada seção é um slide
+    renderizado com fidelidade (screenshot do HTML real) e narrado por TTS a
+    partir de um roteiro escrito pela IA. O binário fica em MEDIA_ROOT/videos e o
+    caminho é guardado em `arquivo` (mesmo padrão de `cover_url`)."""
+
+    class Status(models.TextChoices):
+        PENDENTE = 'pendente', 'Pendente'
+        GERANDO = 'gerando', 'Gerando'
+        PRONTO = 'pronto', 'Pronto'
+        ERRO = 'erro', 'Erro'
+
+    subtopico = models.OneToOneField(
+        Subtopico, on_delete=models.CASCADE, related_name='video'
+    )
+    status = models.CharField(
+        max_length=15, choices=Status.choices, default=Status.PENDENTE, db_index=True
+    )
+    progresso_pct = models.PositiveIntegerField('progresso (%)', default=0)
+    # URL local servida pelo nginx, ex.: /media/videos/<sub_pk>/<uuid>.mp4
+    arquivo = models.CharField('arquivo (URL local)', max_length=300, blank=True)
+    duracao_seg = models.PositiveIntegerField('duração (s)', default=0)
+    # gerado_em do subtópico no momento da geração — detecta conteúdo alterado
+    # (permite oferecer "regerar" quando o texto do tópico mudou).
+    fonte_gerado_em = models.DateTimeField(null=True, blank=True)
+    erro = models.TextField(blank=True)
+
+    criado_em = models.DateTimeField(auto_now_add=True)
+    atualizado_em = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        verbose_name = 'vídeo de subtópico'
+        verbose_name_plural = 'vídeos de subtópicos'
+
+    def __str__(self):
+        return f'Vídeo de {self.subtopico_id} ({self.status})'
+
+    @property
+    def desatualizado(self):
+        """True quando o conteúdo do subtópico foi regerado após o vídeo."""
+        return (
+            self.status == VideoSubtopico.Status.PRONTO
+            and self.subtopico.gerado_em is not None
+            and self.fonte_gerado_em is not None
+            and self.subtopico.gerado_em > self.fonte_gerado_em
+        )
+
+
 class Percurso(models.Model):
     """Percurso personalizado do Mentor: uma sequência de passos (aprender/
     revisar/avaliar) equilibrada entre as trilhas do usuário."""

@@ -167,6 +167,29 @@ SYSTEM_REVISAO = (
     'para código inline curto ou bloco cercado se tiver mais de uma linha.'
 )
 
+SYSTEM_ROTEIRO_VIDEO = (
+    'Você é um narrador didático que transforma o material escrito de um tópico '
+    'de estudo num ROTEIRO FALADO para um vídeo. O vídeo é um slideshow: cada '
+    'seção do material (recebida numerada) vira um slide, e você escreve a '
+    'NARRAÇÃO em voz para cada slide. Objetivo central: o vídeo deve cobrir TODO '
+    'o conteúdo, sem perder nada — inclusive o que está em blocos de código, '
+    'diagramas (Mermaid), tabelas e caixas de destaque.\n\n'
+    'REGRAS DA NARRAÇÃO:\n'
+    '- Escreva UMA narração por seção, na MESMA ordem e quantidade das seções '
+    'recebidas (uma entrada em "slides" para cada seção, com o mesmo "ordem").\n'
+    '- Texto para ser OUVIDO: frases curtas e claras, tom de professor explicando '
+    'em voz alta, em português do Brasil. Sem markdown, sem emojis, sem asteriscos, '
+    'sem títulos, sem "slide 1"; apenas a fala corrida.\n'
+    '- NÃO leia código caractere a caractere nem sintaxe de diagrama: EXPLIQUE em '
+    'palavras o que aquele código faz ou o que o diagrama/tabela mostra, para quem '
+    'só está ouvindo entender tudo.\n'
+    '- Expanda abreviações e símbolos para a forma falada. Mantenha todos os fatos, '
+    'números, nomes e exemplos do material — não resuma a ponto de perder conteúdo.\n'
+    '- Cada narração deve fluir com a anterior, como um vídeo contínuo (sem repetir '
+    'saudações a cada slide). Duração natural de fala por slide: ~15 a 45 segundos.'
+    + DEFESA_INJECAO
+)
+
 
 # ---------------------------------------------------------------------------
 # JSON Schemas (structured outputs)
@@ -410,5 +433,25 @@ SCHEMA_REVISAO = {
         }
     },
     'required': ['questoes'],
+    'additionalProperties': False,
+}
+
+SCHEMA_ROTEIRO = {
+    'type': 'object',
+    'properties': {
+        'slides': {
+            'type': 'array',
+            'items': {
+                'type': 'object',
+                'properties': {
+                    'ordem': {'type': 'integer'},
+                    'narracao': {'type': 'string'},
+                },
+                'required': ['ordem', 'narracao'],
+                'additionalProperties': False,
+            },
+        }
+    },
+    'required': ['slides'],
     'additionalProperties': False,
 }

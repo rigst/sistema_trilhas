@@ -147,6 +147,14 @@ CELERY_BEAT_SCHEDULE = {
     },
 }
 
+# A geração de vídeo é pesada (Chromium + ffmpeg) e vai para uma fila própria,
+# consumida por um worker dedicado (deploy/systemd/trilhas_celery_video.service),
+# para não bloquear as tasks de IA na fila default.
+CELERY_TASK_DEFAULT_QUEUE = 'celery'
+CELERY_TASK_ROUTES = {
+    'trilhas.tasks.task_gerar_video_subtopico': {'queue': 'video'},
+}
+
 
 # ==============================================================================
 # E-mail
@@ -215,6 +223,21 @@ AI_PRICES = {
 # Quotas mensais (tokens) — usuário comum e visitante
 QUOTA_TOKENS_DEFAULT = int(os.getenv('QUOTA_TOKENS_DEFAULT', '3000000'))
 QUOTA_TOKENS_VISITOR = int(os.getenv('QUOTA_TOKENS_VISITOR', '300000'))
+
+
+# ==============================================================================
+# Vídeo do tópico (slideshow narrado gerado sob demanda)
+# ==============================================================================
+
+# Voz PT-BR do edge-tts (grátis). Alternativa feminina: pt-BR-FranciscaNeural.
+VIDEO_TTS_VOICE = os.getenv('VIDEO_TTS_VOICE', 'pt-BR-AntonioNeural')
+# Binários de mídia (ajuste se não estiverem no PATH do worker).
+VIDEO_FFMPEG_BIN = os.getenv('VIDEO_FFMPEG_BIN', 'ffmpeg')
+VIDEO_FFPROBE_BIN = os.getenv('VIDEO_FFPROBE_BIN', 'ffprobe')
+# Música de fundo: por padrão a faixa é escolhida pela CATEGORIA da trilha
+# (ver trilhas/video_pipeline.MUSICAS). Definir VIDEO_MUSICA_PATH força uma
+# faixa fixa para todos os vídeos; vazio = seleção automática por categoria.
+VIDEO_MUSICA_PATH = os.getenv('VIDEO_MUSICA_PATH', '')
 
 # Expiração do visitante (horas de inatividade)
 VISITOR_EXPIRY_HOURS = int(os.getenv('VISITOR_EXPIRY_HOURS', '48'))

@@ -1,6 +1,6 @@
 from django.contrib import admin
 
-from .models import Nivel, PerguntaDirecionadora, Subtopico, Trilha
+from .models import Nivel, PerguntaDirecionadora, Subtopico, Trilha, VideoSubtopico
 
 
 class SubtopicoInline(admin.TabularInline):
@@ -34,3 +34,11 @@ class NivelAdmin(admin.ModelAdmin):
     list_filter = ('faixa', 'status')
     search_fields = ('titulo',)
     inlines = [SubtopicoInline]
+
+
+@admin.register(VideoSubtopico)
+class VideoSubtopicoAdmin(admin.ModelAdmin):
+    list_display = ('subtopico', 'status', 'progresso_pct', 'duracao_seg', 'atualizado_em')
+    list_filter = ('status',)
+    search_fields = ('subtopico__titulo',)
+    readonly_fields = ('criado_em', 'atualizado_em')

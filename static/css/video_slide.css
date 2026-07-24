@@ -1,0 +1,93 @@
+/* Layout dos slides do vídeo do subtópico (renderizados por Chromium a 1280×720).
+   Reaproveita os estilos de conteúdo do app (.markdown-body, .codehilite,
+   .admonition, .mermaid via app.css) e apenas ajusta o enquadramento para vídeo:
+   canvas 16:9, tipografia maior e legível à distância, sem cromo do site. */
+
+html, body {
+  margin: 0;
+  padding: 0;
+  background: var(--bg);
+}
+
+.vslide {
+  box-sizing: border-box;
+  width: 1280px;
+  min-height: 720px;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  padding: 64px 96px;
+  background:
+    radial-gradient(1200px 700px at 15% -10%, rgba(45, 212, 191, .10), transparent 60%),
+    radial-gradient(1000px 700px at 110% 120%, rgba(139, 124, 246, .12), transparent 60%),
+    var(--bg);
+  color: var(--text);
+}
+
+.vslide-in {
+  width: 100%;
+  max-width: 1088px;
+  margin: 0 auto;
+}
+
+/* Conteúdo maior para leitura confortável em vídeo. */
+.vslide .markdown-body { font-size: 1.5rem; line-height: 1.6; }
+.vslide .markdown-body h1,
+.vslide .markdown-body h2 { font-size: 2.4rem; line-height: 1.12; margin: 0 0 .5em; }
+.vslide .markdown-body h3 { font-size: 1.7rem; margin: 0 0 .5em; }
+.vslide .markdown-body p { margin: 0 0 .7em; }
+.vslide .markdown-body pre,
+.vslide .markdown-body .codehilite { font-size: 1.15rem; }
+.vslide .markdown-body table { font-size: 1.25rem; }
+.vslide .markdown-body img { max-width: 100%; max-height: 460px; height: auto; border-radius: 14px; }
+.vslide .mermaid svg { max-width: 100%; height: auto; }
+
+/* Slides de abertura/fecho. */
+.vslide--cover { align-items: center; text-align: center; }
+.vslide--cover .cover-emblema {
+  font-size: 128px;
+  line-height: 1;
+  margin-bottom: 24px;
+  filter: drop-shadow(0 8px 30px rgba(45, 212, 191, .35));
+}
+.vslide--cover .cover-kicker {
+  font-family: var(--sans);
+  letter-spacing: .18em;
+  text-transform: uppercase;
+  color: var(--teal);
+  font-weight: 600;
+  font-size: 1.05rem;
+  margin-bottom: 18px;
+}
+.vslide--cover .cover-titulo {
+  font-family: var(--disp);
+  font-weight: 800;
+  font-size: 3.4rem;
+  line-height: 1.08;
+  letter-spacing: -.02em;
+  margin: 0;
+  max-width: 980px;
+}
+.vslide--cover .cover-sub {
+  font-family: var(--sans);
+  color: var(--muted);
+  font-size: 1.4rem;
+  margin-top: 22px;
+  max-width: 860px;
+}
+.vslide--cover .cover-marca {
+  position: absolute;
+  bottom: 44px;
+  font-family: var(--disp);
+  font-weight: 700;
+  color: var(--muted);
+  letter-spacing: .02em;
+  font-size: 1.1rem;
+}
+.vslide--cover .cover-cred {
+  position: absolute;
+  bottom: 20px;
+  font-family: var(--sans);
+  color: var(--dim);
+  font-size: .82rem;
+}
