@@ -2,10 +2,12 @@ from django import forms
 from django.contrib.auth import get_user_model
 from django.contrib.auth.forms import UserCreationForm
 
+from legal.forms import AceiteLegalMixin
+
 User = get_user_model()
 
 
-class CadastroForm(UserCreationForm):
+class CadastroForm(AceiteLegalMixin, UserCreationForm):
     """Cadastro público: usuário + e-mail (obrigatório e único) + senha."""
 
     email = forms.EmailField(

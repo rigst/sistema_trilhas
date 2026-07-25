@@ -31,11 +31,10 @@
 
       <div class="auth-sep">ou</div>
 
-      <form method="post" action="{% url 'accounts:entrar_visitante' %}">
-        {% csrf_token %}
-        <button type="submit" class="btn btn-ghost btn-block">Entrar como visitante</button>
-        <p class="auth-note">Acesso temporário para experimentar. Suas trilhas expiram por inatividade.</p>
-      </form>
+      {# O aceite acontece na própria página de aceite, não aqui: o texto
+         que a pessoa precisa ler não cabe ao lado de um botão. #}
+      <a class="btn btn-ghost btn-block" href="{% url 'legal:aceite_visitante' %}">Entrar como visitante</a>
+      <p class="auth-note">Acesso temporário para experimentar. Suas trilhas expiram por inatividade.</p>
 
       {% if signup_enabled %}
       <p class="auth-note" style="text-align:center;margin-top:1rem">

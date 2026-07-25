@@ -1,27 +1,28 @@
 from django.contrib import admin
+from unfold.admin import ModelAdmin, TabularInline
 
 from .models import Nivel, PerguntaDirecionadora, Subtopico, Trilha, VideoSubtopico
 
 
-class SubtopicoInline(admin.TabularInline):
+class SubtopicoInline(TabularInline):
     model = Subtopico
     extra = 0
 
 
-class NivelInline(admin.TabularInline):
+class NivelInline(TabularInline):
     model = Nivel
     extra = 0
     fields = ('ordem', 'titulo', 'faixa', 'status')
     show_change_link = True
 
 
-class PerguntaInline(admin.TabularInline):
+class PerguntaInline(TabularInline):
     model = PerguntaDirecionadora
     extra = 0
 
 
 @admin.register(Trilha)
-class TrilhaAdmin(admin.ModelAdmin):
+class TrilhaAdmin(ModelAdmin):
     list_display = ('titulo', 'user', 'status', 'total_niveis', 'niveis_aprovados', 'criada_em')
     list_filter = ('status',)
     search_fields = ('titulo', 'tema_livre', 'user__username')
@@ -29,7 +30,7 @@ class TrilhaAdmin(admin.ModelAdmin):
 
 
 @admin.register(Nivel)
-class NivelAdmin(admin.ModelAdmin):
+class NivelAdmin(ModelAdmin):
     list_display = ('titulo', 'trilha', 'ordem', 'faixa', 'status')
     list_filter = ('faixa', 'status')
     search_fields = ('titulo',)
@@ -37,7 +38,7 @@ class NivelAdmin(admin.ModelAdmin):
 
 
 @admin.register(VideoSubtopico)
-class VideoSubtopicoAdmin(admin.ModelAdmin):
+class VideoSubtopicoAdmin(ModelAdmin):
     list_display = ('subtopico', 'status', 'progresso_pct', 'duracao_seg', 'atualizado_em')
     list_filter = ('status',)
     search_fields = ('subtopico__titulo',)

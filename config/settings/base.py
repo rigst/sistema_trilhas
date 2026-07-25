@@ -29,6 +29,10 @@ ALLOWED_HOSTS = [
 # Application definition
 
 INSTALLED_APPS = [
+    # O unfold precisa vir antes do admin: é assim que os templates dele
+    # sobrescrevem os do django.contrib.admin.
+    'unfold',
+    'unfold.contrib.filters',
     'django.contrib.admin',
     'django.contrib.auth',
     'django.contrib.contenttypes',
@@ -40,6 +44,7 @@ INSTALLED_APPS = [
     'trilhas',
     'avaliacoes',
     'ai',
+    'legal',
 ]
 
 MIDDLEWARE = [
@@ -48,6 +53,10 @@ MIDDLEWARE = [
     'django.middleware.common.CommonMiddleware',
     'django.middleware.csrf.CsrfViewMiddleware',
     'django.contrib.auth.middleware.AuthenticationMiddleware',
+    # Depois do Authentication (precisa de request.user) e antes do
+    # VisitorExpiryMiddleware: nova versão dos termos bloqueia o uso até ser
+    # aceita, inclusive para visitantes.
+    'legal.middleware.AceiteObrigatorioMiddleware',
     'accounts.middleware.VisitorExpiryMiddleware',
     'django.contrib.messages.middleware.MessageMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
@@ -249,3 +258,32 @@ VISITOR_EXPIRY_HOURS = int(os.getenv('VISITOR_EXPIRY_HOURS', '48'))
 
 # Nota média mínima (0–10) para aprovar num nível e ganhar o título.
 NOTA_MINIMA_APROVACAO = float(os.getenv('NOTA_MINIMA_APROVACAO', '7.0'))
+
+UNFOLD = {
+    'SITE_TITLE': 'Trilhas de Estudo',
+    'SITE_HEADER': 'Trilhas de Estudo',
+    'SITE_SUBHEADER': 'Administração',
+    'SHOW_HISTORY': True,
+    'SHOW_VIEW_ON_SITE': False,
+    'COLORS': {
+        # Teal do tema do app.
+        'primary': {
+            '50': '240 253 250', '100': '204 251 241', '200': '153 246 228',
+            '300': '94 234 212', '400': '45 212 191', '500': '20 184 166',
+            '600': '13 148 136', '700': '15 118 110', '800': '17 94 89',
+            '900': '19 78 74', '950': '4 47 46',
+        },
+    },
+}
+
+# Destino após o aceite nas telas do app `legal`.
+LEGAL_REDIRECT_URL = 'dashboard'
+
+# Para onde a tela de aceite de visitante posta. A criação do visitante tem
+# rota própria e não precisa de campos extras.
+LEGAL_VISITOR_ACTION = 'accounts:entrar_visitante'
+LEGAL_VISITOR_EXTRA = {}
+
+# Rotas do PWA que o middleware de re-aceite não pode interceptar: um 302 para
+# a tela de aceite seria cacheado pelo service worker.
+LEGAL_ALLOWLIST_EXTRA = ('/sw.js', '/offline/')

@@ -49,6 +49,27 @@ Em dev o Celery roda em modo *eager* (síncrono), sem precisar de Redis.
 - `avaliacoes` — `Avaliacao`, `Questao`, `Resposta`, `Titulo`.
 - `ai` — `services.py` (Claude), `tasks.py` (Celery), `prompts.py`.
 
+## Conformidade legal (LGPD / Marco Civil)
+
+O app `legal` versiona os Termos de Uso e a Política de Privacidade e registra cada aceite
+com data, hora, IP, navegador e o `sha256` do texto exato aceito. O checkbox nasce
+desmarcado e é obrigatório no servidor; publicar uma versão com mudança material obriga
+todos a aceitarem de novo antes de continuar usando o sistema.
+
+A política descreve a transferência internacional para a API do Claude (art. 33 e 33, VI
+da LGPD), o papel da Anthropic como operadora sob o *Data Processing Addendum* e a
+retenção de até 30 dias do lado dela.
+
+Os registros de acesso do nginx são mantidos por **6 meses**, como exige o art. 15 do
+Marco Civil (`deploy/logrotate/stolben-acesso` e `deploy/nginx_acesso.py`).
+
+O procedimento completo está em [docs/CONFORMIDADE.md](docs/CONFORMIDADE.md).
+
+```bash
+./venv/bin/python manage.py importar_documentos_legais --publicar  # seed inicial
+./venv/bin/python manage.py exportar_documentos_legais             # espelho em git
+```
+
 ## Licença
 
 Software **proprietário** — todos os direitos reservados (ver [LICENSE](LICENSE)).

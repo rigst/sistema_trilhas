@@ -23,3 +23,8 @@ psycopg2-binary>=2.9,<3.0
 django-redis>=5.4,<7.0
 # Monitoramento de erros (ativo só com SENTRY_DSN definido)
 sentry-sdk>=2.0,<3.0
+
+# Conformidade legal (app `legal`): sanitização das políticas (markdown e nh3
+# já constam acima).
+# Tema do admin.
+django-unfold>=0.101,<1.0

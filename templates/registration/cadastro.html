@@ -35,6 +35,7 @@
           {{ form.password2 }}
           {{ form.password2.errors }}
         </div>
+        {% include "legal/_checkbox_aceite.html" with field=form.aceite_legal %}
         <button type="submit" class="btn btn-primary btn-block">Criar conta</button>
       </form>
 

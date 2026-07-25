@@ -1,10 +1,11 @@
 from django.contrib import admin
+from unfold.admin import ModelAdmin
 
 from .models import Profile
 
 
 @admin.register(Profile)
-class ProfileAdmin(admin.ModelAdmin):
+class ProfileAdmin(ModelAdmin):
     list_display = (
         'user', 'is_visitor', 'expires_at',
         'tokens_usados_mes', 'quota_tokens_mes', 'custo_acumulado',

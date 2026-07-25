@@ -7,6 +7,7 @@ from django.contrib.auth import views as auth_views
 from django.urls import include, path
 from django.views.generic import TemplateView
 
+from legal import views as legal_views
 from trilhas import views as trilhas_views
 
 urlpatterns = [
@@ -20,10 +21,11 @@ urlpatterns = [
     path('logout/', auth_views.LogoutView.as_view(), name='logout'),
     # Página estática de fallback offline (pré-cacheada pelo service worker).
     path('offline/', TemplateView.as_view(template_name='offline.html'), name='offline'),
-    # Páginas legais (LGPD): acessíveis sem login.
-    path('privacidade/', TemplateView.as_view(template_name='legal/privacidade.html'),
-         name='privacidade'),
-    path('termos/', TemplateView.as_view(template_name='legal/termos.html'), name='termos'),
+    # Páginas legais (LGPD): acessíveis sem login. O texto vem do banco (app
+    # `legal`), versionado — os nomes de rota seguem os mesmos de antes.
+    path('privacidade/', legal_views.privacidade, name='privacidade'),
+    path('termos/', legal_views.termos, name='termos'),
+    path('legal/', include('legal.urls')),
     # Reset de senha — views nativas do Django; templates em registration/.
     path('senha/reset/', auth_views.PasswordResetView.as_view(
         email_template_name='registration/password_reset_email.html',

@@ -5,31 +5,52 @@ from django.contrib.auth.tokens import default_token_generator
 from django.core.mail import send_mail
 from django.http import Http404
 from django.shortcuts import redirect, render
+from django.urls import reverse
 from django.template.loader import render_to_string
 from django.utils.encoding import force_bytes, force_str
 from django.utils.http import urlsafe_base64_decode, urlsafe_base64_encode
 from django.views.decorators.http import require_POST
+
+from legal.forms import AceiteForm
+from legal.models import OrigemAceite
+from legal.services import documentos_vigentes, registrar_aceite
+from legal.utils import ip_do_request
 
 from .forms import CadastroForm
 from .quota import excedeu_limite
 from .services import criar_visitante
 
 
-def _ip_cliente(request):
-    xff = request.META.get('HTTP_X_FORWARDED_FOR', '')
-    return xff.split(',')[0].strip() or request.META.get('REMOTE_ADDR', '')
-
-
 @require_POST
 def entrar_como_visitante(request):
     """Cria um visitante temporário e autentica a sessão."""
+    # O aceite é condição para criar a conta: valida antes de qualquer escrita,
+    # para não deixar visitante órfão sem prova de aceite.
+    form_aceite = AceiteForm(request.POST)
+    if not form_aceite.is_valid():
+        # Volta para a própria tela de aceite com o erro, e não para o login:
+        # o checkbox não existe mais lá.
+        return render(
+            request,
+            'legal/aceite.html',
+            {
+                'form': form_aceite,
+                'documentos': list(documentos_vigentes().values()),
+                'action': reverse('accounts:entrar_visitante'),
+                'campos_extras': {},
+            },
+        )
+
     # Cada visitante nasce com cota de IA própria: sem limite por IP, um
     # script criaria visitantes em massa e consumiria crédito de API à vontade.
-    if excedeu_limite(f'visitante:{_ip_cliente(request)}', limite=5, janela_s=3600):
+    if excedeu_limite(f'visitante:{ip_do_request(request)}', limite=5, janela_s=3600):
         messages.error(request, 'Muitos acessos de visitante deste endereço. Tente mais tarde.')
         return redirect('login')
     user, _senha = criar_visitante()
     login(request, user)
+    registrar_aceite(
+        request, usuario=user, origem=OrigemAceite.VISITANTE, e_visitante=True
+    )
     messages.info(
         request,
         'Você entrou como visitante. Suas trilhas são temporárias e expiram por inatividade.',
@@ -76,7 +97,7 @@ def cadastrar(request):
         return redirect('dashboard')
     if request.method == 'POST':
         # Limite anti-abuso: no máximo 5 tentativas por IP por hora.
-        if excedeu_limite(f'cadastro:{_ip_cliente(request)}', limite=5, janela_s=3600):
+        if excedeu_limite(f'cadastro:{ip_do_request(request)}', limite=5, janela_s=3600):
             messages.error(request, 'Muitas tentativas deste endereço. Tente mais tarde.')
             return redirect('login')
         form = CadastroForm(request.POST)
@@ -108,6 +129,9 @@ def confirmar_email(request, uidb64, token):
         user.is_active = True
         user.save(update_fields=['is_active'])
         login(request, user)
+        # O aceite foi dado no formulário de cadastro; registra-se aqui, na
+        # confirmação, que é quando a conta passa a existir de fato.
+        registrar_aceite(request, usuario=user, origem=OrigemAceite.CADASTRO)
         messages.success(request, 'Conta confirmada! Bem-vindo(a) ao Trilhas de Estudo.')
         return redirect('dashboard')
     messages.error(request, 'Link de confirmação inválido ou expirado.')
