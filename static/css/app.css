@@ -874,7 +874,7 @@ a.node:not(.lock):hover .nm{color:var(--teal)}
 .xp-widget-meta{font-size:.72rem;color:var(--dim);white-space:nowrap}
 .xp-widget-track{height:6px;border-radius:99px;background:var(--panel-2);overflow:hidden;margin-bottom:.8rem}
 .xp-widget-track i{display:block;height:100%;border-radius:99px;background:linear-gradient(90deg,var(--teal),#34d399);transition:width .4s}
-.xp-semana{display:flex;gap:.35rem}
+.xp-semana{display:flex;gap:.35rem;max-width:30rem;margin-inline:auto}
 .xp-dia{display:flex;flex-direction:column;align-items:center;gap:.25rem;flex:1}
 .xp-dia-dot{width:10px;height:10px;border-radius:50%;background:var(--panel-2);border:1.5px solid var(--line);transition:background .2s}
 .xp-dia-nome{font-size:.6rem;color:var(--dim);font-weight:600;letter-spacing:.04em;text-transform:uppercase}
@@ -903,7 +903,7 @@ a.node:not(.lock):hover .nm{color:var(--teal)}
 /* =========================================================================
    Feed "Para hoje": flashcards de revisão rápida + quiz do dia.
    ========================================================================= */
-.feed-hoje{margin-top:1.6rem;display:flex;flex-direction:column;gap:.9rem;max-width:680px;margin-left:auto;margin-right:auto}
+.feed-hoje{margin-top:1.6rem;display:flex;flex-direction:column;gap:.9rem}
 .feed-head{display:flex;align-items:baseline;gap:.8rem;flex-wrap:wrap;padding-bottom:.2rem}
 .flashcard{border:1px solid var(--line-2);border-radius:var(--radius);padding:1.15rem 1.35rem;
   background:linear-gradient(180deg,var(--glass-a),var(--glass-b)),var(--panel);box-shadow:var(--shadow)}
