@@ -12,7 +12,7 @@
   --app-gradient:linear-gradient(135deg,var(--teal),var(--violet));
   --app-button-gradient:linear-gradient(135deg,#0F766E,#6653D6);
   --green:#34D399; --red:#F87171; --sky:#7DD3FC;
-  --teal-glow:rgba(45,212,191,.35); --amber-glow:rgba(245,181,74,.3);
+  --teal-glow:rgba(45,212,191,.35); --amber-glow:rgba(245,181,74,.28);
   --code-ink:#a7f3e5;
   /* Tintas de feedback (texto sobre tinta translúcida), ajustadas por tema. */
   --ok-ink:#a7f3d0; --ok-bg:rgba(52,211,153,.10); --ok-line:rgba(52,211,153,.38);
@@ -40,7 +40,7 @@ html{scroll-behavior:smooth;font-size:calc(100% * var(--fscale,1))}
   --text:#151B2E; --muted:#54607F; --dim:#727D96;
   --header-bg:#FFFFFF;
   --teal:#0E9C88; --teal-2:#0C8878; --teal-glow:rgba(14,156,136,.18);
-  --amber:#B26A0B; --violet:#6D5BD8; --pink:#C2337A; --sky:#0E7490;
+  --amber:#B26A0B; --amber-glow:rgba(178,106,11,.22); --violet:#6D5BD8; --pink:#C2337A; --sky:#0E7490;
   --green:#0E9F63; --red:#C63C3C;
   --code-ink:#0C7A6B; --shadow:0 16px 40px rgba(20,26,46,.12);
   --ok-ink:#04724F; --err-ink:#AF262D; --info-ink:#075E85; --no-ink:#9D2B62;
@@ -52,7 +52,7 @@ html{scroll-behavior:smooth;font-size:calc(100% * var(--fscale,1))}
   --line:rgba(70,52,25,.14); --line-2:rgba(70,52,25,.22);
   --text:#3A2E1C; --muted:#6E5C42; --dim:#877459;
   --header-bg:#F3E7CE;
-  --teal:#0C8474; --teal-2:#0A7365; --amber:#A9761A; --violet:#6E5AC7;
+  --teal:#0C8474; --teal-2:#0A7365; --amber:#A9761A; --amber-glow:rgba(169,118,26,.2); --violet:#6E5AC7;
   --pink:#A63E6C; --sky:#2A6E85; --green:#2F7A4D; --red:#B0463A;
   --teal-glow:rgba(12,132,116,.16); --code-ink:#7A4E12;
   --shadow:0 16px 40px rgba(70,52,25,.14);
@@ -960,7 +960,7 @@ a.node:not(.lock):hover .nm{color:var(--teal)}
   border:1px solid var(--line-2);background:color-mix(in srgb,var(--panel) 80%,transparent);
   color:var(--dim);transition:.15s}
 .sc-save:hover{color:var(--amber);border-color:var(--amber)}
-.sc-save.on{color:var(--amber);border-color:rgba(245,181,74,.55);box-shadow:0 0 12px var(--amber-glow)}
+.sc-save.on{color:var(--amber);border-color:var(--amber);box-shadow:0 0 14px var(--amber-glow);background:color-mix(in srgb,var(--amber) 12%,var(--panel))}
 .sc-save.on .ic{fill:currentColor}
 .sc-save .ic{width:17px;height:17px}
 
