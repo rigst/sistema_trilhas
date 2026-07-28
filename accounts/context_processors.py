@@ -1,9 +1,9 @@
 from django.conf import settings
+from django.utils import timezone
 
 
 def profile_context(request):
     """Expõe o perfil e dados de quota para todos os templates."""
-    # Flag do auto-cadastro precisa estar disponível mesmo deslogado (tela de login).
     ctx = {'signup_enabled': getattr(settings, 'SIGNUP_ENABLED', False)}
     user = getattr(request, 'user', None)
     if user is None or not user.is_authenticated:
@@ -12,6 +12,23 @@ def profile_context(request):
     if profile is None:
         ctx['profile'] = None
         return ctx
+
+    hoje = timezone.localdate()
+    xp_hoje = profile.xp_hoje_acc if profile.xp_hoje_ref == hoje else 0
+
+    # Mapa semanal: 7 dias Seg–Dom com estado de cada um
+    iso = hoje.isocalendar()
+    semana_atual = f"{iso[0]}-W{iso[1]:02d}"
+    semana = (profile.dias_xp_semana or '0000000').ljust(7, '0')[:7]
+    if profile.semana_ref != semana_atual:
+        semana = '0000000'
+    nomes = ['Seg', 'Ter', 'Qua', 'Qui', 'Sex', 'Sáb', 'Dom']
+    hoje_idx = hoje.weekday()
+    dias_semana = [
+        {'nome': nomes[i], 'ativo': semana[i] == '1', 'hoje': i == hoje_idx}
+        for i in range(7)
+    ]
+
     ctx.update({
         'profile': profile,
         'quota_restante': profile.tokens_restantes,
@@ -20,5 +37,7 @@ def profile_context(request):
         'xp_no_nivel': profile.xp_no_nivel,
         'nivel_xp': profile.nivel_xp,
         'streak_dias': profile.streak_dias,
+        'xp_hoje': xp_hoje,
+        'dias_semana': dias_semana,
     })
     return ctx

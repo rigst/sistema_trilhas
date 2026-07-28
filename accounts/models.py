@@ -31,6 +31,12 @@ class Profile(models.Model):
         'último lembrete de ofensiva enviado em', null=True, blank=True
     )
 
+    # XP diário e mapa semanal
+    xp_hoje_ref = models.DateField('ref XP diário', null=True, blank=True)
+    xp_hoje_acc = models.IntegerField('XP ganho hoje', default=0)
+    semana_ref = models.CharField('semana de ref', max_length=8, blank=True)  # "YYYY-Www"
+    dias_xp_semana = models.CharField('dias com XP na semana', max_length=7, default='0000000')
+
     criado_em = models.DateTimeField(auto_now_add=True)
     atualizado_em = models.DateTimeField(auto_now=True)
 
@@ -106,7 +112,29 @@ class Profile(models.Model):
             self.streak_dias = 1
         self.ultimo_estudo = hoje
         self.xp = (self.xp or 0) + int(xp)
-        self.save(update_fields=['xp', 'streak_dias', 'ultimo_estudo', 'atualizado_em'])
+
+        # Rastreia XP ganho hoje
+        if self.xp_hoje_ref == hoje:
+            self.xp_hoje_acc += int(xp)
+        else:
+            self.xp_hoje_acc = int(xp)
+            self.xp_hoje_ref = hoje
+
+        # Mapa semanal: reseta na virada de semana ISO
+        iso = hoje.isocalendar()
+        semana_atual = f"{iso[0]}-W{iso[1]:02d}"
+        if self.semana_ref != semana_atual:
+            self.dias_xp_semana = '0000000'
+            self.semana_ref = semana_atual
+        mask = list((self.dias_xp_semana or '0000000').ljust(7, '0')[:7])
+        mask[hoje.weekday()] = '1'  # 0=Seg, 6=Dom
+        self.dias_xp_semana = ''.join(mask)
+
+        self.save(update_fields=[
+            'xp', 'streak_dias', 'ultimo_estudo',
+            'xp_hoje_ref', 'xp_hoje_acc', 'semana_ref', 'dias_xp_semana',
+            'atualizado_em',
+        ])
 
     # -- Visitante -------------------------------------------------------
     @property

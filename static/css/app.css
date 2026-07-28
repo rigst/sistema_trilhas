@@ -862,6 +862,27 @@ a.node:not(.lock):hover .nm{color:var(--teal)}
 @media(max-width:560px){.continue-hero{gap:.85rem}.ch-emblem{display:none}}
 
 /* Barra de cota de IA */
+/* ---- XP widget (dashboard) --------------------------------------------- */
+.xp-widget{margin-top:1.25rem;padding:.85rem 1rem;border:1px solid var(--border);border-radius:14px;background:var(--panel)}
+.xp-widget-top{display:flex;justify-content:space-between;align-items:center;margin-bottom:.55rem;flex-wrap:wrap;gap:.4rem}
+.xp-widget-info{display:flex;align-items:center;gap:.55rem;flex-wrap:wrap}
+.xp-nivel-badge{font-size:.78rem;font-weight:700;color:var(--teal);font-family:var(--disp);letter-spacing:.02em}
+.xp-total{font-size:.82rem;color:var(--muted);font-weight:500}
+.xp-hoje-badge{font-size:.75rem;font-weight:700;color:#fbbf24;background:rgba(251,191,36,.12);border:1px solid rgba(251,191,36,.25);border-radius:99px;padding:.15rem .55rem;letter-spacing:.02em}
+.xp-streak{display:inline-flex;align-items:center;gap:.2rem;font-size:.78rem;font-weight:600;color:#f97316}
+.xp-streak .ic{width:13px;height:13px}
+.xp-widget-meta{font-size:.72rem;color:var(--dim);white-space:nowrap}
+.xp-widget-track{height:6px;border-radius:99px;background:var(--panel-2);overflow:hidden;margin-bottom:.8rem}
+.xp-widget-track i{display:block;height:100%;border-radius:99px;background:linear-gradient(90deg,var(--teal),#34d399);transition:width .4s}
+.xp-semana{display:flex;gap:.35rem}
+.xp-dia{display:flex;flex-direction:column;align-items:center;gap:.25rem;flex:1}
+.xp-dia-dot{width:10px;height:10px;border-radius:50%;background:var(--panel-2);border:1.5px solid var(--line);transition:background .2s}
+.xp-dia-nome{font-size:.6rem;color:var(--dim);font-weight:600;letter-spacing:.04em;text-transform:uppercase}
+.xp-dia--on .xp-dia-dot{background:var(--teal);border-color:var(--teal)}
+.xp-dia--on .xp-dia-nome{color:var(--teal)}
+.xp-dia--hoje .xp-dia-dot{box-shadow:0 0 0 2.5px var(--bg),0 0 0 4px var(--teal)}
+.xp-dia--hoje .xp-dia-nome{color:var(--text);font-weight:700}
+
 .quota-bar{margin-top:1.25rem;padding:.7rem .95rem;border:1px solid var(--border);border-radius:14px;background:var(--panel)}
 .quota-bar-head{display:flex;justify-content:space-between;align-items:baseline;margin-bottom:.45rem}
 .quota-bar-label{font-size:.82rem;color:var(--muted)}

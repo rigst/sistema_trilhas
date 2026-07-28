@@ -30,6 +30,29 @@
     </div>
   </div>
 
+  <div class="xp-widget">
+    <div class="xp-widget-top">
+      <div class="xp-widget-info">
+        <span class="xp-nivel-badge">Nv.{{ nivel_xp }}</span>
+        <span class="xp-total">{{ xp }} XP</span>
+        {% if xp_hoje %}<span class="xp-hoje-badge">+{{ xp_hoje }} hoje</span>{% endif %}
+        {% if streak_dias %}<span class="xp-streak"><svg class="ic" aria-hidden="true"><use href="#ic-flame"/></svg> {{ streak_dias }}</span>{% endif %}
+      </div>
+      <span class="xp-widget-meta">{{ xp_no_nivel }}/100 → Nv.{{ nivel_xp|add:1 }}</span>
+    </div>
+    <div class="xp-widget-track" role="progressbar" aria-valuenow="{{ xp_no_nivel }}" aria-valuemin="0" aria-valuemax="100">
+      <i style="width:{{ xp_no_nivel }}%"></i>
+    </div>
+    <div class="xp-semana">
+      {% for dia in dias_semana %}
+        <div class="xp-dia{% if dia.ativo %} xp-dia--on{% endif %}{% if dia.hoje %} xp-dia--hoje{% endif %}">
+          <span class="xp-dia-dot"></span>
+          <span class="xp-dia-nome">{{ dia.nome }}</span>
+        </div>
+      {% endfor %}
+    </div>
+  </div>
+
   {% if quota %}
     <div class="quota-bar" title="Uso mensal de geração por IA">
       <div class="quota-bar-head">
