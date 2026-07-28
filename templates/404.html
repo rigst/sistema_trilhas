@@ -2,14 +2,12 @@
 {% block title %}Página não encontrada · Trilhas de Estudo{% endblock %}
 
 {% block content %}
-<div class="auth-wrap">
-  <div class="auth-card card">
-    <div class="pad" style="text-align:center">
-      <div class="logo-lg" aria-hidden="true"><svg><use href="#logo-trilhas"/></svg></div>
-      <h1 style="font-size:2.4rem;margin:.4rem 0">404</h1>
-      <p>Não encontramos esta página. Ela pode ter sido movida ou o link está errado.</p>
-      <a class="btn btn-primary btn-block" href="{% url 'dashboard' %}" style="margin-top:1rem">Ir para minhas trilhas</a>
-    </div>
+<section class="page narrow" style="display:flex;align-items:center;justify-content:center;min-height:60vh">
+  <div style="text-align:center;max-width:28rem">
+    <p class="eyebrow" style="margin-bottom:.6rem">Erro 404</p>
+    <h1 class="h1" style="font-size:clamp(2.2rem,5vw,3.2rem);margin:0 0 .8rem">Página não encontrada</h1>
+    <p class="sub" style="margin:0 auto 1.6rem">Não encontramos esta página. Ela pode ter sido movida, removida ou o link está incorreto.</p>
+    <a class="btn btn-primary" href="{% url 'dashboard' %}">Voltar ao início</a>
   </div>
-</div>
+</section>
 {% endblock %}

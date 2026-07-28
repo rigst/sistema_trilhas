@@ -15,11 +15,11 @@
         <a class="btn btn-primary" href="{% url 'trilhas:estudar_agora' %}"><svg class="ic" aria-hidden="true"><use href="#ic-play"/></svg> Estudar agora</a>
       {% endif %}
       {% if trilhas %}
-        <a class="btn btn-mentor" href="{% url 'trilhas:mentor' %}"><svg class="ic" aria-hidden="true"><use href="#ic-compass"/></svg> Mentor</a>
+        <a class="btn btn-mentor btn-app-gradient" href="{% url 'trilhas:mentor' %}"><svg class="ic" aria-hidden="true"><use href="#ic-compass"/></svg> Mentor</a>
       {% endif %}
       {% if pode_revisar %}
         <form method="post" action="{% url 'avaliacoes:revisar' %}">{% csrf_token %}
-          <button type="submit" class="btn btn-ghost"><svg class="ic" aria-hidden="true"><use href="#ic-refresh"/></svg> Revisar{% if revisoes_devidas %} <span class="btn-count">{{ revisoes_devidas }}</span>{% endif %}</button>
+          <button type="submit" class="btn btn-app-gradient"><svg class="ic" aria-hidden="true"><use href="#ic-refresh"/></svg> Revisar</button>
         </form>
       {% endif %}
       <a class="btn btn-ghost" href="{% url 'trilhas:criar' %}"><svg class="ic" aria-hidden="true"><use href="#ic-plus"/></svg> Nova trilha</a>
@@ -45,14 +45,14 @@
 
   {% if continuar %}
     <a class="continue-hero" href="{% url 'trilhas:topico' continuar.nivel.pk continuar.sub.ordem %}">
-      <span class="ch-emblem" aria-hidden="true">{{ continuar.trilha.emblema_display }}</span>
+      <span class="ch-cta" aria-hidden="true"><svg class="ic"><use href="#ic-play"/></svg></span>
       <span class="ch-main">
         <span class="ch-eyebrow">Continuar de onde parou</span>
         <span class="ch-title">{{ continuar.sub.titulo }}</span>
         <span class="ch-path">{{ continuar.trilha.titulo }} · {{ continuar.nivel.titulo }}</span>
         <span class="ch-bar" aria-hidden="true"><i style="width:{{ continuar.nivel.leitura_pct }}%"></i></span>
       </span>
-      <span class="ch-cta" aria-hidden="true"><svg class="ic"><use href="#ic-play"/></svg></span>
+      <span class="ch-cta ch-cta--r" aria-hidden="true"><svg class="ic"><use href="#ic-chev-r"/></svg></span>
     </a>
   {% endif %}
 
@@ -65,82 +65,23 @@
         </div>
         <span class="muted" style="font-size:.85rem">{{ medalhas|length }} troféu{{ medalhas|length|pluralize }}</span>
       </div>
-      <div class="medal-shelf">
-        {% for m in medalhas %}
-          <a class="medal medal--{{ m.tier }}" href="{% url 'trilhas:detalhe' m.trilha.pk %}" title="{{ m.nome }} — {{ m.tier_label }}">
-            <span class="medal-trophy" aria-hidden="true">
-              <svg class="trophy-svg" viewBox="0 0 64 64"><use href="#ic-trophy"/></svg>
-              <span class="medal-mono">{{ m.sigla }}</span>
-            </span>
-            <span class="medal-tier-label">{{ m.tier_label }}</span>
-            <span class="medal-stars" aria-label="{{ m.estrelas }} de {{ m.total }} níveis">
-              {% for on in m.pips %}<i class="{% if on %}on{% endif %}"></i>{% endfor %}
-            </span>
-            <span class="medal-name">{{ m.nome }}</span>
-          </a>
-        {% endfor %}
+      <div class="medal-shelf-outer">
+        <div class="medal-shelf">
+          {% for m in medalhas %}
+            <a class="medal medal--{{ m.tier }}" href="{% url 'trilhas:detalhe' m.trilha.pk %}" title="{{ m.nome }}: {{ m.tier_label }}">
+              <span class="medal-trophy" aria-hidden="true">
+                <svg class="trophy-svg" viewBox="0 0 64 64"><use href="#ic-trophy"/></svg>
+                <span class="medal-mono">{{ m.sigla }}</span>
+              </span>
+              <span class="medal-tier-label">{{ m.tier_label }}</span>
+              <span class="medal-stars" aria-label="{{ m.estrelas }} de {{ m.total }} níveis">
+                {% for on in m.pips %}<i class="{% if on %}on{% endif %}"></i>{% endfor %}
+              </span>
+              <span class="medal-name">{{ m.nome }}</span>
+            </a>
+          {% endfor %}
+        </div>
       </div>
-    </section>
-  {% endif %}
-
-  {% if feed_revisao or pode_revisar and not quiz_feito_hoje %}
-    <section class="feed-hoje" id="feed-hoje">
-      {% csrf_token %}
-      <div class="feed-head">
-        <h2 class="h3" style="margin:0">Para hoje</h2>
-        <span class="muted" style="font-size:.85rem">memória se constrói voltando — 30 segundos por card</span>
-      </div>
-
-      {% for item in feed_revisao %}{% with nivel=item.nivel questao=item.questao %}
-        <article class="flashcard" data-url="{% url 'avaliacoes:revisao_rapida' nivel.pk %}"
-                 {% if questao %}data-gabarito="{{ questao.gabarito }}"{% endif %}>
-          <div class="fc-tag"><span class="fc-dot"></span> Revisão devida · {{ nivel.trilha.titulo }} · {{ nivel.titulo }}</div>
-          {% if questao %}
-            <div class="fc-pergunta fc-enunciado markdown-body">{{ questao.enunciado }}</div>
-            <div class="fc-opts" role="group" aria-label="Alternativas">
-              {% for a in questao.alternativas %}
-                <button type="button" class="fc-opt" data-letra="{{ a.letra|upper }}">
-                  <span class="fc-opt-letra">{{ a.letra|upper }}</span> <span class="fc-opt-texto markdown-body">{{ a.texto|md_inline }}</span>
-                </button>
-              {% endfor %}
-            </div>
-            <div class="fc-verso" hidden>
-              <p class="fc-resultado" aria-live="polite"></p>
-              {% if questao.explicacao %}<div class="fc-resumo markdown-body">{{ questao.explicacao }}</div>{% endif %}
-              <div class="fc-acoes">
-                <button type="button" class="btn btn-primary fc-btn" data-resposta="lembrei">Lembrei bem</button>
-                <button type="button" class="btn btn-ghost fc-btn" data-resposta="rever">Preciso rever</button>
-              </div>
-            </div>
-          {% else %}
-            <h3 class="fc-pergunta">O que você lembra de “{{ nivel.titulo }}”?</h3>
-            <p class="fc-hint">Tente responder de cabeça antes de virar o card.</p>
-            <button type="button" class="btn btn-ghost fc-virar">Virar o card</button>
-            <div class="fc-verso" hidden>
-              {% if nivel.resumo %}<p class="fc-resumo">{{ nivel.resumo }}</p>{% endif %}
-              <ul class="fc-topicos">
-                {% for s in nivel.subtopicos.all %}<li>{{ s.titulo }}</li>{% endfor %}
-              </ul>
-              <div class="fc-acoes">
-                <button type="button" class="btn btn-primary fc-btn" data-resposta="lembrei">Lembrei bem</button>
-                <button type="button" class="btn btn-ghost fc-btn" data-resposta="rever">Preciso rever</button>
-              </div>
-            </div>
-          {% endif %}
-          <div class="fc-feito" hidden></div>
-        </article>
-      {% endwith %}{% endfor %}
-
-      {% if pode_revisar and not quiz_feito_hoje %}
-        <article class="flashcard flashcard--quiz">
-          <div class="fc-tag"><span class="fc-dot fc-dot--quiz"></span> Quiz do dia</div>
-          <h3 class="fc-pergunta">Perguntas rápidas sobre o que você já concluiu</h3>
-          <p class="fc-hint">Um deck de questões misturando suas trilhas — e a revisão espaçada se reagenda sozinha.</p>
-          <form method="post" action="{% url 'avaliacoes:revisar' %}">{% csrf_token %}
-            <button type="submit" class="btn btn-primary">Começar o quiz →</button>
-          </form>
-        </article>
-      {% endif %}
     </section>
   {% endif %}
 
@@ -152,23 +93,11 @@
         <p class="trilha-search-empty" id="trilha-search-empty" hidden>Nenhuma trilha encontrada.</p>
       </div>
     {% endif %}
-    {% if multiplos_grupos %}
-      {% for categoria, lista in grupos %}
-        <details class="folder" open>
-          <summary class="folder-head">
-            <span class="folder-name">{{ categoria }}</span>
-            <span class="folder-count">{{ lista|length }}</span>
-          </summary>
-          <div class="trilha-grid">
-            {% for trilha in lista %}{% include 'partials/trilha_card.html' %}{% endfor %}
-          </div>
-        </details>
-      {% endfor %}
-    {% else %}
-      <div class="trilha-grid">
-        {% for categoria, lista in grupos %}{% for trilha in lista %}{% include 'partials/trilha_card.html' %}{% endfor %}{% endfor %}
-      </div>
-    {% endif %}
+    <div class="trilha-grid">
+      {% for trilha in ativas_sorted %}{% include 'partials/trilha_card.html' %}{% endfor %}
+    </div>
+
+    <p class="trilha-count">{{ n_ativas }} trilha{{ n_ativas|pluralize }} ativa{{ n_ativas|pluralize }}</p>
 
     {% if desativadas %}
       <details class="folder folder--off">
@@ -271,7 +200,7 @@
       const res = card.querySelector(".fc-resultado");
       if (res) res.innerHTML = acertou
         ? "✓ <strong>Acertou!</strong>"
-        : "✗ Não foi dessa vez — a correta é a <strong>" + certa + "</strong>.";
+        : "✗ Não foi dessa vez. A correta é a <strong>" + certa + "</strong>.";
       verso.hidden = false;
     }));
     card.querySelectorAll(".fc-btn").forEach((btn) => btn.addEventListener("click", async () => {
@@ -290,7 +219,7 @@
         feito.hidden = false;
         feito.innerHTML = btn.dataset.resposta === "lembrei"
           ? "✓ Boa! Próxima revisão em <strong>" + d.proxima_em_dias + " dia" + (d.proxima_em_dias > 1 ? "s" : "") + "</strong>."
-          : "Anotado — este nível volta <strong>amanhã</strong> para reforçar.";
+          : "Anotado: este nível volta <strong>amanhã</strong> para reforçar.";
         card.classList.add("respondido");
       } catch (e) {
         card.querySelectorAll(".fc-btn").forEach((b) => (b.disabled = false));

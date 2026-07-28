@@ -239,6 +239,8 @@ QUOTA_TOKENS_VISITOR = int(os.getenv('QUOTA_TOKENS_VISITOR', '300000'))
 # ==============================================================================
 
 # Voz PT-BR do edge-tts (grátis). Alternativa feminina: pt-BR-FranciscaNeural.
+VIDEO_ENABLED = os.getenv('VIDEO_ENABLED', 'True') == 'True'
+CERTIFICADO_ENABLED = os.getenv('CERTIFICADO_ENABLED', 'True') == 'True'
 VIDEO_TTS_VOICE = os.getenv('VIDEO_TTS_VOICE', 'pt-BR-AntonioNeural')
 # Binários de mídia (ajuste se não estiverem no PATH do worker).
 VIDEO_FFMPEG_BIN = os.getenv('VIDEO_FFMPEG_BIN', 'ffmpeg')

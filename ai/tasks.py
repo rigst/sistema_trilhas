@@ -206,7 +206,7 @@ def task_gerar_sugestoes(self, sessao_id):
 
 
 @shared_task(**TASK_KW)
-def task_gerar_revisao(self, revisao_id):
+def task_gerar_revisao(self, revisao_id, trilha_id=None):
     from avaliacoes.models import Revisao
 
     try:
@@ -214,7 +214,7 @@ def task_gerar_revisao(self, revisao_id):
     except Revisao.DoesNotExist:
         return 'revisão inexistente'
     try:
-        services.gerar_revisao(revisao, _profile(revisao.user))
+        services.gerar_revisao(revisao, _profile(revisao.user), trilha_id=trilha_id)
         revisao.status = Revisao.Status.PRONTA
         revisao.erro = ''
         revisao.save(update_fields=['status', 'erro'])

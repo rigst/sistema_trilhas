@@ -12,7 +12,7 @@
     <div class="resultado-nota">{{ avaliacao.nota_final|floatformat:1 }}<span>/10</span></div>
     <div class="resultado-msg">
       {% if avaliacao.aprovado %}
-        <h2>🎉 Aprovado!</h2>
+        <h2>Aprovado!</h2>
         {% if titulo_conquistado %}<p>Título conquistado: <strong style="color:var(--amber)">{{ titulo_conquistado.nome }}</strong>.</p>{% endif %}
         <p class="muted">O próximo nível foi desbloqueado.</p>
       {% else %}
@@ -42,7 +42,7 @@
         </div>
         <div class="markdown-body" style="font-size:.95rem">{{ item.enunciado_html }}</div>
         {% if item.resposta %}
-          <div class="correcao-sua"><b>Sua resposta:</b> {{ item.resposta.alternativa_escolhida|default:"—" }}</div>
+          <div class="correcao-sua"><b>Sua resposta:</b> {{ item.resposta.alternativa_escolhida|default:"-" }}</div>
           {% if item.feedback_html %}<div class="correcao-fb markdown-body">{{ item.feedback_html }}</div>{% endif %}
         {% endif %}
       </div>

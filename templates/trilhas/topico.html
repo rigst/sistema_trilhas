@@ -41,24 +41,22 @@
       <span class="faixa faixa--{{ nivel.faixa }}">{{ nivel.get_faixa_display }}</span>
       <span class="pill">Tópico {{ passo }} de {{ total }}</span>
     </div>
-    <h1 class="h1" style="margin-top:.5rem">{{ subtopico.titulo }}</h1>
-    {% if subtopico.descricao_curta %}<p class="sub">{{ subtopico.descricao_curta }}</p>{% endif %}
   </div>
 
   <!-- Vídeo narrado do tópico (gerado sob demanda) -->
-  <section class="card pad topico-video" id="video-box"
+  {% if video_enabled %}<section class="card pad topico-video" id="video-box"
            data-poll="{% url 'trilhas:video_status' subtopico.pk %}"
            data-status="{% if video %}{{ video.status }}{% endif %}">
-    <h2 class="h3" style="margin:0 0 .5rem">🎬 Vídeo do tópico</h2>
+    <h2 class="h3" style="margin:0 0 .5rem"><svg class="ic" aria-hidden="true"><use href="#ic-play"/></svg> Vídeo do tópico</h2>
     {% if video and video.status == 'pronto' %}
       <video class="tv-player" controls preload="metadata" src="{{ video.arquivo }}"
              style="width:100%;border-radius:12px;background:#000"></video>
       <div style="display:flex;flex-wrap:wrap;gap:.6rem;align-items:center;margin-top:.7rem">
-        <a class="btn btn-ghost" href="{{ video.arquivo }}" download>⬇ Baixar</a>
+        <a class="btn btn-ghost" href="{{ video.arquivo }}" download>Baixar vídeo</a>
         <form method="post" action="{% url 'trilhas:video_gerar' subtopico.pk %}" style="display:inline">
           {% csrf_token %}<button class="btn btn-ghost" type="submit">Gerar de novo</button>
         </form>
-        {% if video.desatualizado %}<span class="muted" style="font-size:.85rem">O conteúdo mudou desde este vídeo — gere de novo para atualizar.</span>{% endif %}
+        {% if video.desatualizado %}<span class="muted" style="font-size:.85rem">O conteúdo mudou desde este vídeo. Gere de novo para atualizar.</span>{% endif %}
       </div>
     {% elif video and video.status == 'gerando' %}
       <p class="muted" style="margin:.2rem 0 .6rem">Gerando o vídeo… leva alguns minutos. Você pode continuar navegando.</p>
@@ -72,12 +70,12 @@
         {% csrf_token %}<button class="btn btn-primary" type="submit">Tentar de novo</button>
       </form>
     {% else %}
-      <p class="muted" style="margin:.2rem 0 .6rem">Transforme este tópico num vídeo narrado, com os slides, diagramas e explicação em voz — cobrindo todo o conteúdo.</p>
+      <p class="muted" style="margin:.2rem 0 .6rem">Transforme este tópico num vídeo narrado, com os slides, diagramas e explicação em voz, cobrindo todo o conteúdo.</p>
       <form method="post" action="{% url 'trilhas:video_gerar' subtopico.pk %}">
         {% csrf_token %}<button class="btn btn-primary" type="submit">Gerar vídeo do tópico</button>
       </form>
     {% endif %}
-  </section>
+  </section>{% endif %}
 
   <!-- Leitor imersivo (tela cheia no modo Cards) -->
   <div class="story-shell">

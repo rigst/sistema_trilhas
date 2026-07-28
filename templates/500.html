@@ -5,29 +5,40 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Algo deu errado · Trilhas de Estudo</title>
   <style>
-    :root { color-scheme: dark light; }
-    body {
-      margin: 0; min-height: 100vh; display: grid; place-items: center;
-      font-family: system-ui, -apple-system, Segoe UI, Roboto, sans-serif;
-      background: #0C1020; color: #e8ecf6; padding: 1.5rem;
+    *{box-sizing:border-box;margin:0;padding:0}
+    :root{color-scheme:dark light}
+    body{
+      min-height:100vh;display:grid;place-items:center;padding:1.5rem;
+      font-family:system-ui,-apple-system,'Segoe UI',Roboto,sans-serif;
+      background:#0C1020;color:#E7EAF6;line-height:1.6
     }
-    .box {
-      max-width: 30rem; text-align: center; background: #141a30;
-      border: 1px solid #23304f; border-radius: 18px; padding: 2.2rem 1.8rem;
+    .wrap{max-width:26rem;text-align:center}
+    .code{
+      display:inline-block;font-size:.72rem;font-weight:700;letter-spacing:.16em;
+      text-transform:uppercase;color:#2DD4BF;margin-bottom:.7rem
     }
-    h1 { font-size: 2.4rem; margin: .2rem 0 .6rem; }
-    p { color: #9fb0d0; line-height: 1.5; }
-    a {
-      display: inline-block; margin-top: 1.3rem; padding: .7rem 1.4rem;
-      border-radius: 12px; background: #1fb6a6; color: #062820;
-      font-weight: 600; text-decoration: none;
+    h1{font-size:clamp(2rem,5vw,2.8rem);font-weight:800;letter-spacing:-.02em;margin-bottom:.7rem}
+    p{color:#9AA3C4;margin-bottom:1.6rem}
+    a{
+      display:inline-flex;align-items:center;gap:.5rem;padding:.65rem 1.4rem;
+      border-radius:12px;background:linear-gradient(135deg,#2DD4BF,#22B8A6);
+      color:#062820;font-weight:600;text-decoration:none;font-size:.95rem;
+      box-shadow:0 0 24px rgba(45,212,191,.35)
+    }
+    a:hover{filter:brightness(1.08)}
+    @media(prefers-color-scheme:light){
+      body{background:#F3F5FB;color:#151B2E}
+      p{color:#54607F}
+      .code{color:#0E9C88}
+      a{background:linear-gradient(135deg,#0E9C88,#0C8878);box-shadow:0 0 20px rgba(14,156,136,.2)}
     }
   </style>
 </head>
 <body>
-  <div class="box">
-    <h1>Ops!</h1>
-    <p>Algo deu errado do nosso lado. Já registramos o problema — tente novamente em instantes.</p>
+  <div class="wrap">
+    <span class="code">Erro 500</span>
+    <h1>Algo deu errado</h1>
+    <p>Algo inesperado aconteceu do nosso lado. O problema foi registrado e vamos resolver em breve. Tente novamente em instantes.</p>
     <a href="/">Voltar ao início</a>
   </div>
 </body>

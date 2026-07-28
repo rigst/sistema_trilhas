@@ -28,56 +28,44 @@
   {% endif %}
   <header class="trilha-head{% if trilha.cover_url %} com-foto{% endif %}">
     <div class="trilha-kicker">
-      <span class="trilha-emblema" aria-hidden="true">{{ trilha.emblema_display }}</span>
       <span class="trilha-cat">{{ trilha.categoria_display }}</span>
       <span class="status-badge status-badge--{{ trilha.status }}">{{ trilha.get_status_display }}</span>
       {% if not trilha.ativa %}<span class="status-badge status-badge--off">Desativada</span>{% endif %}
     </div>
-    <div class="spread">
-      <div>
-        <h1 class="trilha-titulo">{{ trilha.titulo }}</h1>
-        <span class="trilha-fio" aria-hidden="true"></span>
-        {% if trilha.descricao %}<p class="sub trilha-desc">{{ trilha.descricao }}</p>{% endif %}
-      </div>
-      <div class="inline-actions" style="display:flex;gap:.5rem;align-items:center;flex-wrap:wrap">
-        {% if trilha.status == 'concluida' %}
-          <a class="btn btn-primary" href="{% url 'trilhas:certificado' trilha.pk %}" target="_blank"><svg class="ic" aria-hidden="true"><use href="#ic-cap"/></svg> Certificado</a>
-        {% endif %}
-        <form method="post" action="{% url 'trilhas:nova_capa' trilha.pk %}">
-          {% csrf_token %}
-          <button type="submit" class="btn btn-ghost" title="Buscar outra foto de capa para esta trilha">
-            <svg class="ic" aria-hidden="true"><use href="#ic-refresh"/></svg> Nova capa
-          </button>
-        </form>
-        <form method="post" action="{% url 'trilhas:alternar_ativa' trilha.pk %}">
-          {% csrf_token %}
-          {% if trilha.ativa %}
-            <button type="submit" class="btn btn-ghost" title="Some da revisão, do mentor e do Estudar agora">Desativar</button>
-          {% else %}
-            <button type="submit" class="btn btn-primary">Reativar</button>
-          {% endif %}
-        </form>
-        <form method="post" action="{% url 'trilhas:excluir' trilha.pk %}" onsubmit="return confirm('Excluir esta trilha e todo o progresso?');">
-          {% csrf_token %}<button type="submit" class="btn btn-danger">Excluir</button>
-        </form>
-      </div>
+    <div>
+      <h1 class="trilha-titulo">{{ trilha.titulo }}</h1>
+      <span class="trilha-fio" aria-hidden="true"></span>
+      {% if trilha.descricao %}<p class="sub trilha-desc">{{ trilha.descricao }}</p>{% endif %}
     </div>
+    {% if trilha.status == 'concluida' and certificado_enabled %}
+      <div style="margin-top:.6rem">
+        <a class="btn btn-primary" href="{% url 'trilhas:certificado' trilha.pk %}" target="_blank"><svg class="ic" aria-hidden="true"><use href="#ic-cap"/></svg> Certificado</a>
+      </div>
+    {% endif %}
   </header>
 
   {% if not trilha.ativa %}
     <div class="card pad" style="border-color:var(--line-2);margin-bottom:1.4rem">
-      <strong>Trilha desativada.</strong> <span class="muted">Ela não entra na revisão espaçada, no percurso do mentor nem no “Estudar agora”. Suas conquistas ficam guardadas — reative quando quiser retomá-la.</span>
+      <strong>Trilha desativada.</strong> <span class="muted">Ela não entra na revisão espaçada, no percurso do mentor nem no “Estudar agora”. Suas conquistas ficam guardadas. Reative quando quiser retomá-la.</span>
     </div>
   {% endif %}
 
   {% if trilha.status == 'concluida' %}
     <div class="card pad" style="border-color:rgba(52,211,153,.35);background:rgba(52,211,153,.06);margin-bottom:1.4rem">
-      <strong>🎉 Trilha concluída!</strong> <span class="muted">Você dominou todos os níveis. Baixe seu certificado acima.</span>
+      <strong>Trilha concluída!</strong> <span class="muted">Você dominou todos os níveis{% if certificado_enabled %}. Baixe seu certificado acima{% endif %}.</span>
     </div>
   {% endif %}
 
   <div class="two-col">
     <div>
+      {% if trilha.niveis_aprovados > 0 %}
+        <form method="post" action="{% url 'avaliacoes:revisar_trilha' trilha.pk %}" style="margin-bottom:1.2rem">
+          {% csrf_token %}
+          <button type="submit" class="btn btn-mentor btn-block">
+            <svg class="ic" aria-hidden="true"><use href="#ic-refresh"/></svg> Revisar esta trilha
+          </button>
+        </form>
+      {% endif %}
       <ol class="nivel-list">
         {% for nivel in trilha.niveis.all %}
           {% if nivel.status == 'bloqueado' %}
@@ -151,6 +139,29 @@
             {% endif %}
           {% endfor %}
         </div>
+      </div>
+
+      <div class="trilha-acoes-discretas">
+        <form method="post" action="{% url 'trilhas:nova_capa' trilha.pk %}">
+          {% csrf_token %}<button type="submit" class="tad-btn">Nova capa</button>
+        </form>
+        <span class="tad-sep">•</span>
+        <form method="post" action="{% url 'trilhas:renomear' trilha.pk %}" id="form-renomear-{{ trilha.pk }}">
+          {% csrf_token %}
+          <input type="hidden" name="titulo" id="inp-renomear-{{ trilha.pk }}">
+          <button type="button" class="tad-btn" onclick="var n=prompt('Novo nome da trilha:','{{ trilha.titulo|escapejs }}');if(n&&n.trim()){document.getElementById('inp-renomear-{{ trilha.pk }}').value=n.trim();document.getElementById('form-renomear-{{ trilha.pk }}').submit();}">Renomear trilha</button>
+        </form>
+        <span class="tad-sep">•</span>
+        <form method="post" action="{% url 'trilhas:alternar_ativa' trilha.pk %}"
+              {% if trilha.ativa %}onsubmit="return confirm('Desativar esta trilha?')"{% endif %}>
+          {% csrf_token %}
+          {% if trilha.ativa %}<button type="submit" class="tad-btn">Desativar trilha</button>
+          {% else %}<button type="submit" class="tad-btn tad-btn--ok">Reativar trilha</button>{% endif %}
+        </form>
+        <span class="tad-sep">•</span>
+        <form method="post" action="{% url 'trilhas:excluir' trilha.pk %}" onsubmit="return confirm('Excluir esta trilha e todo o progresso? Esta ação não pode ser desfeita.');">
+          {% csrf_token %}<button type="submit" class="tad-btn tad-btn--danger">Excluir trilha</button>
+        </form>
       </div>
     </aside>
   </div>

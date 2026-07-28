@@ -8,7 +8,7 @@ from django.views.decorators.http import require_POST
 from accounts.quota import bloqueio_ia
 from ai import tasks as ai_tasks
 from trilhas.mdrender import render_md
-from trilhas.models import Nivel
+from trilhas.models import Nivel, Trilha
 
 from .models import (
     Avaliacao, Exercicio, ListaExercicios, QuestaoRevisao, Resposta, Revisao,
@@ -266,6 +266,25 @@ def revisar_iniciar(request):
         return redirect('dashboard')
     revisao = Revisao.objects.create(user=request.user, status=Revisao.Status.GERANDO)
     ai_tasks.task_gerar_revisao.delay(revisao.pk)
+    return redirect('avaliacoes:revisao', pk=revisao.pk)
+
+
+@login_required
+@require_POST
+def revisar_trilha_iniciar(request, trilha_pk):
+    trilha = get_object_or_404(Trilha, pk=trilha_pk, user=request.user)
+    tem_aprovados = Nivel.objects.filter(
+        trilha=trilha, status=Nivel.Status.APROVADO
+    ).exists()
+    if not tem_aprovados:
+        messages.info(request, 'Conclua ao menos um nível desta trilha para revisar.')
+        return redirect('trilhas:detalhe', pk=trilha_pk)
+    erro = bloqueio_ia(request.user, tokens_estimados=15000)
+    if erro:
+        messages.error(request, erro)
+        return redirect('trilhas:detalhe', pk=trilha_pk)
+    revisao = Revisao.objects.create(user=request.user, status=Revisao.Status.GERANDO)
+    ai_tasks.task_gerar_revisao.delay(revisao.pk, trilha_id=trilha.pk)
     return redirect('avaliacoes:revisao', pk=revisao.pk)
 
 

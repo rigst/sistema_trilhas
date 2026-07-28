@@ -8,7 +8,7 @@
       <div class="auth-head">
         <div class="logo-lg" aria-hidden="true"><svg><use href="#logo-trilhas"/></svg></div>
         <h1>Trilhas de Estudo</h1>
-        <p>Diga o que quer aprender e a IA monta um plano completo — do básico ao avançado, com avaliações e títulos a cada nível.</p>
+        <p>Diga o que quer aprender e a IA monta um plano completo: do básico ao avançado, com avaliações e títulos a cada nível.</p>
       </div>
 
       <form method="post" action="{% url 'login' %}">
@@ -31,8 +31,8 @@
 
       <div class="auth-sep">ou</div>
 
-      {# O aceite acontece na própria página de aceite, não aqui: o texto
-         que a pessoa precisa ler não cabe ao lado de um botão. #}
+      {# O aceite acontece na própria página de aceite, não aqui. #}
+      {# O texto que a pessoa precisa ler não cabe ao lado de um botão. #}
       <a class="btn btn-ghost btn-block" href="{% url 'legal:aceite_visitante' %}">Entrar como visitante</a>
       <p class="auth-note">Acesso temporário para experimentar. Suas trilhas expiram por inatividade.</p>
 

@@ -8,7 +8,7 @@
     <a class="back-link" href="{% url 'trilhas:nivel' nivel.pk %}">← {{ nivel.titulo }}</a>
     <div class="badges"><span class="faixa faixa--{{ nivel.faixa }}">{{ nivel.get_faixa_display }}</span><span class="pill">Prática · obrigatória antes da avaliação</span></div>
     <h1 class="h1">Exercícios do nível</h1>
-    <p class="sub">São 5 questões em dificuldade crescente. Atenção: cada resposta é <strong>definitiva</strong> — depois de responder, não dá para alterar. Responda todas para liberar a avaliação.</p>
+    <p class="sub">São 5 questões em dificuldade crescente. Atenção: cada resposta é <strong>definitiva</strong>: depois de responder, não dá para alterar. Responda todas para liberar a avaliação.</p>
   </div>
 
 {% if lista.status == 'gerando' %}
@@ -40,9 +40,11 @@
   <div class="stack">
     {% for item in itens %}
       {% with ex=item.ex %}
-      <div class="card pad exercise" data-id="{{ ex.pk }}" data-answered="{% if ex.respondido_em %}1{% else %}0{% endif %}" data-url="{% url 'avaliacoes:exercicio_verificar' ex.pk %}">
-        <div class="ex-tag"><span class="spark"><svg class="ic" aria-hidden="true"><use href="#ic-pencil"/></svg></span> Exercício {{ ex.ordem }}</div>
-        <div class="q-enun markdown-body">{{ item.enunciado_html }}</div>
+      <div class="q-block exercise" data-id="{{ ex.pk }}" data-answered="{% if ex.respondido_em %}1{% else %}0{% endif %}" data-url="{% url 'avaliacoes:exercicio_verificar' ex.pk %}">
+        <div class="q-enun q-enun--num">
+          <span class="n">{{ ex.ordem }}.</span>
+          <div class="q-enun-body markdown-body">{{ item.enunciado_html }}</div>
+        </div>
 
         <div class="opts">
           {% for alt in ex.alternativas %}
@@ -55,7 +57,7 @@
 
         <div class="ex-actions">
           {% if ex.respondido_em %}
-            <span class="muted" style="font-size:.85rem">✓ Respondido — resposta definitiva</span>
+            <span class="muted" style="font-size:.85rem">✓ Respondido: resposta definitiva</span>
           {% else %}
             <button type="button" class="btn btn-primary js-verify">Responder</button>
             <span class="muted" style="font-size:.8rem">resposta definitiva</span>
@@ -94,12 +96,12 @@
     const done = document.querySelectorAll('.exercise[data-answered="1"]').length;
     countEl.textContent = done;
     progEl.style.width = (total ? Math.round(done/total*100) : 0) + '%';
-    if (concluida) { btnAval.disabled = false; hintEl.textContent = 'Prática concluída ✓ — avaliação liberada!'; }
+    if (concluida) { btnAval.disabled = false; hintEl.textContent = 'Prática concluída ✓: avaliação liberada!'; }
   };
   const lockCard = (card) => {
     card.querySelectorAll('input').forEach(el => el.disabled = true);
     const actions = card.querySelector('.ex-actions');
-    if (actions) actions.innerHTML = '<span class="muted" style="font-size:.85rem">✓ Respondido — resposta definitiva</span>';
+    if (actions) actions.innerHTML = '<span class="muted" style="font-size:.85rem">✓ Respondido: resposta definitiva</span>';
   };
   document.querySelectorAll('.exercise').forEach(card => {
     const btn = card.querySelector('.js-verify');

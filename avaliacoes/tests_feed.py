@@ -1,4 +1,4 @@
-"""Testes do flashcard de revisão rápida (feed) e da revisão em deck."""
+"""Testes do flashcard de revisão rápida (feed) e da revisão."""
 
 from django.contrib.auth import get_user_model
 from django.test import TestCase
@@ -96,7 +96,7 @@ class RevisaoRapidaTests(TestCase):
         self.assertNotIn('Quiz do dia', html)
 
 
-class RevisaoDeckRenderTests(TestCase):
+class RevisaoRenderTests(TestCase):
     @classmethod
     def setUpTestData(cls):
         cls.user = User.objects.create_user('deck', password='x')
@@ -114,11 +114,13 @@ class RevisaoDeckRenderTests(TestCase):
                 gabarito='A', explicacao_md='Porque sim.',
             )
 
-    def test_revisao_renderiza_deck(self):
+    def test_revisao_renderiza_questoes_no_padrao_da_avaliacao(self):
         self.client.force_login(self.user)
         resp = self.client.get(reverse('avaliacoes:revisao', args=[self.revisao.pk]))
         html = resp.content.decode()
         self.assertEqual(resp.status_code, 200)
-        self.assertIn('story-bars', html)
-        self.assertIn('story-card--fim', html)
-        self.assertIn('TrilhasDeck', html)
+        self.assertIn('q-block exercise', html)
+        self.assertIn('q-enun q-enun--num', html)
+        self.assertIn('Trilha Feed · Fundamentos', html)
+        self.assertNotIn('story-bars', html)
+        self.assertNotIn('TrilhasDeck', html)

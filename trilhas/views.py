@@ -1,3 +1,4 @@
+from django.conf import settings
 from django.contrib import messages
 from django.contrib.auth.decorators import login_required
 from django.http import Http404, HttpResponse, JsonResponse
@@ -82,15 +83,8 @@ def dashboard(request):
         medalhas.append(m)
     medalhas.sort(key=lambda m: (ordem_tier.get(m['tier'], 9), -m['estrelas']))
 
-    # Agrupa as trilhas ativas por categoria (como "pastas"); "Outras" por último.
-    from collections import OrderedDict
-    ordenadas = sorted(
-        ativas,
-        key=lambda t: (t.categoria_display == 'Outras', t.categoria_display.lower()),
-    )
-    grupos = OrderedDict()
-    for t in ordenadas:  # ordenação estável preserva -criada_em dentro do grupo
-        grupos.setdefault(t.categoria_display, []).append(t)
+    # Trilhas ativas ordenadas globalmente por progresso decrescente.
+    ativas_sorted = sorted(ativas, key=lambda t: -t.progresso_pct)
 
     pode_estudar = any(t.proximo_topico for t in ativas)
 
@@ -129,10 +123,10 @@ def dashboard(request):
 
     return render(request, 'trilhas/dashboard.html', {
         'trilhas': trilhas,
+        'n_ativas': len(ativas),
         'desativadas': desativadas,
         'medalhas': medalhas,
-        'grupos': grupos.items(),
-        'multiplos_grupos': len(grupos) > 1,
+        'ativas_sorted': ativas_sorted,
         'pode_estudar': pode_estudar,
         'continuar': continuar,
         'feed_revisao': feed_revisao,
@@ -318,7 +312,10 @@ def sugestoes_nova(request):
         ai_tasks.task_gerar_sugestoes.delay(sessao.pk)
         return redirect('trilhas:sugestoes')
 
-    return render(request, 'trilhas/sugestoes_nova.html', {'candidatas': candidatas})
+    from itertools import groupby
+    candidatas_ord = sorted(candidatas, key=lambda t: t.categoria_display)
+    grupos_cat = [(cat, list(items)) for cat, items in groupby(candidatas_ord, key=lambda t: t.categoria_display)]
+    return render(request, 'trilhas/sugestoes_nova.html', {'candidatas': candidatas, 'grupos_cat': grupos_cat})
 
 
 @login_required
@@ -425,7 +422,21 @@ def trilha_detalhe(request, pk):
     ):
         return redirect('trilhas:perguntas', pk=trilha.pk)
 
-    return render(request, 'trilhas/trilha_detalhe.html', {'trilha': trilha})
+    return render(request, 'trilhas/trilha_detalhe.html', {
+        'trilha': trilha,
+        'certificado_enabled': getattr(settings, 'CERTIFICADO_ENABLED', True),
+    })
+
+
+@login_required
+@require_POST
+def trilha_renomear(request, pk):
+    trilha = get_object_or_404(Trilha, pk=pk, user=request.user)
+    titulo = request.POST.get('titulo', '').strip()
+    if titulo:
+        trilha.titulo = titulo
+        trilha.save(update_fields=['titulo', 'atualizada_em'])
+    return redirect('trilhas:detalhe', pk=pk)
 
 
 @login_required
@@ -528,7 +539,8 @@ def topico(request, nivel_pk, ordem):
         'trilha': nivel.trilha,
         'subtopico': atual,
         'subtopicos': subs,
-        'video': VideoSubtopico.objects.filter(subtopico=atual).first(),
+        'video_enabled': getattr(settings, 'VIDEO_ENABLED', True),
+        'video': VideoSubtopico.objects.filter(subtopico=atual).first() if getattr(settings, 'VIDEO_ENABLED', True) else None,
         'conteudo_html': render_subtopico(atual),
         'passo': idx + 1,
         'total': len(subs),

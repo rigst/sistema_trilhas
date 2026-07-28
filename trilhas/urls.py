@@ -22,6 +22,7 @@ urlpatterns = [
     path('<int:pk>/excluir/', views.trilha_excluir, name='excluir'),
     path('<int:pk>/ativa/', views.trilha_alternar_ativa, name='alternar_ativa'),
     path('<int:pk>/nova-capa/', views.trilha_nova_capa, name='nova_capa'),
+    path('<int:pk>/renomear/', views.trilha_renomear, name='renomear'),
     path('<int:pk>/certificado/', views.certificado, name='certificado'),
     path('nivel/<int:pk>/', views.nivel_detalhe, name='nivel'),
     path('nivel/<int:nivel_pk>/topico/<int:ordem>/', views.topico, name='topico'),

@@ -14,12 +14,19 @@
       </span>
       {% if trilha.total_niveis %}<span class="tc-frac">{{ trilha.niveis_aprovados }}/{{ trilha.total_niveis }}</span>{% endif %}
     </div>
+    {% if show_cat and trilha.categoria_display %}<p class="tc-cat">{{ trilha.categoria_display }}</p>{% endif %}
     <h3 class="tc-title">{{ trilha.titulo|default:trilha.tema_livre|truncatechars:64 }}</h3>
     {% if trilha.descricao %}<p class="tc-desc">{{ trilha.descricao|truncatechars:120 }}</p>{% endif %}
-    {% if trilha.total_niveis %}
-      <div class="progress-bar"><span style="width: {{ trilha.progresso_pct }}%"></span></div>
-      <p class="progress-label">{{ trilha.progresso_pct }}% concluído</p>
-    {% endif %}
-    {% if trilha.medalha %}<div class="title-chips" style="margin-top:.7rem"><span class="title-chip title-chip--{{ trilha.medalha.tier }}">{{ trilha.medalha.tier_label }} · {{ trilha.medalha.nome }}</span></div>{% endif %}
+    <div class="tc-spacer"></div>
+    <div class="progress-bar"><span style="width: {% if trilha.total_niveis %}{{ trilha.progresso_pct }}{% else %}0{% endif %}%"></span></div>
+    <p class="progress-label">{% if trilha.total_niveis %}{{ trilha.progresso_pct }}% concluído{% else %}&nbsp;{% endif %}</p>
+    <div class="tc-medal-area">
+      {% if trilha.medalha %}
+        <div class="tc-medal tc-medal--{{ trilha.medalha.tier }}" title="{{ trilha.medalha.nome }}">
+          <svg class="ic" aria-hidden="true"><use href="#ic-trophy"/></svg>
+          {{ trilha.medalha.tier_label }}
+        </div>
+      {% endif %}
+    </div>
   </a>
 </article>

@@ -665,8 +665,8 @@ def gerar_avaliacao(avaliacao, profile=None):
         f'Resumo: {nivel.resumo}\n'
         f'Subtópicos:\n{subs}\n\n'
         'Elabore uma avaliação com EXATAMENTE 10 questões objetivas (múltipla '
-        'escolha, 4 a 5 alternativas com uma correta), em DIFICULDADE PROGRESSIVA — '
-        'da mais simples (questão 1) à mais difícil (questão 10). Preencha '
+        'escolha, 4 a 5 alternativas com uma correta), em dificuldade MÉDIA e ALTA — '
+        'sem questões fáceis ou triviais; exija raciocínio, aplicação e análise. Preencha '
         '"alternativas" com objetos {letra, texto} e "gabarito" com a letra correta. '
         'Use "peso" 1.0 em todas. Não crie questões dissertativas. Numere em '
         '"ordem" de 1 a 10. Não repita questões nem insira itens de aviso ou '
@@ -795,8 +795,8 @@ def gerar_exercicios(lista, profile=None):
         f'Resumo: {nivel.resumo}\n'
         f'Subtópicos:\n{subs}\n\n'
         'Crie EXATAMENTE 5 exercícios de prática, TODOS objetivos (múltipla escolha), '
-        'em DIFICULDADE PROGRESSIVA — do mais simples (exercício 1) ao mais difícil '
-        '(exercício 5). Para cada um: "alternativas" com {letra, texto} e "gabarito" '
+        'em dificuldade MÉDIA e ALTA — sem exercícios fáceis ou triviais; exija '
+        'aplicação e raciocínio. Para cada um: "alternativas" com {letra, texto} e "gabarito" '
         'com a letra correta. Não crie exercícios dissertativos. Sempre preencha '
         '"explicacao" com um comentário didático que será mostrado como feedback. '
         'Numere em "ordem" de 1 a 5.'
@@ -1045,17 +1045,16 @@ def gerar_sugestoes(sessao, profile=None):
 # 7. Revisão espaçada (Sonnet — quiz misto sobre níveis já concluídos)
 # ---------------------------------------------------------------------------
 
-def gerar_revisao(revisao, profile=None):
+def gerar_revisao(revisao, profile=None, trilha_id=None):
     from avaliacoes.models import QuestaoRevisao
     from trilhas.models import Nivel
 
-    niveis = list(
-        Nivel.objects
-        .filter(trilha__user=revisao.user, trilha__ativa=True,
-                status=Nivel.Status.APROVADO)
-        .select_related('trilha')
-        .order_by('?')[:8]
+    qs = Nivel.objects.filter(
+        trilha__user=revisao.user, trilha__ativa=True, status=Nivel.Status.APROVADO
     )
+    if trilha_id:
+        qs = qs.filter(trilha_id=trilha_id)
+    niveis = list(qs.select_related('trilha').order_by('?')[:10])
     if not niveis:
         raise IAError('Nenhum nível concluído para revisar ainda.')
 
@@ -1066,12 +1065,12 @@ def gerar_revisao(revisao, profile=None):
             f'Nível {i} — trilha "{nv.trilha.titulo}", nível "{nv.titulo}" '
             f'(faixa {nv.get_faixa_display()}). Subtópicos: {subs}'
         )
-    n_questoes = min(12, max(6, len(niveis) * 3))
+    n_questoes = 10 if trilha_id else min(12, max(6, len(niveis) * 3))
     user = (
         'Níveis já concluídos pelo aluno (use-os como base da revisão):\n\n'
         + '\n'.join(blocos)
         + f'\n\nCrie {n_questoes} questões objetivas de revisão, misturando os '
-        'níveis acima e variando a dificuldade. Em "origem" coloque o NÚMERO do '
+        'níveis acima, em dificuldade MÉDIA e ALTA (sem questões fáceis ou triviais). Em "origem" coloque o NÚMERO do '
         'nível de referência (1 a ' + str(len(niveis)) + '). Preencha '
         '"alternativas" com {letra, texto}, "gabarito" com a letra correta e '
         '"explicacao" com um comentário didático. Numere em "ordem" a partir de 1.'

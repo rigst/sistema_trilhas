@@ -8,7 +8,7 @@
     <a class="back-link" href="{% url 'dashboard' %}">← Minhas trilhas</a>
     <div class="badges"><span class="pill"><svg class="ic" aria-hidden="true"><use href="#ic-refresh"/></svg> Revisão espaçada</span></div>
     <h1 class="h1">Revisão dos níveis concluídos</h1>
-    <p class="sub">Perguntas misturando o que você já dominou em diferentes trilhas. Cada resposta é definitiva — o objetivo é reforçar a memória.</p>
+    <p class="sub">Perguntas misturando o que você já dominou em diferentes trilhas. Cada resposta é definitiva: o objetivo é reforçar a memória.</p>
   </div>
 
 {% if revisao.status == 'gerando' %}
@@ -30,7 +30,7 @@
 
 {% else %}
   {% csrf_token %}
-  <div class="card pad-sm" style="margin-bottom:1.2rem">
+  <div style="margin-bottom:1.2rem">
     <div class="spread" style="align-items:center">
       <span class="muted" style="font-size:.9rem">Respondidas <strong id="rev-count" style="color:var(--teal)">{{ revisao.respondidos }}</strong>/{{ revisao.total }}</span>
       <span id="rev-hint" class="muted" style="font-size:.85rem">{% if revisao.concluida %}Revisão concluída ✓ · {{ revisao.acertos }}/{{ revisao.total }} acertos{% else %}responda no seu ritmo{% endif %}</span>
@@ -40,77 +40,41 @@
 
   {% include 'partials/dica_descarte.html' %}
 
-  <div class="story-head">
-    <div class="story-bars" aria-label="Progresso da revisão"></div>
-    <span class="story-count" aria-live="polite"></span>
-    <div class="mode-toggle" role="group" aria-label="Modo de exibição">
-      <button type="button" data-mode="cards">Cards</button>
-      <button type="button" data-mode="lista">Lista</button>
-    </div>
-  </div>
-
-  <div class="story-stage rev-deck">
+  <div class="stack">
     {% for item in itens %}
       {% with q=item.q %}
-      <div class="story-card card pad exercise" data-id="{{ q.pk }}" data-answered="{% if q.respondido_em %}1{% else %}0{% endif %}" data-url="{% url 'avaliacoes:revisao_verificar' q.pk %}">
-        <div class="sc-in">
-          <div class="ex-tag"><span class="spark"><svg class="ic" aria-hidden="true"><use href="#ic-refresh"/></svg></span> Questão {{ q.ordem }}{% if q.origem %} · <span class="muted" style="text-transform:none;letter-spacing:0;font-weight:500">{{ q.origem }}</span>{% endif %}</div>
-          <div class="q-enun markdown-body">{{ item.enunciado_html }}</div>
-
-          <div class="opts">
-            {% for alt in q.alternativas %}
-              <label class="opt {% if q.respondido_em %}{% if alt.letra == q.gabarito %}correct{% elif q.alternativa_escolhida == alt.letra %}wrong{% endif %}{% endif %}">
-                <input type="radio" name="rev_{{ q.pk }}" value="{{ alt.letra }}" {% if q.alternativa_escolhida == alt.letra %}checked{% endif %} {% if q.respondido_em %}disabled{% endif %}>
-                <div class="opt-texto markdown-body"><strong>{{ alt.letra }})</strong> {{ alt.texto|md_inline }}</div>
-              </label>
-            {% endfor %}
-          </div>
-
-          <div class="ex-actions">
-            {% if q.respondido_em %}
-              <span class="muted" style="font-size:.85rem">✓ Respondido — resposta definitiva</span>
-            {% else %}
-              <button type="button" class="btn btn-primary js-verify">Responder</button>
-              <span class="muted" style="font-size:.8rem">resposta definitiva</span>
-            {% endif %}
-          </div>
-          <div class="fb js-fb markdown-body {% if q.respondido_em %}show {% if q.nota == 10 %}ok{% else %}no{% endif %}{% endif %}">{{ item.explicacao_html }}</div>
+      <div class="q-block exercise" data-id="{{ q.pk }}" data-answered="{% if q.respondido_em %}1{% else %}0{% endif %}" data-url="{% url 'avaliacoes:revisao_verificar' q.pk %}">
+        <div class="q-enun q-enun--num">
+          <span class="n">{{ q.ordem }}.</span>
+          <div class="q-enun-body markdown-body">{{ item.enunciado_html }}</div>
         </div>
+        {% if q.origem %}<p class="muted" style="font-size:.82rem;margin:.15rem 0 .7rem">{{ q.origem }}</p>{% endif %}
+
+        <div class="opts">
+          {% for alt in q.alternativas %}
+            <label class="opt {% if q.respondido_em %}{% if alt.letra == q.gabarito %}correct{% elif q.alternativa_escolhida == alt.letra %}wrong{% endif %}{% endif %}">
+              <input type="radio" name="rev_{{ q.pk }}" value="{{ alt.letra }}" {% if q.alternativa_escolhida == alt.letra %}checked{% endif %} {% if q.respondido_em %}disabled{% endif %}>
+              <div class="opt-texto markdown-body"><strong>{{ alt.letra }})</strong> {{ alt.texto|md_inline }}</div>
+            </label>
+          {% endfor %}
+        </div>
+
+        <div class="ex-actions">
+          {% if q.respondido_em %}
+            <span class="muted" style="font-size:.85rem">✓ Respondido: resposta definitiva</span>
+          {% else %}
+            <button type="button" class="btn btn-primary js-verify">Responder</button>
+            <span class="muted" style="font-size:.8rem">resposta definitiva</span>
+          {% endif %}
+        </div>
+        <div class="fb js-fb markdown-body {% if q.respondido_em %}show {% if q.nota == 10 %}ok{% else %}no{% endif %}{% endif %}">{{ item.explicacao_html }}</div>
       </div>
       {% endwith %}
     {% endfor %}
-
-    <div class="story-card story-card--fim">
-      <div class="sc-in">
-        <div class="sc-fim">
-          <span class="fim-badge" aria-hidden="true"><svg class="ic" aria-hidden="true"><use href="#ic-refresh"/></svg></span>
-          <h2 class="h2" style="margin:0" id="rev-fim-titulo">{% if revisao.concluida %}Revisão concluída{% else %}Quase lá{% endif %}</h2>
-          <p class="muted" id="rev-fim-sub" style="margin:.15rem 0 0;font-size:.92rem">
-            {% if revisao.concluida %}{{ revisao.acertos }}/{{ revisao.total }} acertos · os intervalos de revisão de cada nível foram reagendados.{% else %}Responda as questões que faltam para reagendar a revisão espaçada.{% endif %}
-          </p>
-          <form method="post" action="{% url 'avaliacoes:revisar' %}" style="width:100%;max-width:330px">{% csrf_token %}
-            <button class="btn btn-primary btn-block" style="margin-top:1rem">Nova revisão <svg class="ic" aria-hidden="true"><use href="#ic-refresh"/></svg></button>
-          </form>
-          <a class="btn btn-ghost" href="{% url 'dashboard' %}">Voltar às trilhas</a>
-        </div>
-      </div>
-    </div>
-
-    <button class="story-tap story-tap--l" type="button" tabindex="-1" aria-hidden="true"></button>
-    <button class="story-tap story-tap--r" type="button" tabindex="-1" aria-hidden="true"></button>
   </div>
 
-  <div class="story-foot">
-    <button class="story-nav-btn story-prev" type="button" aria-label="Questão anterior">
-      <svg class="ic" aria-hidden="true"><use href="#ic-chev-l"/></svg>
-    </button>
-    <button class="story-nav-btn story-next" type="button" aria-label="Próxima questão">
-      <svg class="ic" aria-hidden="true"><use href="#ic-chev-r"/></svg>
-    </button>
-  </div>
-
-  <div class="form-actions rev-lista-acoes" style="justify-content:center;margin-top:2rem">
-    <a class="btn btn-ghost" href="{% url 'dashboard' %}">Voltar</a>
+  <div class="form-actions" style="justify-content:center;margin-top:2rem">
+    <a class="btn btn-ghost" href="{% url 'dashboard' %}">Voltar às trilhas</a>
     <form method="post" action="{% url 'avaliacoes:revisar' %}">{% csrf_token %}
       <button class="btn btn-primary">Nova revisão <svg class="ic" aria-hidden="true"><use href="#ic-refresh"/></svg></button>
     </form>
@@ -124,7 +88,6 @@
   {% url 'avaliacoes:revisao_status' revisao.pk as poll_url %}
   {% include 'partials/poll.html' with poll_url=poll_url poll_status='gerando' %}
 {% elif revisao.status == 'pronta' %}
-<script src="{% static 'js/deck.js' %}"></script>
 <script>
 (() => {
   const page = document.getElementById('rev-page');
@@ -133,24 +96,19 @@
   const countEl = document.getElementById('rev-count');
   const progEl = document.getElementById('rev-progress');
   const hintEl = document.getElementById('rev-hint');
-  const fimTitulo = document.getElementById('rev-fim-titulo');
-  const fimSub = document.getElementById('rev-fim-sub');
 
   const lockCard = (card) => {
     card.querySelectorAll('input').forEach(el => el.disabled = true);
     const actions = card.querySelector('.ex-actions');
-    if (actions) actions.innerHTML = '<span class="muted" style="font-size:.85rem">✓ Respondido — resposta definitiva</span>';
+    if (actions) actions.innerHTML = '<span class="muted" style="font-size:.85rem">✓ Respondido: resposta definitiva</span>';
   };
   const refresh = (concluida) => {
     const done = document.querySelectorAll('.exercise[data-answered="1"]').length;
     countEl.textContent = done;
     progEl.style.width = (total ? Math.round(done/total*100) : 0) + '%';
-    if (concluida) {
-      hintEl.textContent = 'Revisão concluída ✓';
-      fimTitulo.textContent = 'Revisão concluída';
-      fimSub.textContent = 'Os intervalos de revisão de cada nível foram reagendados.';
-    }
+    if (concluida) hintEl.textContent = 'Revisão concluída ✓';
   };
+
   document.querySelectorAll('.exercise').forEach(card => {
     const btn = card.querySelector('.js-verify');
     const fb = card.querySelector('.js-fb');
@@ -184,14 +142,6 @@
       }
     });
   });
-
-  // Deck estilo stories: uma questão por card; começa na primeira sem resposta.
-  const deck = window.TrilhasDeck(page, { modeKey: 'trilhas-leitura-rev' });
-  if (deck) {
-    const cards = deck.cards;
-    const alvo = cards.findIndex(c => c.dataset.answered === '0');
-    deck.show(alvo === -1 ? cards.length - 1 : alvo);
-  }
 })();
 </script>
 {% endif %}
