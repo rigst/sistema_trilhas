@@ -340,11 +340,22 @@ def sugestao_aceitar(request, pk):
         messages.error(request, erro)
         return redirect('trilhas:sugestoes')
 
+    # Criar uma trilha a partir de uma sugestão também custa 1 diamante.
+    profile = getattr(request.user, 'profile', None)
+    if profile is None or not profile.gastar_diamante():
+        messages.error(
+            request,
+            'Você está sem diamantes. Ganhe mais estudando: a cada '
+            '10 níveis de XP (≈ concluir uma trilha) você recebe um novo diamante.',
+        )
+        return redirect('trilhas:sugestoes')
+
     trilha = Trilha.objects.create(
         user=request.user,
         tema_livre=sugestao.como_tema(),
         titulo=sugestao.titulo,
         status=Trilha.Status.GERANDO_PERGUNTAS,
+        diamante_gasto=True,
     )
     sugestao.trilha = trilha
     sugestao.save(update_fields=['trilha'])

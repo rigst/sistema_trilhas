@@ -4,7 +4,7 @@
 
 {% block content %}
 <section class="page">
-  <div class="spread page-head">
+  <div class="spread page-head dash-head">
     <div>
       <div class="eyebrow">Mapa de expedição</div>
       <h1 class="h1" id="dash-greeting">Minhas trilhas</h1>
@@ -25,42 +25,8 @@
     </div>
   </div>
 
-  <div class="xp-widget">
-    <div class="xp-widget-top">
-      <div class="xp-widget-info">
-        <span class="xp-nivel-badge">Nv.{{ nivel_xp }}</span>
-        <span class="xp-total">{{ xp }} XP</span>
-        {% if xp_hoje %}<span class="xp-hoje-badge">+{{ xp_hoje }} hoje</span>{% endif %}
-        {% if streak_dias %}<span class="xp-streak"><svg class="ic" aria-hidden="true"><use href="#ic-flame"/></svg> {{ streak_dias }}</span>{% endif %}
-      </div>
-      <span class="xp-widget-meta">{{ xp_no_nivel }}/100 → Nv.{{ nivel_xp|add:1 }}</span>
-    </div>
-    <div class="xp-widget-track" role="progressbar" aria-valuenow="{{ xp_no_nivel }}" aria-valuemin="0" aria-valuemax="100">
-      <i style="width:{{ xp_no_nivel }}%"></i>
-    </div>
-    <div class="xp-semana">
-      {% for dia in dias_semana %}
-        <div class="xp-dia{% if dia.ativo %} xp-dia--on{% endif %}{% if dia.hoje %} xp-dia--hoje{% endif %}">
-          <span class="xp-dia-dot"></span>
-          <span class="xp-dia-nome">{{ dia.nome }}</span>
-        </div>
-      {% endfor %}
-    </div>
-  </div>
-
-  {% if quota and quota.pct >= 70 %}
-    <div class="quota-bar" title="Uso mensal de geração por IA">
-      <div class="quota-bar-head">
-        <span class="quota-bar-label">
-          {% if quota.is_visitor %}Cota de visitante{% else %}Cota de IA deste mês{% endif %}
-        </span>
-        <span class="quota-bar-pct">{{ quota.pct }}%</span>
-      </div>
-      <div class="quota-bar-track" role="progressbar" aria-valuenow="{{ quota.pct }}" aria-valuemin="0" aria-valuemax="100">
-        <i style="width:{{ quota.pct }}%{% if quota.pct >= 90 %};background:var(--danger,#c0392b){% endif %}"></i>
-      </div>
-    </div>
-  {% endif %}
+  <div class="two-col dash-cols">
+    <div class="dash-main">
 
   {% if continuar %}
     <a class="continue-hero" href="{% url 'trilhas:topico' continuar.nivel.pk continuar.sub.ordem %}">
@@ -197,6 +163,55 @@
       <a class="btn btn-primary" href="{% url 'trilhas:criar' %}">Criar minha primeira trilha</a>
     </div>
   {% endif %}
+    </div>{# /dash-main #}
+
+    <aside class="dash-side">
+      <div class="xp-widget">
+        <div class="xp-widget-top">
+          <div class="xp-widget-info">
+            <span class="xp-nivel-badge">Nv.{{ nivel_xp }}</span>
+            <span class="xp-total">{{ xp }} XP</span>
+            {% if xp_hoje %}<span class="xp-hoje-badge">+{{ xp_hoje }} hoje</span>{% endif %}
+            {% if streak_dias %}<span class="xp-streak"><svg class="ic" aria-hidden="true"><use href="#ic-flame"/></svg> {{ streak_dias }}</span>{% endif %}
+          </div>
+          <span class="xp-widget-meta">{{ xp_no_nivel }}/100 → Nv.{{ nivel_xp|add:1 }}</span>
+        </div>
+        <div class="xp-widget-track" role="progressbar" aria-valuenow="{{ xp_no_nivel }}" aria-valuemin="0" aria-valuemax="100">
+          <i style="width:{{ xp_no_nivel }}%"></i>
+        </div>
+        <div class="xp-semana">
+          {% for dia in dias_semana %}
+            <div class="xp-dia{% if dia.ativo %} xp-dia--on{% endif %}{% if dia.hoje %} xp-dia--hoje{% endif %}">
+              <span class="xp-dia-dot"></span>
+              <span class="xp-dia-nome">{{ dia.nome }}</span>
+            </div>
+          {% endfor %}
+        </div>
+      </div>
+
+      <div class="diamante-widget" title="Diamantes para criar trilhas">
+        <span class="dw-ico"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="#ic-diamante"/></svg></span>
+        <div class="dw-body">
+          <span class="dw-count">{{ diamantes }} diamante{{ diamantes|pluralize }}</span>
+          <span class="dw-meta">Faltam {{ xp_para_proximo_diamante }} XP para o próximo</span>
+        </div>
+      </div>
+
+      {% if quota and quota.pct >= 70 %}
+        <div class="quota-bar" title="Uso mensal de geração por IA">
+          <div class="quota-bar-head">
+            <span class="quota-bar-label">
+              {% if quota.is_visitor %}Cota de visitante{% else %}Cota de IA deste mês{% endif %}
+            </span>
+            <span class="quota-bar-pct">{{ quota.pct }}%</span>
+          </div>
+          <div class="quota-bar-track" role="progressbar" aria-valuenow="{{ quota.pct }}" aria-valuemin="0" aria-valuemax="100">
+            <i style="width:{{ quota.pct }}%{% if quota.pct >= 90 %};background:var(--danger,#c0392b){% endif %}"></i>
+          </div>
+        </div>
+      {% endif %}
+    </aside>
+  </div>{# /two-col #}
 </section>
 {% endblock %}
 

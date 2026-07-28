@@ -7,11 +7,7 @@
     <div class="eyebrow">Passo 1 de 3</div>
     <h1 class="h1">O que você quer aprender?</h1>
     <p class="sub">Descreva livremente: pode ser amplo. A IA vai fazer algumas perguntas para afinar o plano.</p>
-    <p class="custo-diamante">
-      <svg class="ic" aria-hidden="true"><use href="#ic-diamante"/></svg>
-      Criar uma trilha custa <strong>1 diamante</strong>. Você tem
-      <strong>{{ diamantes }}</strong>. Se excluir a trilha em até 48h, o diamante volta.
-    </p>
+    {% include 'partials/aviso_diamante.html' %}
   </div>
 
   {% if diamantes < 1 %}
