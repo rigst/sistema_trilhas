@@ -7,8 +7,23 @@
     <div class="eyebrow">Passo 1 de 3</div>
     <h1 class="h1">O que você quer aprender?</h1>
     <p class="sub">Descreva livremente: pode ser amplo. A IA vai fazer algumas perguntas para afinar o plano.</p>
+    <p class="custo-diamante">
+      <svg class="ic" aria-hidden="true"><use href="#ic-diamante"/></svg>
+      Criar uma trilha custa <strong>1 diamante</strong>. Você tem
+      <strong>{{ diamantes }}</strong>. Se excluir a trilha em até 48h, o diamante volta.
+    </p>
   </div>
 
+  {% if diamantes < 1 %}
+    <div class="callout callout-warn">
+      Você está sem diamantes. Ganhe mais estudando: a cada 10 níveis de XP
+      (≈ concluir uma trilha) você recebe um novo diamante. Faltam
+      {{ xp_para_proximo_diamante }} XP para o próximo.
+    </div>
+    <div class="form-actions">
+      <a class="btn btn-ghost" href="{% url 'dashboard' %}">Voltar ao painel</a>
+    </div>
+  {% else %}
   <form method="post" action="{% url 'trilhas:criar' %}">
     {% csrf_token %}
     <div class="field">
@@ -21,5 +36,6 @@
       <button type="submit" class="btn btn-primary">Gerar perguntas →</button>
     </div>
   </form>
+  {% endif %}
 </section>
 {% endblock %}

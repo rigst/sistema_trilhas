@@ -367,10 +367,20 @@ def trilha_criar(request):
         if erro:
             messages.error(request, erro)
             return redirect('dashboard')
+        # Criar uma trilha custa 1 diamante. Débito atômico antes de criar.
+        profile = getattr(request.user, 'profile', None)
+        if profile is None or not profile.gastar_diamante():
+            messages.error(
+                request,
+                'Você está sem diamantes. Ganhe mais estudando: a cada '
+                '10 níveis de XP (≈ concluir uma trilha) você recebe um novo diamante.',
+            )
+            return redirect('dashboard')
         trilha = Trilha.objects.create(
             user=request.user,
             tema_livre=tema,
             status=Trilha.Status.GERANDO_PERGUNTAS,
+            diamante_gasto=True,
         )
         ai_tasks.task_gerar_perguntas.delay(trilha.pk)
         return redirect('trilhas:perguntas', pk=trilha.pk)
@@ -443,8 +453,15 @@ def trilha_renomear(request, pk):
 @require_POST
 def trilha_excluir(request, pk):
     trilha = get_object_or_404(Trilha, pk=pk, user=request.user)
+    # Excluir dentro da janela (48h) devolve o diamante gasto na criação.
+    reembolsa = trilha.reembolsavel
+    profile = getattr(request.user, 'profile', None)
     trilha.delete()
-    messages.success(request, 'Trilha excluída.')
+    if reembolsa and profile is not None:
+        profile.creditar_diamante()
+        messages.success(request, 'Trilha excluída — diamante devolvido.')
+    else:
+        messages.success(request, 'Trilha excluída.')
     return redirect('dashboard')
 
 

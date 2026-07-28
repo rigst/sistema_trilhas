@@ -62,6 +62,9 @@ class Trilha(models.Model):
         max_length=25, choices=Status.choices, default=Status.RASCUNHO, db_index=True
     )
     nota_minima_aprovacao = models.FloatField('nota mínima de aprovação', default=7.0)
+    # Marca que 1 diamante foi gasto ao criar esta trilha (habilita reembolso
+    # se excluída dentro da janela). Trilhas antigas ficam False → não reembolsam.
+    diamante_gasto = models.BooleanField('diamante gasto na criação', default=False)
 
     erro = models.TextField('mensagem de erro', blank=True)
     criada_em = models.DateTimeField(auto_now_add=True)
@@ -74,6 +77,18 @@ class Trilha(models.Model):
 
     def __str__(self):
         return self.titulo or self.tema_livre[:60]
+
+    # Janela (horas) em que excluir a trilha devolve o diamante gasto.
+    JANELA_REEMBOLSO_HORAS = 48
+
+    @property
+    def reembolsavel(self):
+        """True se excluir agora devolve o diamante (gasto + dentro da janela)."""
+        if not self.diamante_gasto:
+            return False
+        from django.utils import timezone
+        limite = timezone.timedelta(hours=self.JANELA_REEMBOLSO_HORAS)
+        return (timezone.now() - self.criada_em) <= limite
 
     # -- Progresso / gamificação ----------------------------------------
     @property

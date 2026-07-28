@@ -25,6 +25,11 @@ class Profile(models.Model):
 
     # Gamificação
     xp = models.BigIntegerField('XP', default=0)
+    # Diamantes: moeda para criar trilhas. Começa com 3; ganha +1 a cada
+    # XP_POR_DIAMANTE de XP (≈ 10 níveis de jogador ≈ 1 trilha concluída).
+    diamantes = models.IntegerField('diamantes', default=3)
+    # Quantos diamantes já foram creditados por marcos de XP (evita recrédito).
+    diamantes_xp_creditados = models.IntegerField('diamantes creditados por XP', default=0)
     streak_dias = models.PositiveIntegerField('sequência de dias', default=0)
     ultimo_estudo = models.DateField('último dia de estudo', null=True, blank=True)
     lembrete_streak_em = models.DateField(
@@ -94,6 +99,10 @@ class Profile(models.Model):
     XP_APROVACAO = 50         # ser aprovado num nível
     XP_TRILHA_CONCLUIDA = 100 # completar todos os níveis de uma trilha
 
+    # Economia de diamantes: 1000 XP ≈ 10 níveis de jogador ≈ 1 trilha concluída.
+    # Assim, concluir uma trilha rende ~1 diamante (break-even sustentável).
+    XP_POR_DIAMANTE = 1000
+
     @property
     def nivel_xp(self):
         """Nível de jogador derivado do XP (100 XP por nível)."""
@@ -137,6 +146,50 @@ class Profile(models.Model):
             'xp_hoje_ref', 'xp_hoje_acc', 'semana_ref', 'dias_xp_semana',
             'atualizado_em',
         ])
+        self._creditar_diamantes_por_xp()
+
+    # -- Diamantes -------------------------------------------------------
+    def _creditar_diamantes_por_xp(self):
+        """Credita 1 diamante a cada XP_POR_DIAMANTE de XP acumulado.
+
+        Idempotente: só credita marcos ainda não creditados. Update atômico
+        (F expressions) para não conflitar com gasto/reembolso concorrentes.
+        """
+        merecidos = int(self.xp) // self.XP_POR_DIAMANTE
+        delta = merecidos - (self.diamantes_xp_creditados or 0)
+        if delta <= 0:
+            return
+        Profile.objects.filter(pk=self.pk).update(
+            diamantes=models.F('diamantes') + delta,
+            diamantes_xp_creditados=merecidos,
+            atualizado_em=timezone.now(),
+        )
+        self.diamantes = (self.diamantes or 0) + delta
+        self.diamantes_xp_creditados = merecidos
+
+    @property
+    def xp_para_proximo_diamante(self):
+        """XP que falta para o próximo diamante por marco de XP."""
+        return self.XP_POR_DIAMANTE - (int(self.xp) % self.XP_POR_DIAMANTE)
+
+    def gastar_diamante(self):
+        """Debita 1 diamante de forma atômica. Retorna True se havia saldo."""
+        atualizados = Profile.objects.filter(pk=self.pk, diamantes__gte=1).update(
+            diamantes=models.F('diamantes') - 1,
+            atualizado_em=timezone.now(),
+        )
+        if atualizados:
+            self.refresh_from_db(fields=['diamantes'])
+            return True
+        return False
+
+    def creditar_diamante(self, n=1):
+        """Devolve/credita n diamantes de forma atômica (ex.: reembolso)."""
+        Profile.objects.filter(pk=self.pk).update(
+            diamantes=models.F('diamantes') + int(n),
+            atualizado_em=timezone.now(),
+        )
+        self.refresh_from_db(fields=['diamantes'])
 
     # -- Visitante -------------------------------------------------------
     @property

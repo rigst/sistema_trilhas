@@ -38,6 +38,7 @@
                             <span class="lvl">Nv.{{ nivel_xp }}</span>
                             <span class="xp-bar"><i style="width: {{ xp_no_nivel }}%"></i></span>
                         </div>
+                        <span class="diamante{% if diamantes_ganhos %} ganhou{% endif %}" title="{{ diamantes }} diamante(s) · cada um cria uma trilha. Faltam {{ xp_para_proximo_diamante }} XP para o próximo."><svg class="ic" aria-hidden="true"><use href="#ic-diamante"/></svg> {{ diamantes }}</span>
                         {% if streak_dias %}<span class="streak" title="{{ streak_dias }} dia(s) seguidos"><svg class="ic" aria-hidden="true"><use href="#ic-flame"/></svg> {{ streak_dias }}</span>{% endif %}
                         <span class="av">{{ user.get_short_name|default:user.username|slice:":1"|upper }}</span>
                         <form action="{% url 'logout' %}" method="post">{% csrf_token %}<button class="nav-logout" type="submit">Sair</button></form>
@@ -59,6 +60,31 @@
         {% endif %}
         {% block content %}{% endblock %}
     </main>
+
+    {% if diamantes_ganhos %}
+    <div class="diamante-fx" id="diamante-fx" aria-hidden="true">
+      <svg class="gem" viewBox="0 0 24 24"><use href="#ic-diamante"/></svg>
+      <span class="rotulo">+{{ diamantes_ganhos }} diamante{{ diamantes_ganhos|pluralize }}!</span>
+    </div>
+    <script>
+    (() => {
+      if (window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches) return;
+      const fx = document.getElementById('diamante-fx');
+      if (!fx) return;
+      // Faíscas irradiando do centro.
+      for (let i = 0; i < 10; i++) {
+        const s = document.createElement('span');
+        s.className = 'faisca';
+        const ang = (Math.PI * 2 * i) / 10, dist = 70 + Math.random() * 55;
+        s.style.setProperty('--dx', (Math.cos(ang) * dist).toFixed(0) + 'px');
+        s.style.setProperty('--dy', (Math.sin(ang) * dist).toFixed(0) + 'px');
+        s.style.animationDelay = (Math.random() * 0.2).toFixed(2) + 's';
+        fx.appendChild(s);
+      }
+      setTimeout(() => fx.remove(), 2000);
+    })();
+    </script>
+    {% endif %}
 
     <div class="reader-fab" id="reader-fab">
       <!-- Passagem automática de cards: só aparece no leitor (deck.js exibe). -->

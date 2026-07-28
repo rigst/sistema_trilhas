@@ -29,6 +29,18 @@ def profile_context(request):
         for i in range(7)
     ]
 
+    # Detecta ganho de diamante desde a última página vista (independe de ONDE
+    # foi ganho) comparando com um marcador na sessão → dispara a animação.
+    diamantes_ganhos = 0
+    vistos = request.session.get('diamantes_vistos')
+    if vistos is None:
+        request.session['diamantes_vistos'] = profile.diamantes
+    else:
+        if profile.diamantes > vistos:
+            diamantes_ganhos = profile.diamantes - vistos
+        if profile.diamantes != vistos:
+            request.session['diamantes_vistos'] = profile.diamantes
+
     ctx.update({
         'profile': profile,
         'quota_restante': profile.tokens_restantes,
@@ -36,6 +48,9 @@ def profile_context(request):
         'xp': profile.xp,
         'xp_no_nivel': profile.xp_no_nivel,
         'nivel_xp': profile.nivel_xp,
+        'diamantes': profile.diamantes,
+        'xp_para_proximo_diamante': profile.xp_para_proximo_diamante,
+        'diamantes_ganhos': diamantes_ganhos,
         'streak_dias': profile.streak_dias,
         'xp_hoje': xp_hoje,
         'dias_semana': dias_semana,

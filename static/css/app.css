@@ -425,6 +425,42 @@ a.node:not(.lock):hover .nm{color:var(--teal)}
 .xp-bar{width:82px;height:7px;border-radius:99px;background:var(--panel-2);overflow:hidden}
 .xp-bar>i{display:block;height:100%;background:linear-gradient(90deg,var(--teal),var(--amber));box-shadow:0 0 10px var(--teal-glow)}
 .streak{font-size:.85rem;color:var(--amber);font-weight:600}
+.diamante{display:inline-flex;align-items:center;gap:.25rem;font-size:.85rem;color:var(--teal);font-weight:600}
+.diamante .ic{width:1.05em;height:1.05em;vertical-align:-.12em;filter:drop-shadow(0 0 5px var(--teal-glow));animation:diamante-brilho 3.4s ease-in-out infinite}
+.custo-diamante{margin-top:.6rem;font-size:.92rem;color:var(--muted);line-height:1.55}
+.custo-diamante .ic{width:1.1em;height:1.1em;color:var(--teal);vertical-align:-.16em;margin-right:.15rem}
+.custo-diamante strong{color:var(--text)}
+.callout{border-radius:14px;padding:.9rem 1.1rem;margin:1rem 0;font-size:.95rem;line-height:1.5;border:1px solid var(--line);background:var(--panel-2)}
+.callout-warn{border-color:var(--amber);color:var(--text)}
+
+/* Brilho ambiente do diamante no cabeçalho: pulso suave e leve balanço. */
+@keyframes diamante-brilho{
+  0%,100%{filter:drop-shadow(0 0 4px var(--teal-glow));transform:none}
+  50%{filter:drop-shadow(0 0 9px var(--teal-glow)) brightness(1.15);transform:translateY(-.5px) rotate(-2deg)}
+}
+/* Comemoração ao ganhar diamante: overlay que dá pop e some. */
+.diamante-fx{position:fixed;inset:0;z-index:120;display:grid;place-items:center;pointer-events:none}
+.diamante-fx .gem{width:96px;height:96px;color:var(--teal);filter:drop-shadow(0 0 22px var(--teal-glow));animation:diamante-pop 1.7s cubic-bezier(.2,.9,.25,1) forwards}
+.diamante-fx .rotulo{position:absolute;margin-top:150px;font-family:var(--disp,inherit);font-weight:700;color:var(--teal);font-size:1.05rem;letter-spacing:.3px;text-shadow:0 0 12px var(--teal-glow);animation:diamante-rotulo 1.7s ease-out forwards}
+.diamante-fx .faisca{position:absolute;width:7px;height:7px;border-radius:50%;background:var(--teal);box-shadow:0 0 8px var(--teal-glow);opacity:0;animation:diamante-faisca 1.3s ease-out forwards}
+@keyframes diamante-pop{
+  0%{transform:scale(.2) rotate(-18deg);opacity:0}
+  22%{transform:scale(1.18) rotate(4deg);opacity:1}
+  42%{transform:scale(1) rotate(0)}
+  78%{transform:scale(1) rotate(0);opacity:1}
+  100%{transform:scale(.82) translateY(-26px);opacity:0}
+}
+@keyframes diamante-rotulo{0%,15%{opacity:0;transform:translateY(10px)}35%{opacity:1;transform:none}80%{opacity:1}100%{opacity:0;transform:translateY(-8px)}}
+@keyframes diamante-faisca{0%{opacity:0;transform:translate(0,0) scale(.4)}30%{opacity:1}100%{opacity:0;transform:translate(var(--dx),var(--dy)) scale(1)}}
+/* Pulso no badge do header quando um diamante acabou de entrar. */
+.diamante.ganhou{animation:diamante-badge-pop 1.4s ease-out}
+@keyframes diamante-badge-pop{0%,100%{transform:none}25%{transform:scale(1.45)}50%{transform:scale(.92)}70%{transform:scale(1.12)}}
+
+@media(prefers-reduced-motion:reduce){
+  .diamante .ic{animation:none}
+  .diamante-fx{display:none}
+  .diamante.ganhou{animation:none}
+}
 
 /* ---- copiar código ----------------------------------------------------- */
 .markdown-body .codehilite{position:relative}
@@ -896,7 +932,7 @@ a.node:not(.lock):hover .nm{color:var(--teal)}
 .quota-bar{margin-top:1.25rem;padding:.7rem .95rem;border:1px solid var(--border);border-radius:14px;background:var(--panel)}
 .quota-bar-head{display:flex;justify-content:space-between;align-items:baseline;margin-bottom:.45rem}
 .quota-bar-label{font-size:.82rem;color:var(--muted)}
-.quota-bar-pct{font-size:.82rem;font-weight:600;color:var(--ink)}
+.quota-bar-pct{font-size:.82rem;font-weight:600;color:var(--text)}
 .quota-bar-track{height:6px;border-radius:99px;background:var(--panel-2);overflow:hidden}
 .quota-bar-track>i{display:block;height:100%;border-radius:99px;background:linear-gradient(90deg,var(--teal),var(--amber));transition:width .4s ease}
 
