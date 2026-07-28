@@ -959,9 +959,9 @@ a.node:not(.lock):hover .nm{color:var(--teal)}
   align-self:flex-end;margin:0 0 .4rem;width:36px;height:36px;border-radius:50%;cursor:pointer;flex:none;
   border:1px solid var(--line-2);background:color-mix(in srgb,var(--panel) 80%,transparent);
   color:var(--dim);transition:.15s}
-.sc-save:hover{color:var(--amber);border-color:var(--amber)}
-.sc-save.on{color:var(--amber);border-color:var(--amber);box-shadow:0 0 14px var(--amber-glow);background:color-mix(in srgb,var(--amber) 12%,var(--panel))}
-.sc-save.on .ic{fill:currentColor}
+.mode-cards .story-card .sc-save:hover{color:var(--amber);border-color:var(--amber);background:color-mix(in srgb,var(--amber) 15%,var(--panel))}
+.mode-cards .story-card .sc-save.on{background:var(--amber);color:#fff;border-color:var(--amber);box-shadow:0 0 18px var(--amber-glow)}
+.mode-cards .story-card .sc-save.on .ic{fill:#fff;color:#fff}
 .sc-save .ic{width:17px;height:17px}
 
 /* ---- página de salvos ---------------------------------------------------- */
