@@ -40,6 +40,7 @@
     {% include 'partials/dica_descarte.html' %}
     {% for q in questoes %}
       <div class="q-block">
+        <p class="q-ref">{{ nivel.trilha.titulo }} · {{ nivel.titulo }}</p>
         <div class="q-enun q-enun--num">
           <span class="n">{{ q.ordem }}.</span>
           <div class="q-enun-body markdown-body">{{ q.enunciado_md|md }}</div>

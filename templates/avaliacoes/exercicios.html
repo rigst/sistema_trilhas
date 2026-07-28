@@ -8,7 +8,7 @@
     <a class="back-link" href="{% url 'trilhas:nivel' nivel.pk %}">← {{ nivel.titulo }}</a>
     <div class="badges"><span class="faixa faixa--{{ nivel.faixa }}">{{ nivel.get_faixa_display }}</span><span class="pill">Prática · obrigatória antes da avaliação</span></div>
     <h1 class="h1">Exercícios do nível</h1>
-    <p class="sub">São 5 questões em dificuldade crescente. Atenção: cada resposta é <strong>definitiva</strong>: depois de responder, não dá para alterar. Responda todas para liberar a avaliação.</p>
+    <p class="sub">São 5 questões em dificuldade crescente. Depois de responder, não dá para alterar. Responda todas para liberar a avaliação.</p>
   </div>
 
 {% if lista.status == 'gerando' %}
@@ -41,6 +41,7 @@
     {% for item in itens %}
       {% with ex=item.ex %}
       <div class="q-block exercise" data-id="{{ ex.pk }}" data-answered="{% if ex.respondido_em %}1{% else %}0{% endif %}" data-url="{% url 'avaliacoes:exercicio_verificar' ex.pk %}">
+        <p class="q-ref">{{ trilha.titulo }} · {{ nivel.titulo }}</p>
         <div class="q-enun q-enun--num">
           <span class="n">{{ ex.ordem }}.</span>
           <div class="q-enun-body markdown-body">{{ item.enunciado_html }}</div>
@@ -57,10 +58,9 @@
 
         <div class="ex-actions">
           {% if ex.respondido_em %}
-            <span class="muted" style="font-size:.85rem">✓ Respondido: resposta definitiva</span>
+            <span class="muted" style="font-size:.85rem">✓ Respondido</span>
           {% else %}
             <button type="button" class="btn btn-primary js-verify">Responder</button>
-            <span class="muted" style="font-size:.8rem">resposta definitiva</span>
           {% endif %}
         </div>
         <div class="fb js-fb markdown-body {% if ex.respondido_em %}show {% if ex.nota >= 6 %}ok{% else %}no{% endif %}{% endif %}">{{ item.feedback_html }}</div>
@@ -101,7 +101,7 @@
   const lockCard = (card) => {
     card.querySelectorAll('input').forEach(el => el.disabled = true);
     const actions = card.querySelector('.ex-actions');
-    if (actions) actions.innerHTML = '<span class="muted" style="font-size:.85rem">✓ Respondido: resposta definitiva</span>';
+    if (actions) actions.innerHTML = '<span class="muted" style="font-size:.85rem">✓ Respondido</span>';
   };
   document.querySelectorAll('.exercise').forEach(card => {
     const btn = card.querySelector('.js-verify');

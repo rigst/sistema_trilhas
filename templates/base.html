@@ -31,19 +31,8 @@
             <nav class="nav">
                 <div class="nav-top">
                     <a href="{% url 'dashboard' %}" class="brand"><span class="logo" aria-hidden="true"><svg><use href="#logo-trilhas"/></svg></span> Trilhas</a>
-                    {% if user.is_authenticated %}
-                    <button class="nav-toggle js-nav-toggle" type="button" aria-expanded="false" aria-controls="nav-links nav-hud">
-                        <span class="visually-hidden">Abrir menu</span>
-                        <span class="nav-toggle-bar"></span><span class="nav-toggle-bar"></span><span class="nav-toggle-bar"></span>
-                    </button>
-                    {% endif %}
                 </div>
                 {% if user.is_authenticated %}
-                    <ul class="nav-links" id="nav-links">
-                        <li><a href="{% url 'dashboard' %}" {% if request.resolver_match.url_name == 'dashboard' %}class="active"{% endif %}>Minhas trilhas</a></li>
-                        <li><a href="{% url 'trilhas:criar' %}" {% if request.resolver_match.url_name == 'criar' %}class="active"{% endif %}>Nova trilha</a></li>
-                        <li><a href="{% url 'trilhas:salvos' %}" {% if request.resolver_match.url_name == 'salvos' %}class="active"{% endif %}>Salvos</a></li>
-                    </ul>
                     <div class="hud" id="nav-hud">
                         <div class="xp" title="{{ xp }} XP · nível de jogador {{ nivel_xp }}">
                             <span class="lvl">Nv.{{ nivel_xp }}</span>
@@ -139,21 +128,6 @@
 
     <script>
     (() => {
-      const toggle = document.querySelector(".js-nav-toggle");
-      const links = document.getElementById("nav-links");
-      const hud = document.getElementById("nav-hud");
-      const media = window.matchMedia("(max-width: 820px)");
-      const sync = () => {
-        const open = document.body.classList.contains("nav-open");
-        if (!media.matches) { if (links) links.style.display=""; if (hud) hud.style.display=""; return; }
-        if (links) links.style.display = open ? "flex" : "none";
-        if (hud) hud.style.display = open ? "flex" : "none";
-        if (toggle) toggle.setAttribute("aria-expanded", open ? "true":"false");
-      };
-      if (toggle) toggle.addEventListener("click", () => { document.body.classList.toggle("nav-open"); sync(); });
-      if (media.addEventListener) media.addEventListener("change", () => { document.body.classList.remove("nav-open"); sync(); });
-      sync();
-
       // Botão "copiar" nos blocos de código.
       document.querySelectorAll(".markdown-body .codehilite").forEach((block) => {
         if (block.querySelector(".copy-btn")) return;

@@ -44,11 +44,11 @@
     {% for item in itens %}
       {% with q=item.q %}
       <div class="q-block exercise" data-id="{{ q.pk }}" data-answered="{% if q.respondido_em %}1{% else %}0{% endif %}" data-url="{% url 'avaliacoes:revisao_verificar' q.pk %}">
+        {% if q.origem %}<p class="q-ref">{{ q.origem }}</p>{% endif %}
         <div class="q-enun q-enun--num">
           <span class="n">{{ q.ordem }}.</span>
           <div class="q-enun-body markdown-body">{{ item.enunciado_html }}</div>
         </div>
-        {% if q.origem %}<p class="muted" style="font-size:.82rem;margin:.15rem 0 .7rem">{{ q.origem }}</p>{% endif %}
 
         <div class="opts">
           {% for alt in q.alternativas %}
@@ -61,10 +61,9 @@
 
         <div class="ex-actions">
           {% if q.respondido_em %}
-            <span class="muted" style="font-size:.85rem">✓ Respondido: resposta definitiva</span>
+            <span class="muted" style="font-size:.85rem">✓ Respondido</span>
           {% else %}
             <button type="button" class="btn btn-primary js-verify">Responder</button>
-            <span class="muted" style="font-size:.8rem">resposta definitiva</span>
           {% endif %}
         </div>
         <div class="fb js-fb markdown-body {% if q.respondido_em %}show {% if q.nota == 10 %}ok{% else %}no{% endif %}{% endif %}">{{ item.explicacao_html }}</div>
@@ -100,7 +99,7 @@
   const lockCard = (card) => {
     card.querySelectorAll('input').forEach(el => el.disabled = true);
     const actions = card.querySelector('.ex-actions');
-    if (actions) actions.innerHTML = '<span class="muted" style="font-size:.85rem">✓ Respondido: resposta definitiva</span>';
+    if (actions) actions.innerHTML = '<span class="muted" style="font-size:.85rem">✓ Respondido</span>';
   };
   const refresh = (concluida) => {
     const done = document.querySelectorAll('.exercise[data-answered="1"]').length;

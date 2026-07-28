@@ -135,33 +135,18 @@ h1,h2,h3,h4{font-family:var(--disp);letter-spacing:-.01em;line-height:1.15}
 .brand{font-family:var(--disp);font-weight:800;font-size:1.28rem;display:flex;align-items:center;gap:.6rem;letter-spacing:-.01em}
 .brand .logo{width:30px;height:30px;border-radius:9px;background:linear-gradient(135deg,var(--teal),var(--violet));display:grid;place-items:center;color:#0b1020;box-shadow:0 0 22px var(--teal-glow)}
 .brand .logo svg{width:19px;height:19px}
-.nav-links{display:flex;gap:.3rem;list-style:none;margin:0;padding:0}
-.nav-links a{font-size:.9rem;font-weight:500;color:var(--muted);padding:.45rem .85rem;border-radius:9px;display:block}
-.nav-links a:hover{color:var(--text)}
-.nav-links a.active{color:var(--text);background:var(--panel-2)}
 .hud{display:flex;align-items:center;gap:.9rem}
 .token-pill{font-size:.78rem;color:var(--muted);border:1px solid var(--line);border-radius:999px;padding:.32rem .75rem;font-variant-numeric:tabular-nums}
 .av{width:34px;height:34px;border-radius:50%;background:linear-gradient(135deg,var(--pink),var(--violet));display:grid;place-items:center;font-weight:700;font-size:.85rem;color:#0b1020}
 .nav-logout{background:transparent;border:1px solid var(--line-2);color:var(--muted);border-radius:9px;padding:.4rem .8rem;font:inherit;font-size:.85rem;cursor:pointer}
 .nav-logout:hover{border-color:var(--red);color:var(--red)}
-.nav-toggle{display:none;background:transparent;border:0;cursor:pointer;flex-direction:column;gap:4px;padding:6px}
-.nav-toggle-bar{width:22px;height:2px;background:var(--text);border-radius:2px}
 
 @media(max-width:820px){
-  .nav{flex-wrap:wrap;height:auto;padding:8px 0;gap:0}
-  .nav-top{flex:0 0 100%;justify-content:space-between}
-  .nav-toggle{display:flex;margin-right:-6px}
-  /* Menu aberto: links numa linha à esquerda; hud numa linha à direita. */
-  .nav-links{flex:0 0 100%;flex-direction:row;flex-wrap:wrap;justify-content:flex-start;gap:.2rem;
-    padding:.28rem 0 .2rem}
-  .nav-links a{display:inline-flex;align-items:center;padding:.32rem .65rem;
-    font-size:.82rem;font-weight:600;border-radius:10px;white-space:nowrap}
-  .nav-links a:active{background:var(--panel-2)}
-  .hud{flex:0 0 100%;justify-content:flex-end;align-items:center;gap:.55rem;
-    padding:.2rem 0 .15rem}
+  .nav{height:auto;padding:8px 0}
+  .hud{gap:.55rem}
   .hud .xp-bar{display:none}
   .hud .xp{gap:.3rem}
-  .nav-logout{margin-left:0;padding:.26rem .65rem;font-size:.8rem}
+  .nav-logout{padding:.26rem .65rem;font-size:.8rem}
 }
 
 /* ---- buttons ----------------------------------------------------------- */
@@ -347,6 +332,7 @@ a.node:not(.lock):hover .nm{color:var(--teal)}
 .aprovado-note{background:var(--ok-bg);border:1px solid var(--ok-line);color:var(--ok-ink);padding:.75rem 1rem;border-radius:11px;width:100%}
 
 /* ---- quiz / exercise --------------------------------------------------- */
+.q-ref{font-size:.72rem;color:var(--dim);margin:0 0 .5rem;letter-spacing:.01em;font-weight:500}
 .q-block{padding:1.35rem 0;border-bottom:1px solid var(--line)}
 .q-block:last-child{border-bottom:none}
 .q-enun{font-weight:600;margin:0 0 .8rem;color:var(--text)}
@@ -378,7 +364,7 @@ a.node:not(.lock):hover .nm{color:var(--teal)}
 .fb.ok{background:var(--ok-bg);color:var(--ok-ink);border:1px solid var(--ok-line)}
 .fb.no{background:var(--no-bg);color:var(--no-ink);border:1px solid var(--no-line)}
 .fb.neutral{background:var(--panel-2);color:var(--muted);border:1px solid var(--line-2)}
-.ex-actions{margin-top:.9rem;display:flex;gap:.7rem;align-items:center;flex-wrap:wrap}
+.ex-actions{margin-top:.9rem;display:flex;gap:.7rem;align-items:center;flex-wrap:wrap;justify-content:flex-end}
 .ex-reward{font-size:.75rem;color:var(--amber);font-weight:600}
 .ex-tag{display:inline-flex;align-items:center;gap:.5rem;font-size:.72rem;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:var(--teal);margin-bottom:.5rem}
 .ex-tag .spark{width:22px;height:22px;border-radius:7px;background:var(--teal);color:#0b1020;display:grid;place-items:center;font-size:.8rem}
@@ -660,7 +646,7 @@ a.node:not(.lock):hover .nm{color:var(--teal)}
 /* touch-action: o duplo-toque descarta a alternativa em vez de dar zoom. */
 .opt{user-select:none;touch-action:manipulation}
 .opt.descartada{opacity:.5;background:var(--panel-2);border-color:var(--line);cursor:default}
-.opt.descartada span{text-decoration:line-through;color:var(--dim)}
+.opt.descartada .opt-texto{text-decoration:line-through;color:var(--dim)}
 
 /* ---- tópicos bloqueados (leitura em ordem) ----------------------------- */
 .topico-item.locked{opacity:.6;cursor:not-allowed;background:var(--glass-b)}
