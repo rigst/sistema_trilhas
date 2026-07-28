@@ -748,7 +748,10 @@ def corrigir_avaliacao(avaliacao, profile=None):
     if aprovado:
         _aprovar_nivel(avaliacao.nivel)
         if profile is not None:
-            profile.registrar_atividade(profile.XP_APROVACAO)
+            xp = profile.XP_APROVACAO
+            if avaliacao.nivel.trilha.concluida:
+                xp += profile.XP_TRILHA_CONCLUIDA
+            profile.registrar_atividade(xp)
     return avaliacao
 
 

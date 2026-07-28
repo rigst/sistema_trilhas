@@ -88,9 +88,11 @@ class Profile(models.Model):
 
     # -- Gamificação -----------------------------------------------------
     # Faixa de XP por atividade
-    XP_TOPICO = 10        # ler um tópico (primeira vez)
-    XP_EXERCICIO = 5      # responder um exercício (primeira vez)
-    XP_APROVACAO = 50     # ser aprovado num nível
+    XP_TOPICO = 10            # ler um tópico (primeira vez)
+    XP_EXERCICIO = 5          # responder uma questão (exercício, revisão)
+    XP_AVALIACAO = 20         # submeter uma avaliação (por tentativa)
+    XP_APROVACAO = 50         # ser aprovado num nível
+    XP_TRILHA_CONCLUIDA = 100 # completar todos os níveis de uma trilha
 
     @property
     def nivel_xp(self):

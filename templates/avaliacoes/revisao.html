@@ -89,6 +89,13 @@
 {% elif revisao.status == 'pronta' %}
 <script>
 (() => {
+  const showXpToast = (xp) => {
+    if (!xp) return;
+    const el = document.createElement('div');
+    el.className = 'xp-toast'; el.textContent = `+${xp} XP`;
+    document.body.appendChild(el);
+    setTimeout(() => el.remove(), 3200);
+  };
   const page = document.getElementById('rev-page');
   const csrf = page.querySelector('[name=csrfmiddlewaretoken]').value;
   const total = {{ revisao.total }};
@@ -134,6 +141,7 @@
         });
         fb.className = 'fb js-fb markdown-body show ' + (d.correto ? 'ok' : 'no');
         fb.innerHTML = (d.correto ? '✔ <strong>Correto!</strong> ' : '✘ <strong>Não foi dessa vez.</strong> ') + (d.feedback_html || '');
+        showXpToast(d.xp_ganho);
         refresh(d.concluida);
       } catch(e) {
         fb.className = 'fb js-fb markdown-body show no'; fb.textContent = 'Falha ao verificar. Tente de novo.';

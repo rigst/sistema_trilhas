@@ -109,6 +109,67 @@
     </section>
   {% endif %}
 
+  {% if feed_revisao or pode_revisar and not quiz_feito_hoje %}
+    <section class="feed-hoje" id="feed-hoje">
+      {% csrf_token %}
+      <div class="feed-head">
+        <h2 class="h3" style="margin:0">Para hoje</h2>
+        <span class="muted" style="font-size:.85rem">memória se constrói voltando — 30 segundos por card</span>
+      </div>
+
+      {% for item in feed_revisao %}{% with nivel=item.nivel questao=item.questao %}
+        <article class="flashcard" data-url="{% url 'avaliacoes:revisao_rapida' nivel.pk %}"
+                 {% if questao %}data-gabarito="{{ questao.gabarito }}"{% endif %}>
+          <div class="fc-tag"><span class="fc-dot"></span> Revisão devida · {{ nivel.trilha.titulo }} · {{ nivel.titulo }}</div>
+          {% if questao %}
+            <div class="fc-pergunta fc-enunciado markdown-body">{{ questao.enunciado }}</div>
+            <div class="fc-opts" role="group" aria-label="Alternativas">
+              {% for a in questao.alternativas %}
+                <button type="button" class="fc-opt" data-letra="{{ a.letra|upper }}">
+                  <span class="fc-opt-letra">{{ a.letra|upper }}</span> <span class="fc-opt-texto markdown-body">{{ a.texto|md_inline }}</span>
+                </button>
+              {% endfor %}
+            </div>
+            <div class="fc-verso" hidden>
+              <p class="fc-resultado" aria-live="polite"></p>
+              {% if questao.explicacao %}<div class="fc-resumo markdown-body">{{ questao.explicacao }}</div>{% endif %}
+              <div class="fc-acoes">
+                <button type="button" class="btn btn-primary fc-btn" data-resposta="lembrei">Lembrei bem</button>
+                <button type="button" class="btn btn-ghost fc-btn" data-resposta="rever">Preciso rever</button>
+              </div>
+            </div>
+          {% else %}
+            <h3 class="fc-pergunta">O que você lembra de "{{ nivel.titulo }}"?</h3>
+            <p class="fc-hint">Tente responder de cabeça antes de virar o card.</p>
+            <button type="button" class="btn btn-ghost fc-virar">Virar o card</button>
+            <div class="fc-verso" hidden>
+              {% if nivel.resumo %}<p class="fc-resumo">{{ nivel.resumo }}</p>{% endif %}
+              <ul class="fc-topicos">
+                {% for s in nivel.subtopicos.all %}<li>{{ s.titulo }}</li>{% endfor %}
+              </ul>
+              <div class="fc-acoes">
+                <button type="button" class="btn btn-primary fc-btn" data-resposta="lembrei">Lembrei bem</button>
+                <button type="button" class="btn btn-ghost fc-btn" data-resposta="rever">Preciso rever</button>
+              </div>
+            </div>
+          {% endif %}
+          <div class="fc-feito" hidden></div>
+        </article>
+      {% endwith %}{% endfor %}
+
+      {% if pode_revisar and not quiz_feito_hoje %}
+        <article class="flashcard flashcard--quiz">
+          <div class="fc-tag"><span class="fc-dot fc-dot--quiz"></span> Quiz do dia</div>
+          <h3 class="fc-pergunta">Perguntas rápidas sobre o que você já concluiu</h3>
+          <p class="fc-hint">Um deck de questões misturando suas trilhas — e a revisão espaçada se reagenda sozinha.</p>
+          <form method="post" action="{% url 'avaliacoes:revisar' %}">{% csrf_token %}
+            <button type="submit" class="btn btn-primary">Começar o quiz →</button>
+          </form>
+        </article>
+      {% endif %}
+    </section>
+  {% endif %}
+
   {% if trilhas %}
     {% if trilhas|length > 3 %}
       <div class="trilha-search">

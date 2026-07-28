@@ -84,6 +84,11 @@ def avaliacao_submeter(request, pk):
     avaliacao.status = Avaliacao.Status.CORRIGINDO
     avaliacao.save(update_fields=['status'])
     ai_tasks.task_corrigir_avaliacao.delay(avaliacao.pk)
+
+    profile = getattr(request.user, 'profile', None)
+    if profile is not None:
+        profile.registrar_atividade(profile.XP_AVALIACAO)
+
     return redirect('avaliacoes:detalhe', pk=avaliacao.pk)
 
 
@@ -193,14 +198,17 @@ def exercicio_verificar(request, pk):
     ex.respondido_em = timezone.now()
     ex.save(update_fields=['alternativa_escolhida', 'nota', 'feedback_md', 'respondido_em'])
 
+    xp_ganho = 0
     profile = getattr(request.user, 'profile', None)
     if profile is not None:
-        profile.registrar_atividade(profile.XP_EXERCICIO)
+        xp_ganho = profile.XP_EXERCICIO
+        profile.registrar_atividade(xp_ganho)
 
     return JsonResponse({
         'correto': acertou, 'gabarito': correta,
         'feedback_html': _md(ex.explicacao_md),
         'concluida': ex.lista.concluida,
+        'xp_ganho': xp_ganho,
     })
 
 
@@ -332,9 +340,11 @@ def questao_revisao_verificar(request, pk):
     q.respondido_em = timezone.now()
     q.save(update_fields=['alternativa_escolhida', 'nota', 'respondido_em'])
 
+    xp_ganho = 0
     profile = getattr(request.user, 'profile', None)
     if profile is not None:
-        profile.registrar_atividade(profile.XP_EXERCICIO)
+        xp_ganho = profile.XP_EXERCICIO
+        profile.registrar_atividade(xp_ganho)
 
     # Ao concluir a revisão, reagenda a repetição espaçada de cada nível.
     concluida = q.revisao.concluida
@@ -346,4 +356,5 @@ def questao_revisao_verificar(request, pk):
         'correto': acertou, 'gabarito': correta,
         'feedback_html': _md(q.explicacao_md),
         'concluida': concluida,
+        'xp_ganho': xp_ganho,
     })
