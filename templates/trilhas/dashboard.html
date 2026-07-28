@@ -7,8 +7,8 @@
   <div class="spread page-head">
     <div>
       <div class="eyebrow">Mapa de expedição</div>
-      <h1 class="h1">Minhas trilhas</h1>
-      <p class="sub">Continue de onde parou ou comece a dominar algo novo.</p>
+      <h1 class="h1" id="dash-greeting">Minhas trilhas</h1>
+      <p class="sub" id="dash-sub">Continue de onde parou ou comece a dominar algo novo.</p>
     </div>
     <div class="home-actions">
       {% if pode_estudar and not continuar %}
@@ -17,16 +17,10 @@
       {% if trilhas %}
         <a class="btn btn-mentor btn-app-gradient" href="{% url 'trilhas:mentor' %}"><svg class="ic" aria-hidden="true"><use href="#ic-compass"/></svg> Mentor</a>
       {% endif %}
-      {% if pode_revisar %}
-        <form method="post" action="{% url 'avaliacoes:revisar' %}">{% csrf_token %}
-          <button type="submit" class="btn btn-app-gradient"><svg class="ic" aria-hidden="true"><use href="#ic-refresh"/></svg> Revisar</button>
-        </form>
-      {% endif %}
       <a class="btn btn-ghost" href="{% url 'trilhas:criar' %}"><svg class="ic" aria-hidden="true"><use href="#ic-plus"/></svg> Nova trilha</a>
       {% if trilhas %}
-        <a class="btn btn-ghost" href="{% url 'trilhas:sugestoes' %}"><svg class="ic" aria-hidden="true"><use href="#ic-spark"/></svg> Sugestões de trilhas</a>
+        <a class="btn btn-ghost" href="{% url 'trilhas:sugestoes' %}"><svg class="ic" aria-hidden="true"><use href="#ic-spark"/></svg> Sugestões</a>
       {% endif %}
-      <a class="btn btn-ghost" href="{% url 'trilhas:salvos' %}"><svg class="ic" aria-hidden="true"><use href="#ic-bookmark"/></svg> Salvos</a>
     </div>
   </div>
 
@@ -53,7 +47,7 @@
     </div>
   </div>
 
-  {% if quota %}
+  {% if quota and quota.pct >= 70 %}
     <div class="quota-bar" title="Uso mensal de geração por IA">
       <div class="quota-bar-head">
         <span class="quota-bar-label">
@@ -78,35 +72,6 @@
       </span>
       <span class="ch-cta ch-cta--r" aria-hidden="true"><svg class="ic"><use href="#ic-chev-r"/></svg></span>
     </a>
-  {% endif %}
-
-  {% if medalhas %}
-    <section class="medal-case">
-      <div class="medal-case-head">
-        <div>
-          <div class="eyebrow">Suas conquistas</div>
-          <h2 class="h3" style="margin:0">Sala de troféus</h2>
-        </div>
-        <span class="muted" style="font-size:.85rem">{{ medalhas|length }} troféu{{ medalhas|length|pluralize }}</span>
-      </div>
-      <div class="medal-shelf-outer">
-        <div class="medal-shelf">
-          {% for m in medalhas %}
-            <a class="medal medal--{{ m.tier }}" href="{% url 'trilhas:detalhe' m.trilha.pk %}" title="{{ m.nome }}: {{ m.tier_label }}">
-              <span class="medal-trophy" aria-hidden="true">
-                <svg class="trophy-svg" viewBox="0 0 64 64"><use href="#ic-trophy"/></svg>
-                <span class="medal-mono">{{ m.sigla }}</span>
-              </span>
-              <span class="medal-tier-label">{{ m.tier_label }}</span>
-              <span class="medal-stars" aria-label="{{ m.estrelas }} de {{ m.total }} níveis">
-                {% for on in m.pips %}<i class="{% if on %}on{% endif %}"></i>{% endfor %}
-              </span>
-              <span class="medal-name">{{ m.nome }}</span>
-            </a>
-          {% endfor %}
-        </div>
-      </div>
-    </section>
   {% endif %}
 
   {% if feed_revisao or pode_revisar and not quiz_feito_hoje %}
@@ -170,6 +135,35 @@
     </section>
   {% endif %}
 
+  {% if medalhas %}
+    <section class="medal-case">
+      <div class="medal-case-head">
+        <div>
+          <div class="eyebrow">Suas conquistas</div>
+          <h2 class="h3" style="margin:0">Sala de troféus</h2>
+        </div>
+        <span class="muted" style="font-size:.85rem">{{ medalhas|length }} troféu{{ medalhas|length|pluralize }}</span>
+      </div>
+      <div class="medal-shelf-outer">
+        <div class="medal-shelf">
+          {% for m in medalhas %}
+            <a class="medal medal--{{ m.tier }}" href="{% url 'trilhas:detalhe' m.trilha.pk %}" title="{{ m.nome }}: {{ m.tier_label }}">
+              <span class="medal-trophy" aria-hidden="true">
+                <svg class="trophy-svg" viewBox="0 0 64 64"><use href="#ic-trophy"/></svg>
+                <span class="medal-mono">{{ m.sigla }}</span>
+              </span>
+              <span class="medal-tier-label">{{ m.tier_label }}</span>
+              <span class="medal-stars" aria-label="{{ m.estrelas }} de {{ m.total }} níveis">
+                {% for on in m.pips %}<i class="{% if on %}on{% endif %}"></i>{% endfor %}
+              </span>
+              <span class="medal-name">{{ m.nome }}</span>
+            </a>
+          {% endfor %}
+        </div>
+      </div>
+    </section>
+  {% endif %}
+
   {% if trilhas %}
     {% if trilhas|length > 3 %}
       <div class="trilha-search">
@@ -207,6 +201,32 @@
 
 {% block scripts %}
 <script>
+// Saudação personalizada no cabeçalho da dashboard.
+(() => {
+  const h = new Date().getHours();
+  const cumprimento = h < 12 ? 'Bom dia' : h < 18 ? 'Boa tarde' : 'Boa noite';
+  const nome = '{{ user.get_short_name|default:user.username|escapejs }}';
+  const streak = {{ streak_dias|default:0 }};
+  const xpHoje = {{ xp_hoje|default:0 }};
+  const greeting = document.getElementById('dash-greeting');
+  const sub = document.getElementById('dash-sub');
+  if (!greeting) return;
+  if (streak >= 3) {
+    greeting.textContent = `${cumprimento}, ${nome}!`;
+    sub.textContent = `🔥 ${streak} dias seguidos estudando — não perca agora.`;
+  } else if (streak > 0) {
+    greeting.textContent = `${cumprimento}, ${nome}!`;
+    sub.textContent = xpHoje > 0
+      ? `Já somou +${xpHoje} XP hoje. Continue!`
+      : 'Que tal estudar hoje e começar uma sequência?';
+  } else if (xpHoje > 0) {
+    greeting.textContent = `${cumprimento}!`;
+    sub.textContent = `Já somou +${xpHoje} XP hoje. Bora continuar?`;
+  } else {
+    greeting.textContent = `${cumprimento}!`;
+  }
+})();
+
 // Capa-constelação: desenha o mini-mapa da trilha (nós = níveis; os já
 // aprovados ficam acesos). Determinístico por trilha (seed = pk).
 (() => {
