@@ -475,7 +475,10 @@ def gerar_sumario(trilha, profile=None):
         '"Direito", "História", "Idiomas", "Música"), usando um rótulo curto e '
         'reutilizável para agrupar trilhas afins. Para cada nível: '
         'defina a faixa (iniciante → mestre) de '
-        'forma crescente; um título claro; um resumo do que será aprendido; um '
+        'forma crescente. O PRIMEIRO nível deve ser "iniciante" e o ÚLTIMO nível '
+        'deve OBRIGATORIAMENTE ser "mestre" (o auge da trilha, medalha de '
+        'diamante); distribua as faixas intermediárias de forma crescente entre '
+        'eles. Para cada nível também: um título claro; um resumo do que será aprendido; um '
         '"titulo_concedido" motivador que a pessoa ganha ao ser aprovada (ex.: '
         '"Iniciante em <tema>"); e de 3 a 6 subtópicos coerentes. Numere níveis e '
         'subtópicos em "ordem" a partir de 1. Adapte a profundidade e o foco às '
@@ -500,13 +503,18 @@ def gerar_sumario(trilha, profile=None):
     ])
 
     trilha.niveis.all().delete()
-    for i, nv in enumerate(data.get('niveis', []), start=1):
+    niveis_data = data.get('niveis', []) or []
+    total_niveis = len(niveis_data)
+    for i, nv in enumerate(niveis_data, start=1):
+        # O último nível da trilha é sempre "mestre" (medalha de diamante),
+        # independentemente do que a IA retornar.
+        faixa = 'mestre' if i == total_niveis else (nv.get('faixa') or 'iniciante')
         nivel = Nivel.objects.create(
             trilha=trilha,
             ordem=nv.get('ordem') or i,
             titulo=(nv.get('titulo') or f'Nível {i}').strip(),
             resumo=(nv.get('resumo') or '').strip(),
-            faixa=nv.get('faixa') or 'iniciante',
+            faixa=faixa,
             titulo_concedido=(nv.get('titulo_concedido') or '').strip(),
             status=Nivel.Status.DISPONIVEL if i == 1 else Nivel.Status.BLOQUEADO,
         )
