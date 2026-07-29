@@ -62,26 +62,43 @@
     </main>
 
     {% if diamantes_ganhos %}
-    <div class="diamante-fx" id="diamante-fx" aria-hidden="true">
-      <svg class="gem" viewBox="0 0 24 24"><use href="#ic-diamante"/></svg>
+    <div class="diamante-fx" id="diamante-fx" role="dialog" aria-label="Diamante conquistado" tabindex="-1">
+      <svg class="gem" viewBox="0 0 24 24" aria-hidden="true"><use href="#ic-diamante"/></svg>
       <span class="rotulo">+{{ diamantes_ganhos }} diamante{{ diamantes_ganhos|pluralize }}!</span>
+      <span class="toque">toque para continuar</span>
     </div>
     <script>
     (() => {
-      if (window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches) return;
       const fx = document.getElementById('diamante-fx');
       if (!fx) return;
-      // Faíscas irradiando do centro.
-      for (let i = 0; i < 10; i++) {
-        const s = document.createElement('span');
-        s.className = 'faisca';
-        const ang = (Math.PI * 2 * i) / 10, dist = 70 + Math.random() * 55;
-        s.style.setProperty('--dx', (Math.cos(ang) * dist).toFixed(0) + 'px');
-        s.style.setProperty('--dy', (Math.sin(ang) * dist).toFixed(0) + 'px');
-        s.style.animationDelay = (Math.random() * 0.2).toFixed(2) + 's';
-        fx.appendChild(s);
+      const reduzido = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+      // Faíscas irradiando do centro (só com movimento habilitado).
+      if (!reduzido) {
+        for (let i = 0; i < 10; i++) {
+          const s = document.createElement('span');
+          s.className = 'faisca';
+          const ang = (Math.PI * 2 * i) / 10, dist = 70 + Math.random() * 55;
+          s.style.setProperty('--dx', (Math.cos(ang) * dist).toFixed(0) + 'px');
+          s.style.setProperty('--dy', (Math.sin(ang) * dist).toFixed(0) + 'px');
+          s.style.animationDelay = (Math.random() * 0.2).toFixed(2) + 's';
+          fx.appendChild(s);
+        }
       }
-      setTimeout(() => fx.remove(), 2000);
+      // Fica fixo até o usuário tocar/clicar (ou Esc/Enter/Espaço).
+      let fechado = false;
+      const fechar = () => {
+        if (fechado) return;
+        fechado = true;
+        fx.classList.add('saindo');
+        document.removeEventListener('keydown', onKey);
+        setTimeout(() => fx.remove(), 320);
+      };
+      const onKey = (e) => {
+        if (e.key === 'Escape' || e.key === 'Enter' || e.key === ' ') { e.preventDefault(); fechar(); }
+      };
+      fx.addEventListener('click', fechar);
+      document.addEventListener('keydown', onKey);
+      fx.focus();
     })();
     </script>
     {% endif %}

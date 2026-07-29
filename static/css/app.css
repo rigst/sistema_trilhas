@@ -461,19 +461,25 @@ a.node:not(.lock):hover .nm{color:var(--teal)}
   75%{filter:drop-shadow(0 0 6px var(--teal-glow)) brightness(1.06)}
   100%{filter:drop-shadow(0 0 3px var(--teal-glow)) brightness(1)}
 }
-/* Comemoração ao ganhar diamante: overlay que dá pop e some. */
-.diamante-fx{position:fixed;inset:0;z-index:120;display:grid;place-items:center;pointer-events:none}
-.diamante-fx .gem{width:96px;height:96px;color:var(--teal);filter:drop-shadow(0 0 22px var(--teal-glow));animation:diamante-pop 1.7s cubic-bezier(.2,.9,.25,1) forwards}
-.diamante-fx .rotulo{position:absolute;margin-top:150px;font-family:var(--disp,inherit);font-weight:700;color:var(--teal);font-size:1.05rem;letter-spacing:.3px;text-shadow:0 0 12px var(--teal-glow);animation:diamante-rotulo 1.7s ease-out forwards}
+/* Comemoração ao ganhar diamante: escurece o resto da tela (esmaecido, não
+   preto) para dar foco no diamante e fica FIXO até o usuário tocar/clicar. */
+.diamante-fx{position:fixed;inset:0;z-index:120;display:grid;place-items:center;pointer-events:auto;cursor:pointer;background:rgba(6,11,18,.72);backdrop-filter:blur(2px);-webkit-backdrop-filter:blur(2px);animation:diamante-fx-in .35s ease-out}
+.diamante-fx.saindo{animation:diamante-fx-out .3s ease-in forwards}
+/* Entra com pop e depois flutua de leve, parado no centro, esperando o toque. */
+.diamante-fx .gem{width:112px;height:112px;color:var(--teal);filter:drop-shadow(0 0 30px var(--teal-glow));animation:diamante-pop-in 1s cubic-bezier(.2,.9,.25,1) both,diamante-idle 3.4s ease-in-out 1s infinite}
+.diamante-fx .rotulo{position:absolute;margin-top:172px;font-family:var(--disp,inherit);font-weight:700;color:var(--teal);font-size:1.15rem;letter-spacing:.3px;text-shadow:0 0 12px var(--teal-glow);animation:diamante-rotulo-in .7s ease-out .35s both}
+.diamante-fx .toque{position:absolute;margin-top:214px;font-size:.82rem;color:var(--muted);letter-spacing:.4px;animation:diamante-toque-in .6s ease-out 1.2s both}
 .diamante-fx .faisca{position:absolute;width:7px;height:7px;border-radius:50%;background:var(--teal);box-shadow:0 0 8px var(--teal-glow);opacity:0;animation:diamante-faisca 1.3s ease-out forwards}
-@keyframes diamante-pop{
+@keyframes diamante-fx-in{from{opacity:0}to{opacity:1}}
+@keyframes diamante-fx-out{to{opacity:0}}
+@keyframes diamante-pop-in{
   0%{transform:scale(.2) rotate(-18deg);opacity:0}
-  22%{transform:scale(1.18) rotate(4deg);opacity:1}
-  42%{transform:scale(1) rotate(0)}
-  78%{transform:scale(1) rotate(0);opacity:1}
-  100%{transform:scale(.82) translateY(-26px);opacity:0}
+  55%{transform:scale(1.18) rotate(4deg);opacity:1}
+  100%{transform:scale(1) rotate(0);opacity:1}
 }
-@keyframes diamante-rotulo{0%,15%{opacity:0;transform:translateY(10px)}35%{opacity:1;transform:none}80%{opacity:1}100%{opacity:0;transform:translateY(-8px)}}
+@keyframes diamante-idle{0%,100%{transform:translateY(0)}50%{transform:translateY(-9px)}}
+@keyframes diamante-rotulo-in{0%{opacity:0;transform:translateY(10px)}100%{opacity:1;transform:none}}
+@keyframes diamante-toque-in{0%{opacity:0}100%{opacity:.85}}
 @keyframes diamante-faisca{0%{opacity:0;transform:translate(0,0) scale(.4)}30%{opacity:1}100%{opacity:0;transform:translate(var(--dx),var(--dy)) scale(1)}}
 /* Pulso no badge do header quando um diamante acabou de entrar. */
 .diamante.ganhou{animation:diamante-badge-pop 1.4s ease-out}
@@ -481,7 +487,10 @@ a.node:not(.lock):hover .nm{color:var(--teal)}
 
 @media(prefers-reduced-motion:reduce){
   .diamante .ic{animation:none}
-  .diamante-fx{display:none}
+  /* Sem movimento, mas o foco (esmaecido + diamante fixo até tocar) permanece. */
+  .diamante-fx,.diamante-fx .gem,.diamante-fx .rotulo,.diamante-fx .toque{animation:none;opacity:1}
+  .diamante-fx .toque{opacity:.85}
+  .diamante-fx .gem{transform:none}
   .diamante.ganhou{animation:none}
 }
 
