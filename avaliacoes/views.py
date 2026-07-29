@@ -260,13 +260,19 @@ def revisar_iniciar(request):
         messages.info(request, 'Conclua ao menos um nível para liberar a revisão.')
         return redirect('dashboard')
 
-    # Se já existe uma revisão em andamento (gerando ou não concluída), retoma.
+    # "Nova revisão" (botão explícito) força um deck novo; a entrada normal
+    # (ex.: quiz do dashboard) retoma uma revisão em andamento.
+    forcar_nova = request.POST.get('nova') == '1'
     ultima = request.user.revisoes.first()
-    if ultima and (
-        ultima.status == Revisao.Status.GERANDO
-        or (ultima.status == Revisao.Status.PRONTA and not ultima.concluida)
-    ):
+    # Nunca duplica uma geração em curso (evita disparar a IA duas vezes).
+    if ultima and ultima.status == Revisao.Status.GERANDO:
         return redirect('avaliacoes:revisao', pk=ultima.pk)
+    # Revisão pronta mas não concluída: retoma, a menos que se peça uma nova.
+    if ultima and ultima.status == Revisao.Status.PRONTA and not ultima.concluida:
+        if not forcar_nova:
+            return redirect('avaliacoes:revisao', pk=ultima.pk)
+        # Ao pedir uma nova, descarta a incompleta para não acumular órfãs.
+        ultima.delete()
 
     erro = bloqueio_ia(request.user, tokens_estimados=15000)
     if erro:

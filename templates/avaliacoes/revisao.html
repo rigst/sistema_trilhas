@@ -75,6 +75,7 @@
   <div class="form-actions" style="justify-content:center;margin-top:2rem">
     <a class="btn btn-ghost" href="{% url 'dashboard' %}">Voltar às trilhas</a>
     <form method="post" action="{% url 'avaliacoes:revisar' %}">{% csrf_token %}
+      <input type="hidden" name="nova" value="1">
       <button class="btn btn-primary">Nova revisão <svg class="ic" aria-hidden="true"><use href="#ic-refresh"/></svg></button>
     </form>
   </div>
