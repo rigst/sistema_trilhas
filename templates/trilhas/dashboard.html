@@ -34,10 +34,10 @@
           {% if xp_hoje %}<span class="xp-hoje-badge">+{{ xp_hoje }} hoje</span>{% endif %}
           {% if streak_dias %}<span class="xp-streak"><svg class="ic" aria-hidden="true"><use href="#ic-flame"/></svg> {{ streak_dias }}</span>{% endif %}
         </div>
-        <span class="xp-widget-meta">{{ xp_no_nivel }}/100 → Nv.{{ nivel_xp|add:1 }}</span>
+        <span class="xp-widget-meta">{{ xp_no_nivel }}/{{ xp_prox_nivel }} → Nv.{{ nivel_xp|add:1 }}</span>
       </div>
-      <div class="xp-widget-track" role="progressbar" aria-valuenow="{{ xp_no_nivel }}" aria-valuemin="0" aria-valuemax="100">
-        <i style="width:{{ xp_no_nivel }}%"></i>
+      <div class="xp-widget-track" role="progressbar" aria-valuenow="{{ xp_no_nivel }}" aria-valuemin="0" aria-valuemax="{{ xp_prox_nivel }}">
+        <i style="width:{{ xp_no_nivel_pct }}%"></i>
       </div>
       <div class="xp-semana">
         {% for dia in dias_semana %}

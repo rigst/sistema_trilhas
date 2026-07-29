@@ -956,7 +956,7 @@ a.node:not(.lock):hover .nm{color:var(--teal)}
 .xp-widget-track i{position:relative;display:block;height:100%;border-radius:99px;background:linear-gradient(90deg,#2dd4bf,#34d399,#a3e635,#fbbf24,#fb923c,#f472b6,#a78bfa,#2dd4bf);background-size:220% 100%;box-shadow:0 0 8px rgba(45,212,191,.55);animation:xp-fluir 6s linear infinite;transition:width .5s cubic-bezier(.2,.9,.25,1)}
 /* Faixa de brilho que desliza por cima do preenchimento. */
 .xp-widget-track i::after{content:"";position:absolute;inset:0;border-radius:inherit;background:linear-gradient(90deg,transparent,rgba(255,255,255,.6),transparent);background-size:45% 100%;background-repeat:no-repeat;animation:xp-brilho 2.8s ease-in-out infinite}
-@keyframes xp-fluir{to{background-position:220% 0}}
+@keyframes xp-fluir{from{background-position:220% 0}to{background-position:0 0}}
 @keyframes xp-brilho{0%{background-position:-45% 0}55%,100%{background-position:145% 0}}
 @media(prefers-reduced-motion:reduce){
   .xp-widget-track i{animation:none}

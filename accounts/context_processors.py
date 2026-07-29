@@ -47,6 +47,8 @@ def profile_context(request):
         'quota_total': profile.quota_tokens_mes,
         'xp': profile.xp,
         'xp_no_nivel': profile.xp_no_nivel,
+        'xp_prox_nivel': profile.xp_prox_nivel,
+        'xp_no_nivel_pct': profile.xp_no_nivel_pct,
         'nivel_xp': profile.nivel_xp,
         'diamantes': profile.diamantes,
         'xp_para_proximo_diamante': profile.xp_para_proximo_diamante,

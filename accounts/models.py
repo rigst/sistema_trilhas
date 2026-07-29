@@ -103,14 +103,48 @@ class Profile(models.Model):
     # Assim, concluir uma trilha rende ~1 diamante (break-even sustentável).
     XP_POR_DIAMANTE = 1000
 
+    # Curva de nível do jogador: cada nível exige um pouco mais de XP que o
+    # anterior (progressão suave), em vez de 100 fixo para todos.
+    XP_NIVEL_BASE = 100        # XP para sair do nível 1
+    XP_NIVEL_INCREMENTO = 25   # a mais exigido a cada nível seguinte
+
+    def _nivel_info(self):
+        """(nível, xp_no_nível, xp_para_completar_o_nível) a partir do XP total,
+        usando a curva progressiva. Memoiza pelo XP para não recalcular."""
+        xp = max(0, int(self.xp or 0))
+        cache = getattr(self, '_nivel_info_cache', None)
+        if cache is not None and cache[0] == xp:
+            return cache[1]
+        restante = xp
+        nivel = 1
+        req = self.XP_NIVEL_BASE
+        while restante >= req:
+            restante -= req
+            nivel += 1
+            req = self.XP_NIVEL_BASE + (nivel - 1) * self.XP_NIVEL_INCREMENTO
+        info = (nivel, restante, req)
+        self._nivel_info_cache = (xp, info)
+        return info
+
     @property
     def nivel_xp(self):
-        """Nível de jogador derivado do XP (100 XP por nível)."""
-        return self.xp // 100 + 1
+        """Nível de jogador derivado do XP (curva progressiva)."""
+        return self._nivel_info()[0]
 
     @property
     def xp_no_nivel(self):
-        return self.xp % 100
+        return self._nivel_info()[1]
+
+    @property
+    def xp_prox_nivel(self):
+        """XP total exigido para completar o nível atual."""
+        return self._nivel_info()[2]
+
+    @property
+    def xp_no_nivel_pct(self):
+        """Progresso (0–100) dentro do nível atual, para a barra de XP."""
+        _, no_nivel, req = self._nivel_info()
+        return round(no_nivel / req * 100) if req else 0
 
     def registrar_atividade(self, xp=0):
         """Soma XP e atualiza a sequência (streak) de dias de estudo."""

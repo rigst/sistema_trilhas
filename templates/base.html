@@ -36,7 +36,7 @@
                     <div class="hud" id="nav-hud">
                         <div class="xp" title="{{ xp }} XP · nível de jogador {{ nivel_xp }}">
                             <span class="lvl">Nv.{{ nivel_xp }}</span>
-                            <span class="xp-bar"><i style="width: {{ xp_no_nivel }}%"></i></span>
+                            <span class="xp-bar"><i style="width: {{ xp_no_nivel_pct }}%"></i></span>
                         </div>
                         <span class="diamante{% if diamantes_ganhos %} ganhou{% endif %}" title="{{ diamantes }} diamante(s) · cada um cria uma trilha. Faltam {{ xp_para_proximo_diamante }} XP para o próximo."><svg class="ic" aria-hidden="true"><use href="#ic-diamante"/></svg> {{ diamantes }}</span>
                         {% if streak_dias %}<span class="streak" title="{{ streak_dias }} dia(s) seguidos"><svg class="ic" aria-hidden="true"><use href="#ic-flame"/></svg> {{ streak_dias }}</span>{% endif %}
