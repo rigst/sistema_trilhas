@@ -951,8 +951,17 @@ a.node:not(.lock):hover .nm{color:var(--teal)}
 .xp-streak{display:inline-flex;align-items:center;gap:.2rem;font-size:.78rem;font-weight:600;color:#f97316}
 .xp-streak .ic{width:13px;height:13px}
 .xp-widget-meta{font-size:.72rem;color:var(--dim);white-space:nowrap}
-.xp-widget-track{height:6px;border-radius:99px;background:var(--panel-2);overflow:hidden;margin-bottom:.8rem}
-.xp-widget-track i{display:block;height:100%;border-radius:99px;background:linear-gradient(90deg,var(--teal),#34d399);transition:width .4s}
+.xp-widget-track{position:relative;height:9px;border-radius:99px;background:var(--panel-2);overflow:hidden;margin-bottom:.8rem;box-shadow:inset 0 1px 2px rgba(0,0,0,.25)}
+/* Preenchimento com gradiente multicolor que flui + glow na cor. */
+.xp-widget-track i{position:relative;display:block;height:100%;border-radius:99px;background:linear-gradient(90deg,#2dd4bf,#34d399,#a3e635,#fbbf24,#fb923c,#f472b6,#a78bfa,#2dd4bf);background-size:220% 100%;box-shadow:0 0 8px rgba(45,212,191,.55);animation:xp-fluir 6s linear infinite;transition:width .5s cubic-bezier(.2,.9,.25,1)}
+/* Faixa de brilho que desliza por cima do preenchimento. */
+.xp-widget-track i::after{content:"";position:absolute;inset:0;border-radius:inherit;background:linear-gradient(90deg,transparent,rgba(255,255,255,.6),transparent);background-size:45% 100%;background-repeat:no-repeat;animation:xp-brilho 2.8s ease-in-out infinite}
+@keyframes xp-fluir{to{background-position:220% 0}}
+@keyframes xp-brilho{0%{background-position:-45% 0}55%,100%{background-position:145% 0}}
+@media(prefers-reduced-motion:reduce){
+  .xp-widget-track i{animation:none}
+  .xp-widget-track i::after{display:none}
+}
 .xp-semana{display:flex;gap:.35rem;max-width:30rem;margin-inline:auto}
 .xp-dia{display:flex;flex-direction:column;align-items:center;gap:.25rem;flex:1}
 .xp-dia-dot{width:10px;height:10px;border-radius:50%;background:var(--panel-2);border:1.5px solid var(--line);transition:background .2s}
