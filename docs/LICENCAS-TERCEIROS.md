@@ -1,6 +1,6 @@
 # Licenças de terceiros — Trilhas de Estudo com IA
 
-Gerado por `scripts/licencas_terceiros.py` em 2026-07-24 a partir dos pacotes instalados no venv de produção.
+Gerado por `scripts/licencas_terceiros.py` em 2026-07-29 a partir dos pacotes instalados no venv de produção.
 Para regenerar: `./venv/bin/python scripts/licencas_terceiros.py`.
 
 O código deste projeto é licenciado sob **licença proprietária** (ver `LICENSE`). As bibliotecas abaixo permanecem sob suas licenças originais.
@@ -13,6 +13,7 @@ O código deste projeto é licenciado sob **licença proprietária** (ver `LICEN
 | celery | 5.6.3 | BSD-3-Clause |
 | Django | 6.0.6 | BSD-3-Clause |
 | django-redis | 6.0.0 | BSD License |
+| django-unfold | 0.101.0 | MIT |
 | edge-tts | 7.2.8 | GNU Lesser General Public License v3 (LGPLv3) |
 | gunicorn | 26.0.0 | MIT |
 | Markdown | 3.10.2 | BSD-3-Clause |

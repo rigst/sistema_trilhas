@@ -100,8 +100,11 @@ forjáveis.
 ./venv/bin/python manage.py migrate
 ./venv/bin/python manage.py importar_documentos_legais --publicar   # só na 1ª vez
 ./venv/bin/python manage.py collectstatic --noinput                 # unfold traz estáticos
-sudo systemctl reload trilhas
+sudo systemctl restart trilhas
 ```
+
+> O `trilhas.service` (gunicorn) não define `ExecReload`, então use `restart`
+> (`reload` responde "Job type reload is not applicable").
 
 `collectstatic` precisa das variáveis de produção: o app usa
 `ManifestStaticFilesStorage`, e um estático fora do manifesto derruba a página com 500.
