@@ -24,8 +24,9 @@
     {% csrf_token %}
     <div class="field">
       <label for="tema_livre">Tema</label>
-      <textarea id="tema_livre" name="tema_livre" rows="5" required
-        placeholder="Ex.: quero aprender programação em Python voltada para análise de dados, do zero até conseguir fazer projetos práticos."></textarea>
+      <textarea id="tema_livre" name="tema_livre" rows="5" required minlength="20"
+        placeholder="Ex.: quero aprender programação em Python voltada para análise de dados, do zero até conseguir fazer projetos práticos.">{{ tema_livre }}</textarea>
+      <p class="field-hint">Escreva ao menos uma frase (mín. 5 palavras) com o conceito geral e o foco — quanto mais contexto, melhor o plano que a IA monta.</p>
     </div>
     <div class="form-actions">
       <a class="btn btn-ghost" href="{% url 'dashboard' %}">Cancelar</a>

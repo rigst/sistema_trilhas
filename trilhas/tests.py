@@ -112,20 +112,31 @@ class QuotaGateTests(TestCase):
         self.user = User.objects.create_user('u', password='x')
         self.client.force_login(self.user)
 
+    # Tema válido: pelo menos MIN_PALAVRAS_TEMA palavras (conceito + foco).
+    TEMA_OK = 'quero aprender python do zero para análise de dados'
+
     def test_criar_trilha_bloqueado_sem_quota(self):
         p = self.user.profile
         p.tokens_usados_mes = p.quota_tokens_mes
         p.save(update_fields=['tokens_usados_mes'])
         antes = Trilha.objects.count()
         resp = self.client.post(reverse('trilhas:criar'),
-                                {'tema_livre': 'Algo novo'}, follow=True)
+                                {'tema_livre': self.TEMA_OK}, follow=True)
         self.assertContains(resp, 'cota mensal')
         self.assertEqual(Trilha.objects.count(), antes)  # nada foi criado
+
+    def test_criar_trilha_rejeita_tema_curto(self):
+        antes = Trilha.objects.count()
+        resp = self.client.post(reverse('trilhas:criar'),
+                                {'tema_livre': 'aprender python'}, follow=True)
+        self.assertContains(resp, 'pelo menos')          # aviso de mínimo
+        self.assertEqual(Trilha.objects.count(), antes)  # nada foi criado
+        self.assertContains(resp, 'aprender python')     # texto preservado no form
 
     @mock.patch('ai.tasks.task_gerar_perguntas.delay')
     def test_criar_trilha_ok_com_quota(self, delay):
         resp = self.client.post(reverse('trilhas:criar'),
-                                {'tema_livre': 'Algo novo'})
+                                {'tema_livre': self.TEMA_OK})
         self.assertEqual(Trilha.objects.filter(user=self.user).count(), 1)
         self.assertEqual(resp.status_code, 302)
         delay.assert_called_once()  # a geração foi enfileirada

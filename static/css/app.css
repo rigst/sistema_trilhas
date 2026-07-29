@@ -173,6 +173,7 @@ h1,h2,h3,h4{font-family:var(--disp);letter-spacing:-.01em;line-height:1.15}
 /* ---- forms ------------------------------------------------------------- */
 .field{display:flex;flex-direction:column;gap:.4rem;margin-bottom:1.1rem}
 .field label,.field>span{font-weight:600;font-size:.9rem;color:var(--text)}
+.field-hint{margin:.1rem 0 0;font-size:.82rem;color:var(--muted);line-height:1.45}
 input[type=text],input[type=password],input[type=email],textarea,select{
   width:100%;font:inherit;font-size:.95rem;color:var(--text);background:var(--bg-2);
   border:1px solid var(--line-2);border-radius:var(--radius-sm);padding:.7rem .9rem;transition:.15s}

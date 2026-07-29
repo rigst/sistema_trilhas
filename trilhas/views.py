@@ -382,13 +382,26 @@ def sugestao_aceitar(request, pk):
 # Criar trilha → dispara geração das perguntas
 # ---------------------------------------------------------------------------
 
+# Mínimo de palavras no tema: força uma frase com conceito/foco (não só
+# "aprender python"), o que dá contexto melhor para a IA montar o plano.
+MIN_PALAVRAS_TEMA = 5
+
+
 @login_required
 def trilha_criar(request):
     if request.method == 'POST':
         tema = (request.POST.get('tema_livre') or '').strip()
         if not tema:
             messages.error(request, 'Descreva o que você quer aprender.')
-            return render(request, 'trilhas/trilha_nova.html')
+            return render(request, 'trilhas/trilha_nova.html', {'tema_livre': tema})
+        if len(tema.split()) < MIN_PALAVRAS_TEMA:
+            messages.error(
+                request,
+                f'Descreva com mais detalhe: use pelo menos {MIN_PALAVRAS_TEMA} '
+                'palavras com o conceito geral e o foco (ex.: para que você quer '
+                'aprender, seu nível atual ou os assuntos de interesse).',
+            )
+            return render(request, 'trilhas/trilha_nova.html', {'tema_livre': tema})
         erro = bloqueio_ia(request.user, tokens_estimados=30000)
         if erro:
             messages.error(request, erro)
