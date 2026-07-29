@@ -1,10 +1,12 @@
 # Trilhas de Estudo com IA
 
-App Django onde o usuário descreve livremente um tema, a IA (Claude Opus 4.8)
-faz perguntas direcionadoras, monta um sumário do básico ao avançado e gera o
-conteúdo de cada nível sob demanda. Cada nível termina numa avaliação
-(objetiva + dissertativa) corrigida pela IA; ao atingir a nota mínima, o usuário
-ganha um título (Iniciante/Especialista/Mestre em X) e desbloqueia o próximo.
+App Django onde o usuário descreve livremente um tema, a IA (Claude) faz
+perguntas direcionadoras, monta um sumário do básico ao avançado e gera o
+conteúdo de cada nível sob demanda. Cada nível termina numa avaliação objetiva
+corrigida por gabarito; ao atingir a nota mínima, o usuário ganha um título
+(Iniciante/Especialista/Mestre em X) e desbloqueia o próximo. Em cima disso há
+uma camada de gamificação (XP, níveis de jogador, ofensiva e **diamantes** como
+moeda para criar trilhas) e de revisão espaçada (SM-2).
 
 Segue os padrões dos demais apps em `/var/www` (design system Stölben, Celery +
 Redis, settings split, login com visitante).
@@ -12,17 +14,45 @@ Redis, settings split, login com visitante).
 ## Stack
 Django 6 · Celery + Redis (DB 3) · Anthropic SDK · SQLite (dev) / PostgreSQL (prod).
 UI própria tema **"Foco"** (noturno gamificado, Sora + Inter). Markdown com callouts
-(admonitions) e destaque de sintaxe via **Pygments**.
+(admonitions) e destaque de sintaxe via **Pygments**, sanitizado por allowlist (**nh3**).
 
 ## Divisão de modelos (configurável no .env)
-- **Opus 4.8** (`AI_MODEL_PLANEJAMENTO`): sumário e correção das dissertativas.
-- **Sonnet 4.6** (`AI_MODEL`): perguntas, conteúdo, avaliação e exercícios (rápido/barato).
+- **Opus 4.8** (`AI_MODEL_PLANEJAMENTO`): planejamento que exige mais julgamento —
+  sumário da trilha, percurso do mentor e sugestões de novas trilhas.
+- **Sonnet 5** (`AI_MODEL`): perguntas, conteúdo dos tópicos, avaliação,
+  exercícios e revisão (rápido/barato).
+
+O raciocínio é adaptativo e o esforço (`AI_EFFORT`, `AI_EFFORT_GERAL`) é
+configurável. O system prompt vai com `cache_control` efêmero para cortar o custo
+de input nas chamadas seguintes. Todo uso debita a quota de tokens do `Profile`.
 
 ## Funcionalidades
-- Perguntas direcionadoras → sumário → conteúdo sob demanda (todas com barra/skeleton de progresso).
+- Perguntas direcionadoras → sumário → conteúdo sob demanda (com barra/skeleton de progresso).
 - Conteúdo rico: subtítulos, caixas de destaque coloridas e código com cores de sintaxe.
 - **Exercícios de prática** (rota separada) respondidos com feedback imediato (sem nota).
-- Avaliação por nível corrigida pela IA → título + desbloqueio do próximo nível.
+- Avaliação objetiva por nível → título + desbloqueio do próximo nível.
+- **Mentor**: percurso personalizado (aprender/revisar/avaliar) equilibrado entre as trilhas.
+- **Sugestões** de novas trilhas geradas pela IA a partir das existentes, aceitáveis num clique.
+- **Cards salvos**: biblioteca pessoal de destaques da leitura.
+- **Vídeo narrado** do tópico sob demanda (slideshow via edge-tts + Playwright/FFmpeg).
+- **Capa** buscada na Pexels com termo escolhido pela IA e baixada para `/media`.
+
+## Economia e progressão
+Regras centrais da gamificação (em `accounts/models.py::Profile` e nos serviços de
+avaliação/revisão). Manter estas invariantes ao mexer no fluxo — elas evitam farm
+de XP/diamante e corrida em ações concorrentes:
+
+- **XP por atividade**: ler tópico (10), responder questão (5), enviar avaliação (20),
+  ser aprovado num nível (50), concluir trilha (+100). O crédito de XP é **atômico**
+  (`registrar_atividade` roda em transação com `select_for_update`).
+- **Nível de jogador**: curva progressiva (base 100, +25 por nível).
+- **Diamantes** (moeda para criar trilha): começa com 3; +1 a cada 1000 XP e +1 a cada
+  5 níveis de jogador (contadores próprios idempotentes). Criar trilha custa 1 diamante,
+  debitado de forma atômica; excluir em até **48h** devolve o diamante (uma única vez).
+- **Aprovação concede XP só na primeira vez**: reavaliar um nível já aprovado é
+  bloqueado e não reganha XP nem reinicia o agendamento de revisão.
+- **Revisão espaçada (SM-2)**: cada nível aprovado é reagendado; o flashcard do
+  dashboard só concede XP quando a revisão estava realmente **devida**.
 
 ## Desenvolvimento
 ```bash
@@ -35,19 +65,34 @@ python manage.py runserver
 ```
 Em dev o Celery roda em modo *eager* (síncrono), sem precisar de Redis.
 
+Testes:
+```bash
+./venv/bin/python manage.py test
+```
+
 ## Produção
 1. Instalar em `/var/www/sistema_trilhas`, criar `venv`, `pip install -r requirements.txt`.
 2. `.env` com `DJANGO_SETTINGS_MODULE=config.settings.production`, `SECRET_KEY`,
    `ALLOWED_HOSTS`, `DATABASE_*`, `REDIS_URL=redis://localhost:6379/3`, `ANTHROPIC_API_KEY`.
 3. `python manage.py migrate && python manage.py collectstatic`.
-4. Copiar os units de `deploy/systemd/` e habilitar `trilhas.service` + `trilhas_celery.service`.
-5. Nginx a partir de `deploy/nginx.conf`.
+   > `collectstatic` exige `DJANGO_SETTINGS_MODULE=config.settings.production`
+   > (o `manage.py` usa dev por padrão, sem manifest de estáticos).
+4. Copiar os units de `deploy/systemd/` e habilitar `trilhas.service`,
+   `trilhas_celery.service` e `trilhas_celery_video.service` (fila dedicada ao vídeo).
+5. Nginx a partir de `deploy/nginx/`.
+
+Alterações em template (ex.: `templates/partials/icons.html`) pedem só um restart do
+`trilhas.service`; alterações em `models`/`services`/`tasks` pedem restart também do
+`trilhas_celery*`.
 
 ## Apps
-- `accounts` — `Profile` (quota de tokens, visitante).
-- `trilhas` — `Trilha`, `PerguntaDirecionadora`, `Nivel`, `Subtopico`.
-- `avaliacoes` — `Avaliacao`, `Questao`, `Resposta`, `Titulo`.
+- `accounts` — `Profile` (quota de tokens, XP/diamantes/streak, visitante).
+- `trilhas` — `Trilha`, `PerguntaDirecionadora`, `Nivel`, `Subtopico`, `CardSalvo`,
+  `VideoSubtopico`, `Percurso`/`PassoPercurso`, `SessaoSugestao`/`TrilhaSugerida`.
+- `avaliacoes` — `Avaliacao`, `Questao`, `Resposta`, `Titulo`, `ListaExercicios`/
+  `Exercicio`, `Revisao`/`QuestaoRevisao` (revisão espaçada em `spaced.py`).
 - `ai` — `services.py` (Claude), `tasks.py` (Celery), `prompts.py`.
+- `legal` — versionamento de Termos/Privacidade e registro de aceites.
 
 ## Conformidade legal (LGPD / Marco Civil)
 
