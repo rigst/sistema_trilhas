@@ -71,8 +71,8 @@ def dashboard(request):
     desativadas = [t for t in trilhas if not t.ativa]
 
     # Medalhas conquistadas (uma por trilha ativa que já tem título), da mais
-    # alta para a mais baixa, para a estante de conquistas.
-    ordem_tier = {'diamante': 0, 'platina': 1, 'ouro': 2, 'prata': 3, 'bronze': 4}
+    # recente para a mais antiga (por data de obtenção do título atual),
+    # independentemente do grau, para a estante de conquistas.
     medalhas = []
     for t in ativas:
         m = t.medalha
@@ -80,8 +80,13 @@ def dashboard(request):
             continue
         m['trilha'] = t
         m['pips'] = [i < m['estrelas'] for i in range(m['total'])]
+        tit = t.titulo_atual
+        m['obtido_em'] = tit.concedido_em if tit else None
         medalhas.append(m)
-    medalhas.sort(key=lambda m: (ordem_tier.get(m['tier'], 9), -m['estrelas']))
+    medalhas.sort(
+        key=lambda m: (m['obtido_em'] is not None, m['obtido_em']),
+        reverse=True,
+    )
 
     # Trilhas ativas ordenadas globalmente por progresso decrescente.
     ativas_sorted = sorted(ativas, key=lambda t: -t.progresso_pct)
