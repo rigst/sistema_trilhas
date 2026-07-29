@@ -395,6 +395,12 @@ a.node:not(.lock):hover .nm{color:var(--teal)}
 .spin-sm{width:15px;height:15px;border:2px solid var(--line-2);border-top-color:var(--teal);border-radius:50%;animation:spin .7s linear infinite;display:inline-block}
 
 /* ---- resultado --------------------------------------------------------- */
+/* Legenda discreta de XP por tarefa, abaixo das trilhas do dashboard. */
+.xp-legenda{margin:1.4rem 0 0;font-size:.8rem;color:var(--muted);line-height:1.9;display:flex;flex-wrap:wrap;align-items:center;gap:.35rem .5rem}
+.xp-legenda-titulo{font-weight:600;color:var(--text);opacity:.75}
+.xp-legenda-item b{color:var(--teal);font-weight:600}
+.xp-legenda-sep{opacity:.4}
+
 /* Desistir da trilha (página de perguntas): ação secundária discreta. */
 .desistir-row{text-align:center;margin-top:1.7rem}
 .link-desistir{background:none;border:0;padding:.4rem;font:inherit;font-size:.9rem;color:var(--muted);cursor:pointer;text-decoration:underline;text-underline-offset:3px;transition:color .15s}

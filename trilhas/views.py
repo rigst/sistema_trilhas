@@ -126,6 +126,15 @@ def dashboard(request):
         revisao_proxima__lte=timezone.localdate()
     ).count()
 
+    from accounts.models import Profile
+    xp_tabela = [
+        ('Ler um tópico', Profile.XP_TOPICO),
+        ('Responder uma questão', Profile.XP_EXERCICIO),
+        ('Enviar uma avaliação', Profile.XP_AVALIACAO),
+        ('Ser aprovado num nível', Profile.XP_APROVACAO),
+        ('Concluir uma trilha', Profile.XP_TRILHA_CONCLUIDA),
+    ]
+
     return render(request, 'trilhas/dashboard.html', {
         'trilhas': trilhas,
         'n_ativas': len(ativas),
@@ -139,6 +148,7 @@ def dashboard(request):
         'pode_revisar': pode_revisar,
         'revisoes_devidas': revisoes_devidas,
         'quota': _quota_ctx(request.user),
+        'xp_tabela': xp_tabela,
     })
 
 

@@ -196,6 +196,11 @@
         </div>
       </details>
     {% endif %}
+
+    <p class="xp-legenda">
+      <span class="xp-legenda-titulo">XP por tarefa:</span>
+      {% for nome, xp in xp_tabela %}<span class="xp-legenda-item">{{ nome }} <b>+{{ xp }}</b></span>{% if not forloop.last %}<span class="xp-legenda-sep">·</span>{% endif %}{% endfor %}
+    </p>
   {% else %}
     <div class="empty">
       <h3>Você ainda não tem trilhas</h3>
