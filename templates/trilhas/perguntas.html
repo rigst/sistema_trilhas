@@ -47,6 +47,14 @@
       <button type="submit" class="btn btn-primary">Gerar meu plano →</button>
     </div>
   </form>
+
+  <div class="desistir-row">
+    <form method="post" action="{% url 'trilhas:excluir' trilha.pk %}"
+          onsubmit="return confirm('{% if trilha.reembolsavel %}Desistir desta trilha? Ela será excluída e o diamante usado para criá-la será devolvido.{% else %}Desistir e excluir esta trilha? Esta ação não pode ser desfeita.{% endif %}');">
+      {% csrf_token %}
+      <button type="submit" class="link-desistir">Desistir da trilha{% if trilha.reembolsavel %} <span class="muted">(diamante devolvido)</span>{% endif %}</button>
+    </form>
+  </div>
 {% endif %}
 </section>
 {% endblock %}
