@@ -40,9 +40,6 @@ class IAError(Exception):
 # Infra
 # ---------------------------------------------------------------------------
 
-import re
-
-
 _SCHEMA_QUERY_CAPA = {
     'type': 'object',
     'properties': {'query': {'type': 'string'}},
@@ -754,8 +751,13 @@ def corrigir_avaliacao(avaliacao, profile=None):
     avaliacao.save()
 
     if aprovado:
-        _aprovar_nivel(avaliacao.nivel)
-        if profile is not None:
+        from trilhas.models import Nivel
+        # Só concede XP/progressão na PRIMEIRA aprovação do nível. Reavaliar um
+        # nível já aprovado (se escapar pela view) não deve reganhar XP nem
+        # reiniciar o agendamento de revisão espaçada.
+        ja_aprovado = avaliacao.nivel.status == Nivel.Status.APROVADO
+        _aprovar_nivel(avaliacao.nivel, ja_aprovado=ja_aprovado)
+        if profile is not None and not ja_aprovado:
             xp = profile.XP_APROVACAO
             if avaliacao.nivel.trilha.concluida:
                 xp += profile.XP_TRILHA_CONCLUIDA
@@ -763,13 +765,16 @@ def corrigir_avaliacao(avaliacao, profile=None):
     return avaliacao
 
 
-def _aprovar_nivel(nivel):
+def _aprovar_nivel(nivel, ja_aprovado=False):
     from avaliacoes.models import Titulo
     from trilhas.models import Nivel, Trilha
 
     nivel.status = Nivel.Status.APROVADO
     nivel.save(update_fields=['status', 'atualizado_em'])
-    nivel.iniciar_revisao_espacada()  # agenda a 1ª revisão espaçada
+    # Agenda a 1ª revisão espaçada só na aprovação inicial — reavaliar não pode
+    # zerar o progresso de SM-2 já acumulado no nível.
+    if not ja_aprovado:
+        nivel.iniciar_revisao_espacada()
 
     nome_titulo = nivel.titulo_concedido or f'{nivel.get_faixa_display()} em {nivel.trilha.titulo}'
     Titulo.objects.get_or_create(

@@ -23,6 +23,11 @@ def avaliacao_iniciar(request, nivel_pk):
     nivel = get_object_or_404(Nivel, pk=nivel_pk, trilha__user=request.user)
     if nivel.status == Nivel.Status.BLOQUEADO:
         return redirect('trilhas:detalhe', pk=nivel.trilha_id)
+    # Nível já aprovado não se reavalia: gastaria geração de IA à toa e abriria
+    # brecha para reganhar XP de aprovação. Para revisar, use a revisão espaçada.
+    if nivel.status == Nivel.Status.APROVADO:
+        messages.info(request, 'Você já foi aprovado neste nível. Use a revisão para praticar.')
+        return redirect('trilhas:nivel', pk=nivel.pk)
     # Pré-requisito: ler todos os tópicos. Os exercícios de prática são
     # opcionais — aquecem, mas não travam a avaliação.
     if not nivel.conteudo_lido:
@@ -232,16 +237,23 @@ def revisao_rapida(request, nivel_pk):
     if qualidade is None:
         return JsonResponse({'erro': 'Resposta inválida.'}, status=400)
 
+    # XP só quando a revisão estava REALMENTE devida: assim que se revisa, o
+    # SM-2 reagenda para o futuro e o cartão sai do "devido", então repetir o
+    # POST não rende mais XP (fecha o farm de XP/diamante deste endpoint).
+    devida = nivel.revisao_devida
     nivel.registrar_revisao(qualidade)
 
     profile = getattr(request.user, 'profile', None)
-    if profile is not None:
-        profile.registrar_atividade(profile.XP_EXERCICIO)
+    xp_ganho = 0
+    if profile is not None and devida:
+        xp_ganho = profile.XP_EXERCICIO
+        profile.registrar_atividade(xp_ganho)
 
     dias = max(1, (nivel.revisao_proxima - timezone.localdate()).days)
     return JsonResponse({
         'ok': True,
         'proxima_em_dias': dias,
+        'xp_ganho': xp_ganho,
         'streak': profile.streak_dias if profile else None,
     })
 

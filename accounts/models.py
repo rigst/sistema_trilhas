@@ -152,39 +152,61 @@ class Profile(models.Model):
         return round(no_nivel / req * 100) if req else 0
 
     def registrar_atividade(self, xp=0):
-        """Soma XP e atualiza a sequência (streak) de dias de estudo."""
+        """Soma XP e atualiza a sequência (streak) de dias de estudo.
+
+        A lógica de streak/XP-diário/mapa-semanal é read-modify-write (depende do
+        estado atual), então serializa-se com um lock de linha dentro de uma
+        transação: gerações e ações concorrentes no mesmo perfil não perdem XP
+        (lost update). Opera numa cópia recarregada e sincroniza de volta em self.
+        """
+        from django.db import transaction
+
+        xp = int(xp)
         hoje = timezone.localdate()
-        if self.ultimo_estudo == hoje:
-            pass
-        elif self.ultimo_estudo == hoje - timezone.timedelta(days=1):
-            self.streak_dias += 1
-        else:
-            self.streak_dias = 1
-        self.ultimo_estudo = hoje
-        self.xp = (self.xp or 0) + int(xp)
-
-        # Rastreia XP ganho hoje
-        if self.xp_hoje_ref == hoje:
-            self.xp_hoje_acc += int(xp)
-        else:
-            self.xp_hoje_acc = int(xp)
-            self.xp_hoje_ref = hoje
-
-        # Mapa semanal: reseta na virada de semana ISO
         iso = hoje.isocalendar()
         semana_atual = f"{iso[0]}-W{iso[1]:02d}"
-        if self.semana_ref != semana_atual:
-            self.dias_xp_semana = '0000000'
-            self.semana_ref = semana_atual
-        mask = list((self.dias_xp_semana or '0000000').ljust(7, '0')[:7])
-        mask[hoje.weekday()] = '1'  # 0=Seg, 6=Dom
-        self.dias_xp_semana = ''.join(mask)
 
-        self.save(update_fields=[
+        with transaction.atomic():
+            p = Profile.objects.select_for_update().get(pk=self.pk)
+
+            if p.ultimo_estudo == hoje:
+                pass
+            elif p.ultimo_estudo == hoje - timezone.timedelta(days=1):
+                p.streak_dias += 1
+            else:
+                p.streak_dias = 1
+            p.ultimo_estudo = hoje
+            p.xp = (p.xp or 0) + xp
+
+            # Rastreia XP ganho hoje
+            if p.xp_hoje_ref == hoje:
+                p.xp_hoje_acc += xp
+            else:
+                p.xp_hoje_acc = xp
+                p.xp_hoje_ref = hoje
+
+            # Mapa semanal: reseta na virada de semana ISO
+            if p.semana_ref != semana_atual:
+                p.dias_xp_semana = '0000000'
+                p.semana_ref = semana_atual
+            mask = list((p.dias_xp_semana or '0000000').ljust(7, '0')[:7])
+            mask[hoje.weekday()] = '1'  # 0=Seg, 6=Dom
+            p.dias_xp_semana = ''.join(mask)
+
+            p.save(update_fields=[
+                'xp', 'streak_dias', 'ultimo_estudo',
+                'xp_hoje_ref', 'xp_hoje_acc', 'semana_ref', 'dias_xp_semana',
+                'atualizado_em',
+            ])
+
+        # Sincroniza o estado recém-gravado de volta na instância chamadora.
+        for campo in (
             'xp', 'streak_dias', 'ultimo_estudo',
             'xp_hoje_ref', 'xp_hoje_acc', 'semana_ref', 'dias_xp_semana',
-            'atualizado_em',
-        ])
+        ):
+            setattr(self, campo, getattr(p, campo))
+        self.__dict__.pop('_nivel_info_cache', None)
+
         self._creditar_diamantes_por_xp()
         self._creditar_diamantes_por_nivel()
 

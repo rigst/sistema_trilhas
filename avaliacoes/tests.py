@@ -82,6 +82,36 @@ class CorrecaoAprovacaoTests(TestCase):
         self.assertEqual(n1.revisao_proxima, timezone.localdate() + timezone.timedelta(days=1))
         self.assertFalse(n1.revisao_devida)
 
+    def test_reaprovar_nivel_nao_reganha_xp_nem_reseta_sm2(self):
+        # Regressão: corrigir uma nova avaliação de um nível JÁ aprovado não
+        # pode reganhar XP de aprovação nem zerar o progresso de revisão espaçada.
+        trilha, n1, n2, av = montar_avaliacao(self.user, ['A'] * 10)
+        corrigir_avaliacao(av, self.user.profile)
+        self.user.profile.refresh_from_db()
+        xp_apos_1a = self.user.profile.xp
+
+        # Avança o SM-2 do nível (simula revisões feitas depois da aprovação).
+        n1.refresh_from_db()
+        n1.registrar_revisao(5)
+        n1.registrar_revisao(5)
+        intervalo_antes = n1.revisao_intervalo
+        self.assertGreater(intervalo_antes, 1)
+
+        # Segunda avaliação do mesmo nível, novamente com nota máxima.
+        av2 = Avaliacao.objects.create(nivel=n1, tentativa=2, status=Avaliacao.Status.PRONTA)
+        for q in av.questoes.all():
+            nq = Questao.objects.create(
+                avaliacao=av2, ordem=q.ordem, tipo=Questao.Tipo.OBJETIVA,
+                enunciado_md=q.enunciado_md, alternativas=q.alternativas,
+                gabarito='A', peso=1.0,
+            )
+            Resposta.objects.create(questao=nq, alternativa_escolhida='A')
+        corrigir_avaliacao(av2, self.user.profile)
+
+        self.user.profile.refresh_from_db(); n1.refresh_from_db()
+        self.assertEqual(self.user.profile.xp, xp_apos_1a)          # XP não dobrou
+        self.assertEqual(n1.revisao_intervalo, intervalo_antes)     # SM-2 preservado
+
 
 class SM2Tests(TestCase):
     def setUp(self):
@@ -91,6 +121,26 @@ class SM2Tests(TestCase):
         self.n = Nivel.objects.create(trilha=self.trilha, ordem=1, titulo='N',
                                       faixa=Nivel.Faixa.INICIANTE, status=Nivel.Status.APROVADO)
         self.n.iniciar_revisao_espacada()
+
+    def test_flashcard_so_da_xp_quando_devido(self):
+        # Regressão (farm de XP): revisao_rapida só concede XP quando o cartão
+        # estava realmente devido. Após revisar, o SM-2 reagenda e repetir o
+        # POST no mesmo dia não rende mais XP.
+        self.client.force_login(self.user)
+        Nivel.objects.filter(pk=self.n.pk).update(revisao_proxima=timezone.localdate())
+        self.user.profile.refresh_from_db()
+        xp0 = self.user.profile.xp
+
+        url = reverse('avaliacoes:revisao_rapida', args=[self.n.pk])
+        r1 = self.client.post(url, {'resposta': 'lembrei'})
+        self.assertEqual(r1.json()['xp_ganho'], self.user.profile.XP_EXERCICIO)
+
+        # Segundo POST no mesmo dia: cartão já não está devido -> sem XP.
+        r2 = self.client.post(url, {'resposta': 'lembrei'})
+        self.assertEqual(r2.json()['xp_ganho'], 0)
+
+        self.user.profile.refresh_from_db()
+        self.assertEqual(self.user.profile.xp, xp0 + self.user.profile.XP_EXERCICIO)
 
     def test_qualidade_mapeia_percentual(self):
         self.assertEqual(_qualidade(1.0), 5)

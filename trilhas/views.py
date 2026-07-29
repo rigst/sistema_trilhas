@@ -482,8 +482,10 @@ def trilha_excluir(request, pk):
     # Excluir dentro da janela (48h) devolve o diamante gasto na criação.
     reembolsa = trilha.reembolsavel
     profile = getattr(request.user, 'profile', None)
-    trilha.delete()
-    if reembolsa and profile is not None:
+    # Delete condicional (filtra por pk+user): num duplo-POST concorrente só um
+    # request remove a linha de fato, então o diamante é devolvido uma única vez.
+    deletados, _ = Trilha.objects.filter(pk=trilha.pk, user=request.user).delete()
+    if deletados and reembolsa and profile is not None:
         profile.creditar_diamante()
         messages.success(request, 'Trilha excluída — diamante devolvido.')
     else:
