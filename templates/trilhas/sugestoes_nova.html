@@ -12,7 +12,7 @@
   </div>
 
   {% if candidatas %}
-    <form method="post" action="{% url 'trilhas:sugestoes' %}">
+    <form method="post" action="{% url 'trilhas:sugestoes_nova' %}">
       {% csrf_token %}
       <div class="sugg-pick">
         <div class="sugg-pick-head">
