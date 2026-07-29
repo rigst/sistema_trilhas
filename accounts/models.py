@@ -30,6 +30,8 @@ class Profile(models.Model):
     diamantes = models.IntegerField('diamantes', default=3)
     # Quantos diamantes já foram creditados por marcos de XP (evita recrédito).
     diamantes_xp_creditados = models.IntegerField('diamantes creditados por XP', default=0)
+    # Idem para os diamantes extras concedidos a cada N níveis de jogador.
+    diamantes_nivel_creditados = models.IntegerField('diamantes creditados por nível', default=0)
     streak_dias = models.PositiveIntegerField('sequência de dias', default=0)
     ultimo_estudo = models.DateField('último dia de estudo', null=True, blank=True)
     lembrete_streak_em = models.DateField(
@@ -102,6 +104,9 @@ class Profile(models.Model):
     # Economia de diamantes: 1000 XP ≈ 10 níveis de jogador ≈ 1 trilha concluída.
     # Assim, concluir uma trilha rende ~1 diamante (break-even sustentável).
     XP_POR_DIAMANTE = 1000
+
+    # Diamante extra concedido a cada N níveis de jogador (5, 10, 15…).
+    DIAMANTE_A_CADA_N_NIVEIS = 5
 
     # Curva de nível do jogador: cada nível exige um pouco mais de XP que o
     # anterior (progressão suave), em vez de 100 fixo para todos.
@@ -181,8 +186,27 @@ class Profile(models.Model):
             'atualizado_em',
         ])
         self._creditar_diamantes_por_xp()
+        self._creditar_diamantes_por_nivel()
 
     # -- Diamantes -------------------------------------------------------
+    def _creditar_diamantes_por_nivel(self):
+        """Credita 1 diamante extra a cada DIAMANTE_A_CADA_N_NIVEIS níveis.
+
+        Idempotente (contador próprio) e atômico, no mesmo molde do crédito
+        por marcos de XP — os dois bônus se acumulam.
+        """
+        merecidos = self.nivel_xp // self.DIAMANTE_A_CADA_N_NIVEIS
+        delta = merecidos - (self.diamantes_nivel_creditados or 0)
+        if delta <= 0:
+            return
+        Profile.objects.filter(pk=self.pk).update(
+            diamantes=models.F('diamantes') + delta,
+            diamantes_nivel_creditados=merecidos,
+            atualizado_em=timezone.now(),
+        )
+        self.diamantes = (self.diamantes or 0) + delta
+        self.diamantes_nivel_creditados = merecidos
+
     def _creditar_diamantes_por_xp(self):
         """Credita 1 diamante a cada XP_POR_DIAMANTE de XP acumulado.
 
