@@ -109,10 +109,6 @@
             <div class="fc-verso" hidden>
               <p class="fc-resultado" aria-live="polite"></p>
               {% if questao.explicacao %}<div class="fc-resumo markdown-body">{{ questao.explicacao }}</div>{% endif %}
-              <div class="fc-acoes">
-                <button type="button" class="btn btn-primary fc-btn" data-resposta="lembrei">Lembrei bem</button>
-                <button type="button" class="btn btn-ghost fc-btn" data-resposta="rever">Preciso rever</button>
-              </div>
             </div>
           {% else %}
             <h3 class="fc-pergunta">O que você lembra de "{{ nivel.titulo }}"?</h3>
@@ -293,16 +289,42 @@
   const feed = document.getElementById("feed-hoje");
   if (!feed) return;
   const csrf = feed.querySelector("[name=csrfmiddlewaretoken]");
+  // Envia o resultado ao SM-2 e mostra a confirmação de reagendamento.
+  // manterVerso: nas questões, mantém a explicação visível ao confirmar.
+  const reagendar = async (card, resposta, { manterVerso = false } = {}) => {
+    const verso = card.querySelector(".fc-verso");
+    const feito = card.querySelector(".fc-feito");
+    try {
+      const body = new URLSearchParams();
+      body.set("resposta", resposta);
+      const r = await fetch(card.dataset.url, {
+        method: "POST",
+        headers: { "X-CSRFToken": csrf.value, "X-Requested-With": "XMLHttpRequest" },
+        body,
+      });
+      const d = await r.json();
+      if (!d.ok) throw new Error();
+      if (verso && !manterVerso) verso.hidden = true;
+      feito.hidden = false;
+      feito.innerHTML = resposta === "lembrei"
+        ? "✓ Boa! Próxima revisão em <strong>" + d.proxima_em_dias + " dia" + (d.proxima_em_dias > 1 ? "s" : "") + "</strong>."
+        : "Anotado: este nível volta <strong>amanhã</strong> para reforçar.";
+      card.classList.add("respondido");
+      return true;
+    } catch (e) {
+      return false;
+    }
+  };
   feed.querySelectorAll(".flashcard[data-url]").forEach((card) => {
     const virar = card.querySelector(".fc-virar");
     const verso = card.querySelector(".fc-verso");
-    const feito = card.querySelector(".fc-feito");
     if (virar) virar.addEventListener("click", () => {
       verso.hidden = false;
       virar.remove();
       card.classList.add("virado");
     });
-    // Questão objetiva: responder revela certo/errado + explicação + SM-2.
+    // Questão objetiva: responder revela certo/errado + explicação e reagenda
+    // sozinho (acertou = lembrou bem; errou = precisa rever). Sem autoavaliação.
     card.querySelectorAll(".fc-opt").forEach((opt) => opt.addEventListener("click", () => {
       if (card.classList.contains("virado")) return;
       card.classList.add("virado");
@@ -318,28 +340,13 @@
         ? "✓ <strong>Acertou!</strong>"
         : "✗ Não foi dessa vez. A correta é a <strong>" + certa + "</strong>.";
       verso.hidden = false;
+      reagendar(card, acertou ? "lembrei" : "rever", { manterVerso: true });
     }));
+    // Card de recordação livre (sem certo/errado): autoavaliação manual.
     card.querySelectorAll(".fc-btn").forEach((btn) => btn.addEventListener("click", async () => {
       card.querySelectorAll(".fc-btn").forEach((b) => (b.disabled = true));
-      try {
-        const body = new URLSearchParams();
-        body.set("resposta", btn.dataset.resposta);
-        const r = await fetch(card.dataset.url, {
-          method: "POST",
-          headers: { "X-CSRFToken": csrf.value, "X-Requested-With": "XMLHttpRequest" },
-          body,
-        });
-        const d = await r.json();
-        if (!d.ok) throw new Error();
-        verso.hidden = true;
-        feito.hidden = false;
-        feito.innerHTML = btn.dataset.resposta === "lembrei"
-          ? "✓ Boa! Próxima revisão em <strong>" + d.proxima_em_dias + " dia" + (d.proxima_em_dias > 1 ? "s" : "") + "</strong>."
-          : "Anotado: este nível volta <strong>amanhã</strong> para reforçar.";
-        card.classList.add("respondido");
-      } catch (e) {
-        card.querySelectorAll(".fc-btn").forEach((b) => (b.disabled = false));
-      }
+      const ok = await reagendar(card, btn.dataset.resposta);
+      if (!ok) card.querySelectorAll(".fc-btn").forEach((b) => (b.disabled = false));
     }));
   });
 })();
