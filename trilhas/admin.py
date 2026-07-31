@@ -1,7 +1,7 @@
 from django.contrib import admin
 from unfold.admin import ModelAdmin, TabularInline
 
-from .models import Nivel, PerguntaDirecionadora, Subtopico, Trilha, VideoSubtopico
+from .models import Nivel, PerguntaDirecionadora, Subtopico, Trilha, VideoNivel
 
 
 class SubtopicoInline(TabularInline):
@@ -37,9 +37,9 @@ class NivelAdmin(ModelAdmin):
     inlines = [SubtopicoInline]
 
 
-@admin.register(VideoSubtopico)
-class VideoSubtopicoAdmin(ModelAdmin):
-    list_display = ('subtopico', 'status', 'progresso_pct', 'duracao_seg', 'atualizado_em')
+@admin.register(VideoNivel)
+class VideoNivelAdmin(ModelAdmin):
+    list_display = ('nivel', 'status', 'progresso_pct', 'duracao_seg', 'atualizado_em')
     list_filter = ('status',)
-    search_fields = ('subtopico__titulo',)
+    search_fields = ('nivel__titulo',)
     readonly_fields = ('criado_em', 'atualizado_em')

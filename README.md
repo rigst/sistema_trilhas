@@ -34,7 +34,13 @@ de input nas chamadas seguintes. Todo uso debita a quota de tokens do `Profile`.
 - **Mentor**: percurso personalizado (aprender/revisar/avaliar) equilibrado entre as trilhas.
 - **Sugestões** de novas trilhas geradas pela IA a partir das existentes, aceitáveis num clique.
 - **Cards salvos**: biblioteca pessoal de destaques da leitura.
-- **Vídeo narrado** do tópico sob demanda (slideshow via edge-tts + Playwright/FFmpeg).
+- **Vídeo narrado do nível** sob demanda: um vídeo por nível, cobrindo todos os
+  tópicos em capítulos (slideshow via edge-tts + Playwright/FFmpeg), com
+  **mascote apresentador** no canto — boca sincronizada pelo volume da narração,
+  animação contínua (respiração, deriva da cabeça) e reações tiradas do próprio
+  áudio: ênfase, aceno, inclinação e encolher de ombros. Cada trilha recebe uma
+  das paletas de `trilhas/video_avatar.PALETAS`, sorteada pelo id (sempre a
+  mesma para a mesma trilha).
 - **Capa** buscada na Pexels com termo escolhido pela IA e baixada para `/media`.
 
 ## Economia e progressão

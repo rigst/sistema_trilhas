@@ -4,6 +4,10 @@ Cada par (slide PNG, áudio MP3) vira um clipe 1280×720 com efeito Ken Burns e
 duração igual à do áudio; os clipes são concatenados na ordem e, por fim, uma
 faixa instrumental é mixada em volume baixo sob a narração. Saída: MP4
 H.264/AAC 720p com faststart (streaming progressivo no player <video>).
+
+Quando `video_avatar` entrega os clipes do mascote, cada quadro ainda recebe o
+apresentador no canto inferior direito, por cima do Ken Burns (o mascote não
+acompanha o zoom).
 """
 
 import math
@@ -14,6 +18,11 @@ from django.conf import settings
 
 LARGURA, ALTURA, FPS = 1280, 720, 30
 COR_FUNDO = '0x0C1020'  # var(--bg) do tema escuro
+
+# Respiro do mascote até as bordas do quadro. A posição é fixa de propósito: o
+# movimento acontece dentro do círculo (ver video_avatar), então o disco fica
+# cravado no canto em vez de flutuar.
+AVATAR_MARGEM = 34
 
 
 def _bin(nome, setting):
@@ -49,8 +58,12 @@ def duracao(path: str) -> float:
         return 0.0
 
 
-def _clipe(png: str, audio: str, destino: str):
-    """Gera um clipe 1280×720 com Ken Burns, com a duração do áudio."""
+def _clipe(png: str, audio: str, destino: str, avatar: str | None = None):
+    """Gera um clipe 1280×720 com Ken Burns, com a duração do áudio.
+
+    ``avatar`` é o clipe com alfa do mascote para esta narração; sem ele o
+    clipe sai só com o slide.
+    """
     dur = max(0.8, duracao(audio))
     frames = max(1, math.ceil(dur * FPS))
     # Fit do slide no quadro (nada é cortado), depois zoom lento (Ken Burns).
@@ -59,13 +72,24 @@ def _clipe(png: str, audio: str, destino: str):
         f'pad={LARGURA}:{ALTURA}:(ow-iw)/2:(oh-ih)/2:color={COR_FUNDO},setsar=1,'
         f'scale={LARGURA*2}:{ALTURA*2},'
         f"zoompan=z='min(zoom+0.0004,1.10)':d={frames}:"
-        f"x='iw/2-(iw/zoom/2)':y='ih/2-(ih/zoom/2)':s={LARGURA}x{ALTURA}:fps={FPS},"
-        f'format=yuv420p[v]'
+        f"x='iw/2-(iw/zoom/2)':y='ih/2-(ih/zoom/2)':s={LARGURA}x{ALTURA}:fps={FPS}[base]"
     )
+    entradas = ['-loop', '1', '-i', png, '-i', audio]
+    if avatar:
+        # O alfa do WebM/VP9 vem num plano separado que só o decodificador
+        # libvpx-vp9 lê; com o decodificador nativo o mascote sai num quadrado
+        # preto opaco em vez de recortado no círculo.
+        entradas += ['-c:v', 'libvpx-vp9', '-i', avatar]
+        vf += (
+            ';[2:v]format=rgba,setpts=PTS-STARTPTS[mascote]'
+            f';[base][mascote]overlay=x=W-w-{AVATAR_MARGEM}:y=H-h-{AVATAR_MARGEM}:'
+            'eof_action=repeat,format=yuv420p[v]'
+        )
+    else:
+        vf += ';[base]format=yuv420p[v]'
     _run([
         _ffmpeg(), '-y',
-        '-loop', '1', '-i', png,
-        '-i', audio,
+        *entradas,
         '-filter_complex', vf,
         '-map', '[v]', '-map', '1:a',
         '-t', f'{dur:.3f}',
@@ -112,11 +136,13 @@ def _faststart(video: str, destino: str):
 
 
 def montar(slides: list[str], audios: list[str], destino: str,
-           work_dir: str, musica: str | None = None) -> float:
+           work_dir: str, musica: str | None = None,
+           avatares: list[str] | None = None) -> float:
     """Monta o vídeo final e devolve sua duração em segundos.
 
     ``slides`` e ``audios`` são listas paralelas (mesmo tamanho, mesma ordem).
     ``musica`` é opcional; se ausente ou inexistente, o vídeo sai só com narração.
+    ``avatares`` (clipes do mascote, na mesma ordem) também é opcional.
     """
     if not slides or len(slides) != len(audios):
         raise ValueError('slides e audios devem ter o mesmo tamanho e não vazios.')
@@ -125,7 +151,8 @@ def montar(slides: list[str], audios: list[str], destino: str,
     clipes = []
     for i, (png, aud) in enumerate(zip(slides, audios)):
         clipe = os.path.join(work_dir, f'clipe_{i:03d}.mp4')
-        _clipe(png, aud, clipe)
+        _clipe(png, aud, clipe,
+               avatar=avatares[i] if avatares and i < len(avatares) else None)
         clipes.append(clipe)
 
     concat = os.path.join(work_dir, 'sem_musica.mp4')

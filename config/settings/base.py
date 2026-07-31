@@ -161,7 +161,7 @@ CELERY_BEAT_SCHEDULE = {
 # para não bloquear as tasks de IA na fila default.
 CELERY_TASK_DEFAULT_QUEUE = 'celery'
 CELERY_TASK_ROUTES = {
-    'trilhas.tasks.task_gerar_video_subtopico': {'queue': 'video'},
+    'trilhas.tasks.task_gerar_video_nivel': {'queue': 'video'},
 }
 
 
@@ -249,6 +249,14 @@ VIDEO_FFPROBE_BIN = os.getenv('VIDEO_FFPROBE_BIN', 'ffprobe')
 # (ver trilhas/video_pipeline.MUSICAS). Definir VIDEO_MUSICA_PATH força uma
 # faixa fixa para todos os vídeos; vazio = seleção automática por categoria.
 VIDEO_MUSICA_PATH = os.getenv('VIDEO_MUSICA_PATH', '')
+# Mascote apresentador no canto do vídeo (círculo com a boca sincronizada pela
+# narração). Custo zero: a arte é um SVG do próprio app e a animação sai do
+# volume do MP3 do edge-tts — sem IA, GPU ou serviço externo.
+VIDEO_AVATAR = os.getenv('VIDEO_AVATAR', 'True') == 'True'
+VIDEO_AVATAR_TAMANHO = int(os.getenv('VIDEO_AVATAR_TAMANHO', '200'))
+# Cores do personagem: dict com as chaves de trilhas.video_avatar.PALETA que
+# você quiser trocar (o resto fica no padrão). Mudar aqui refaz a arte sozinho.
+VIDEO_AVATAR_PALETA = {}
 
 # Expiração do visitante (horas de inatividade)
 VISITOR_EXPIRY_HOURS = int(os.getenv('VISITOR_EXPIRY_HOURS', '48'))

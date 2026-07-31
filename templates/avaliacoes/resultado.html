@@ -1,4 +1,5 @@
 {% extends "base.html" %}
+{% load md %}
 {% block title %}Resultado · {{ nivel.titulo }}{% endblock %}
 
 {% block content %}
@@ -42,7 +43,26 @@
         </div>
         <div class="markdown-body" style="font-size:.95rem">{{ item.enunciado_html }}</div>
         {% if item.resposta %}
-          <div class="correcao-sua"><b>Sua resposta:</b> {{ item.resposta.alternativa_escolhida|default:"-" }}</div>
+          {% if item.errou %}
+            <div class="correcao-sua correcao-sua--erro">
+              <b>Sua resposta:</b>
+              {% if item.escolhida_letra %}
+                <span class="correcao-alt">{{ item.escolhida_letra }})</span>
+                <span class="markdown-body">{{ item.escolhida_texto|md_inline }}</span>
+              {% else %}<span class="muted">em branco</span>{% endif %}
+            </div>
+            <div class="correcao-sua correcao-sua--certa">
+              <b>Resposta correta:</b>
+              <span class="correcao-alt">{{ item.correta_letra }})</span>
+              <span class="markdown-body">{{ item.correta_texto|md_inline }}</span>
+            </div>
+          {% else %}
+            <div class="correcao-sua">
+              <b>Sua resposta:</b>
+              <span class="correcao-alt">{{ item.escolhida_letra|default:"-" }})</span>
+              <span class="markdown-body">{{ item.escolhida_texto|md_inline }}</span>
+            </div>
+          {% endif %}
           {% if item.feedback_html %}<div class="correcao-fb markdown-body">{{ item.feedback_html }}</div>{% endif %}
         {% endif %}
       </div>

@@ -414,6 +414,16 @@ a.node:not(.lock):hover .nm{color:var(--teal)}
 .resultado-nota span{font-size:1.1rem;color:var(--muted)}
 .resultado-msg h2{margin:0 0 .3rem}
 .correcao-list{display:flex;flex-direction:column;gap:1rem;margin-top:1rem}
+/* Progresso da geração do vídeo do nível: etapa, barra e estimativa. */
+.tv-prog{display:flex;flex-direction:column;gap:.45rem}
+.tv-prog-top{display:flex;align-items:baseline;gap:.75rem;font-size:.88rem}
+.tv-prog-top>:first-child{flex:1;color:var(--text)}
+.tv-prog-pct{font-family:var(--disp);font-weight:700;color:var(--teal)}
+.tv-prog-trilho{height:8px;background:var(--panel-2);border-radius:999px;overflow:hidden}
+.tv-prog-trilho>i{display:block;height:100%;width:0;border-radius:999px;
+  background:linear-gradient(90deg,var(--teal),var(--violet));transition:width .6s ease}
+.tv-prog-baixo{display:flex;justify-content:space-between;gap:.75rem;font-size:.8rem}
+
 .correcao-item{border:1px solid var(--line);border-left-width:4px;border-radius:var(--radius-sm);padding:1.1rem 1.25rem}
 .correcao-item.ok{border-left-color:var(--teal)} .correcao-item.bad{border-left-color:var(--pink)}
 .correcao-top{display:flex;align-items:center;gap:.6rem;margin-bottom:.5rem}
@@ -422,6 +432,18 @@ a.node:not(.lock):hover .nm{color:var(--teal)}
 .correcao-nota{margin-left:auto;font-weight:700;font-family:var(--disp)}
 .correcao-sua{font-size:.9rem;margin:.5rem 0;color:var(--muted)}
 .correcao-sua b{color:var(--text)}
+/* Nas questões erradas as duas alternativas aparecem com o texto completo:
+   a escolhida e a correta, para o erro virar aprendizado. */
+.correcao-sua--erro,.correcao-sua--certa{display:flex;flex-wrap:wrap;gap:.35rem;align-items:baseline;
+  border-radius:10px;padding:.55rem .75rem;margin:.45rem 0}
+.correcao-sua--erro{background:var(--err-bg);border:1px solid var(--err-line)}
+.correcao-sua--erro b{color:var(--err-ink)}
+.correcao-sua--certa{background:var(--ok-bg);border:1px solid var(--ok-line)}
+.correcao-sua--certa b{color:var(--ok-ink)}
+.correcao-sua .correcao-alt{font-weight:700;font-family:var(--disp)}
+.correcao-sua .markdown-body{display:inline;color:var(--text)}
+.correcao-sua .markdown-body>:first-child{margin-top:0}
+.correcao-sua .markdown-body>:last-child{margin-bottom:0}
 .correcao-fb{background:var(--panel-2);border-radius:11px;padding:.75rem 1rem;font-size:.92rem;margin-top:.5rem}
 
 /* ---- auth -------------------------------------------------------------- */

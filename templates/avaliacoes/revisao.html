@@ -8,7 +8,7 @@
     <a class="back-link" href="{% url 'dashboard' %}">← Minhas trilhas</a>
     <div class="badges"><span class="pill"><svg class="ic" aria-hidden="true"><use href="#ic-refresh"/></svg> Revisão espaçada</span></div>
     <h1 class="h1">Revisão dos níveis concluídos</h1>
-    <p class="sub">Perguntas misturando o que você já dominou em diferentes trilhas. Cada resposta é definitiva: o objetivo é reforçar a memória.</p>
+    <p class="sub">Perguntas misturando o que você já dominou em diferentes trilhas. Toque na alternativa para responder (no teclado, setas para escolher e <kbd>Enter</kbd> para confirmar) — a resposta vale na hora e é definitiva: o objetivo é reforçar a memória.</p>
   </div>
 
 {% if revisao.status == 'gerando' %}
@@ -38,9 +38,7 @@
     <div class="progress-bar" style="margin-top:.5rem"><span id="rev-progress" style="width: {% widthratio revisao.respondidos revisao.total 100 %}%"></span></div>
   </div>
 
-  {% include 'partials/dica_descarte.html' %}
-
-  <div class="stack">
+  <div class="stack" data-sem-descarte>
     {% for item in itens %}
       {% with q=item.q %}
       <div class="q-block exercise" data-id="{{ q.pk }}" data-answered="{% if q.respondido_em %}1{% else %}0{% endif %}" data-url="{% url 'avaliacoes:revisao_verificar' q.pk %}">
@@ -63,7 +61,7 @@
           {% if q.respondido_em %}
             <span class="muted" style="font-size:.85rem">✓ Respondido</span>
           {% else %}
-            <button type="button" class="btn btn-primary js-verify">Responder</button>
+            <span class="muted js-status" style="font-size:.85rem">Toque na alternativa (ou Enter) para responder</span>
           {% endif %}
         </div>
         <div class="fb js-fb markdown-body {% if q.respondido_em %}show {% if q.nota == 10 %}ok{% else %}no{% endif %}{% endif %}">{{ item.explicacao_html }}</div>
@@ -116,16 +114,19 @@
     if (concluida) hintEl.textContent = 'Revisão concluída ✓';
   };
 
+  /* A escolha da alternativa JÁ é a resposta: não há botão de confirmar nem
+     descarte por duplo-clique (ver [data-sem-descarte] no base.html). */
   document.querySelectorAll('.exercise').forEach(card => {
-    const btn = card.querySelector('.js-verify');
+    if (card.dataset.answered === '1') return;
     const fb = card.querySelector('.js-fb');
-    if (!btn) return;
-    btn.addEventListener('click', async () => {
-      const sel = card.querySelector('input[type=radio]:checked');
-      if (!sel) { fb.className = 'fb js-fb markdown-body show neutral'; fb.textContent = 'Escolha uma alternativa.'; return; }
-      const body = new URLSearchParams(); body.set('alternativa', sel.value);
-      btn.disabled = true; const original = btn.innerHTML;
-      btn.innerHTML = '<span class="spin-sm"></span> Verificando';
+    const status = card.querySelector('.js-status');
+    let enviando = false;
+
+    const responder = async (escolha) => {
+      if (enviando || card.dataset.answered === '1') return;
+      enviando = true;
+      if (status) status.innerHTML = '<span class="spin-sm"></span> Verificando';
+      const body = new URLSearchParams(); body.set('alternativa', escolha);
       try {
         const r = await fetch(card.dataset.url, {
           method: 'POST',
@@ -138,16 +139,38 @@
         card.querySelectorAll('.opt').forEach(o => {
           const v = o.querySelector('input').value;
           if (v === d.gabarito) o.classList.add('correct');
-          if (sel.value === v && !d.correto) o.classList.add('wrong');
+          if (escolha === v && !d.correto) o.classList.add('wrong');
         });
         fb.className = 'fb js-fb markdown-body show ' + (d.correto ? 'ok' : 'no');
         fb.innerHTML = (d.correto ? '✔ <strong>Correto!</strong> ' : '✘ <strong>Não foi dessa vez.</strong> ') + (d.feedback_html || '');
         showXpToast(d.xp_ganho);
         refresh(d.concluida);
       } catch(e) {
-        fb.className = 'fb js-fb markdown-body show no'; fb.textContent = 'Falha ao verificar. Tente de novo.';
-        btn.disabled = false; btn.innerHTML = original;
+        // Falhou: destrava para o aluno poder tentar de novo.
+        enviando = false;
+        card.querySelectorAll('input[type=radio]').forEach(el => { el.checked = false; });
+        if (status) status.textContent = 'Toque na alternativa (ou Enter) para responder';
+        fb.className = 'fb js-fb markdown-body show no';
+        fb.textContent = 'Falha ao enviar. Toque de novo na alternativa.';
       }
+    };
+
+    card.querySelectorAll('input[type=radio]').forEach(input => {
+      /* Mouse e toque respondem no clique. No teclado, as setas só percorrem
+         as alternativas — a resposta sai no Enter, para ninguém commitar sem
+         querer só de navegar. `detail === 0` é o clique sintético que o
+         navegador dispara ao mover a seleção pelo teclado. */
+      input.addEventListener('click', (e) => {
+        if (e.detail === 0) return;
+        responder(input.value);
+      });
+      input.addEventListener('keydown', (e) => {
+        if (e.key !== 'Enter') return;
+        e.preventDefault();
+        const escolhido = card.querySelector('input[type=radio]:checked') || input;
+        escolhido.checked = true;
+        responder(escolhido.value);
+      });
     });
   });
 })();

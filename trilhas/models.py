@@ -2,6 +2,7 @@ import re
 
 from django.conf import settings
 from django.db import models
+from django.utils import timezone
 
 
 # Conectivos e palavras genéricas ignorados ao montar o monograma (sigla) da
@@ -415,13 +416,14 @@ class CardSalvo(models.Model):
         return f'Card {self.indice} de {self.subtopico_id} ({self.user_id})'
 
 
-class VideoSubtopico(models.Model):
-    """Vídeo narrado gerado sob demanda a partir do conteúdo de um subtópico.
+class VideoNivel(models.Model):
+    """Vídeo narrado gerado sob demanda com TODO o conteúdo de um nível.
 
-    O conteúdo (Markdown, seções `---`) vira um slideshow: cada seção é um slide
-    renderizado com fidelidade (screenshot do HTML real) e narrado por TTS a
-    partir de um roteiro escrito pela IA. O binário fica em MEDIA_ROOT/videos e o
-    caminho é guardado em `arquivo` (mesmo padrão de `cover_url`)."""
+    Os subtópicos prontos do nível entram em ordem: cada um abre com um slide de
+    capítulo e segue com suas seções `---`, renderizadas com fidelidade
+    (screenshot do HTML real) e narradas por TTS a partir de um roteiro escrito
+    pela IA. O binário fica em MEDIA_ROOT/videos e o caminho é guardado em
+    `arquivo` (mesmo padrão de `cover_url`)."""
 
     class Status(models.TextChoices):
         PENDENTE = 'pendente', 'Pendente'
@@ -429,18 +431,22 @@ class VideoSubtopico(models.Model):
         PRONTO = 'pronto', 'Pronto'
         ERRO = 'erro', 'Erro'
 
-    subtopico = models.OneToOneField(
-        Subtopico, on_delete=models.CASCADE, related_name='video'
+    nivel = models.OneToOneField(
+        Nivel, on_delete=models.CASCADE, related_name='video'
     )
     status = models.CharField(
         max_length=15, choices=Status.choices, default=Status.PENDENTE, db_index=True
     )
     progresso_pct = models.PositiveIntegerField('progresso (%)', default=0)
-    # URL local servida pelo nginx, ex.: /media/videos/<sub_pk>/<uuid>.mp4
+    # Etapa corrente, em texto ("Narrando os slides…") — some na tela junto da
+    # barra de progresso, e com ela alimenta a estimativa de tempo restante.
+    etapa = models.CharField('etapa atual', max_length=80, blank=True)
+    iniciado_em = models.DateTimeField('início da geração', null=True, blank=True)
+    # URL local servida pelo nginx, ex.: /media/videos/<nivel_pk>/<uuid>.mp4
     arquivo = models.CharField('arquivo (URL local)', max_length=300, blank=True)
     duracao_seg = models.PositiveIntegerField('duração (s)', default=0)
-    # gerado_em do subtópico no momento da geração — detecta conteúdo alterado
-    # (permite oferecer "regerar" quando o texto do tópico mudou).
+    # gerado_em MAIS RECENTE entre os subtópicos no momento da geração — detecta
+    # conteúdo alterado (permite oferecer "regerar" quando algum tópico mudou).
     fonte_gerado_em = models.DateTimeField(null=True, blank=True)
     erro = models.TextField(blank=True)
 
@@ -448,21 +454,42 @@ class VideoSubtopico(models.Model):
     atualizado_em = models.DateTimeField(auto_now=True)
 
     class Meta:
-        verbose_name = 'vídeo de subtópico'
-        verbose_name_plural = 'vídeos de subtópicos'
+        verbose_name = 'vídeo de nível'
+        verbose_name_plural = 'vídeos de níveis'
 
     def __str__(self):
-        return f'Vídeo de {self.subtopico_id} ({self.status})'
+        return f'Vídeo do nível {self.nivel_id} ({self.status})'
 
     @property
     def desatualizado(self):
-        """True quando o conteúdo do subtópico foi regerado após o vídeo."""
-        return (
-            self.status == VideoSubtopico.Status.PRONTO
-            and self.subtopico.gerado_em is not None
-            and self.fonte_gerado_em is not None
-            and self.subtopico.gerado_em > self.fonte_gerado_em
-        )
+        """True quando algum subtópico do nível foi regerado após o vídeo."""
+        if self.status != VideoNivel.Status.PRONTO or self.fonte_gerado_em is None:
+            return False
+        return self.nivel.subtopicos.filter(
+            gerado_em__gt=self.fonte_gerado_em
+        ).exists()
+
+    @property
+    def decorrido_seg(self):
+        """Segundos desde o início da geração (0 se ainda não começou)."""
+        if not self.iniciado_em:
+            return 0
+        return max(0, int((timezone.now() - self.iniciado_em).total_seconds()))
+
+    @property
+    def restante_seg(self):
+        """Estimativa de quanto falta, extrapolando o ritmo até aqui.
+
+        Só arrisca um número depois de PISO_ESTIMATIVA: no comecinho o
+        percentual é ruído e a conta daria minutos absurdos.
+        """
+        PISO_ESTIMATIVA = 5
+        if self.status != VideoNivel.Status.GERANDO:
+            return None
+        pct, decorrido = self.progresso_pct, self.decorrido_seg
+        if pct < PISO_ESTIMATIVA or not decorrido:
+            return None
+        return max(0, int(decorrido * (100 - pct) / pct))
 
 
 class Percurso(models.Model):

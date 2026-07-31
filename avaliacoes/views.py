@@ -107,11 +107,21 @@ def avaliacao_resultado(request, pk):
     itens = []
     for q in avaliacao.questoes.all():
         resp = getattr(q, 'resposta', None)
+        # Nas questões erradas o aluno precisa ver o que escolheu e qual era a
+        # resposta certa, com o texto — a letra sozinha não ensina nada.
+        alternativas = {a.get('letra'): a.get('texto', '') for a in q.alternativas}
+        escolhida = resp.alternativa_escolhida if resp else ''
+        errou = bool(resp and resp.nota is not None and resp.nota < 6)
         itens.append({
             'questao': q,
             'enunciado_html': _md(q.enunciado_md),
             'resposta': resp,
             'feedback_html': _md(resp.feedback_md) if resp else '',
+            'errou': errou,
+            'escolhida_letra': escolhida,
+            'escolhida_texto': alternativas.get(escolhida, ''),
+            'correta_letra': q.gabarito,
+            'correta_texto': alternativas.get(q.gabarito, ''),
         })
     titulo = getattr(avaliacao.nivel, 'titulo_conquistado', None)
     return render(request, 'avaliacoes/resultado.html', {

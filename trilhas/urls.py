@@ -27,6 +27,6 @@ urlpatterns = [
     path('nivel/<int:pk>/', views.nivel_detalhe, name='nivel'),
     path('nivel/<int:nivel_pk>/topico/<int:ordem>/', views.topico, name='topico'),
     path('topico/<int:pk>/status/', views.topico_status, name='topico_status'),
-    path('topico/<int:pk>/video/', views.video_gerar, name='video_gerar'),
-    path('topico/<int:pk>/video/status/', views.video_status, name='video_status'),
+    path('nivel/<int:pk>/video/', views.video_gerar, name='video_gerar'),
+    path('nivel/<int:pk>/video/status/', views.video_status, name='video_status'),
 ]

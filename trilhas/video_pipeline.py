@@ -1,7 +1,8 @@
-"""Orquestração da geração do vídeo de um subtópico (sob demanda).
+"""Orquestração da geração do vídeo de um nível (sob demanda).
 
-Encadeia as etapas — roteiro (IA) → slides (Chromium) → narração (edge-tts) →
-montagem (ffmpeg) — e grava o MP4 em MEDIA_ROOT/videos, atualizando o progresso.
+Encadeia as etapas — roteiro (IA, um por tópico) → slides (Chromium) → narração
+(edge-tts) → mascote (Pillow) → montagem (ffmpeg) — e grava o MP4 em
+MEDIA_ROOT/videos, atualizando o progresso.
 """
 
 import os
@@ -13,7 +14,7 @@ from django.conf import settings
 from django.utils import timezone
 
 from ai import services
-from . import video_montagem, video_slides, video_tts
+from . import video_avatar, video_montagem, video_slides, video_tts
 
 
 # Biblioteca de faixas de fundo (instrumentais, suaves), por clima → arquivo +
@@ -61,57 +62,111 @@ def _musica_para(trilha):
 
 
 def gerar_video(video, profile=None, progresso=None):
-    """Gera o vídeo do subtópico associado a ``video`` (VideoSubtopico).
+    """Gera o vídeo do nível associado a ``video`` (VideoNivel).
 
-    ``progresso`` é um callback opcional ``fn(pct: int)`` para reportar avanço.
-    Retorna (url_local, duracao_seg). Levanta em qualquer falha (a task cuida do
-    status de ERRO e do retry).
+    Percorre os subtópicos prontos na ordem: cada um abre um capítulo e contribui
+    com suas seções. O roteiro é pedido à IA **por tópico** (e não de uma vez
+    para o nível inteiro) para manter cada chamada pequena e longe do teto de
+    tokens de saída.
+
+    ``progresso`` é um callback opcional ``fn(pct: int, etapa: str)`` para
+    reportar avanço. Retorna (url_local, duracao_seg). Levanta em qualquer falha
+    (a task cuida do status de ERRO e do retry).
     """
-    def _p(pct):
+    def _p(pct, etapa=''):
         if progresso:
-            progresso(pct)
+            progresso(pct, etapa)
 
-    sub = video.subtopico
-    nivel = sub.nivel
+    from .models import Subtopico
+
+    nivel = video.nivel
     trilha = nivel.trilha
 
-    _p(5)
-    roteiro = services.gerar_roteiro_video(sub, profile)
-    if not roteiro:
-        raise RuntimeError('Conteúdo do tópico vazio: nada para narrar.')
-    _p(20)
+    # O vídeo é do nível INTEIRO: qualquer tópico ainda sem conteúdo é gerado
+    # aqui, antes de tudo, senão o vídeo sairia furado. É síncrono de propósito
+    # — esta task já roda na fila de vídeo, com tempo de sobra.
+    faltantes = [
+        s for s in nivel.subtopicos.all().order_by('ordem')
+        if s.status != Subtopico.Status.PRONTO or not s.conteudo_md
+    ]
+    for i, sub in enumerate(faltantes):
+        _p(1 + int(19 * i / len(faltantes)),
+           f'Gerando o conteúdo do tópico {sub.ordem} ({i + 1} de {len(faltantes)})')
+        sub.conteudo_md = services.gerar_conteudo_subtopico(sub, profile)
+        sub.status = Subtopico.Status.PRONTO
+        sub.gerado_em = timezone.now()
+        sub.erro = ''
+        sub.save(update_fields=['conteudo_md', 'status', 'gerado_em', 'erro'])
 
-    # Páginas (slides) e narrações, em listas paralelas: intro + seções + outro.
+    subs = [
+        s for s in nivel.subtopicos.all().order_by('ordem')
+        if s.status == Subtopico.Status.PRONTO and s.conteudo_md
+    ]
+    if not subs:
+        raise RuntimeError('Nenhum tópico do nível tem conteúdo: nada para narrar.')
+
+    _p(20, 'Escrevendo o roteiro')
+    # Capa do nível.
     paginas = [{
         'tipo': 'capa',
         'kicker': trilha.titulo,
-        'titulo': sub.titulo,
-        'sub': sub.descricao_curta or '',
+        'titulo': nivel.titulo,
+        'sub': nivel.resumo or '',
         'emblema': trilha.emblema or '🎓',
     }]
-    narracoes = [f'{sub.titulo}. Vamos começar.']
-    for item in roteiro:
-        paginas.append({'tipo': 'conteudo', 'md': item['md']})
-        narracoes.append(item['narracao'])
+    narracoes = [f'{nivel.titulo}. Vamos começar.']
+
+    # Um capítulo por tópico: capa curta + as seções narradas do conteúdo.
+    for i, sub in enumerate(subs):
+        roteiro = services.gerar_roteiro_video(sub, profile)
+        if not roteiro:
+            continue
+        paginas.append({
+            'tipo': 'capa',
+            'kicker': f'Tópico {i + 1} de {len(subs)}',
+            'titulo': sub.titulo,
+            'sub': sub.descricao_curta or '',
+            'emblema': '📘',
+        })
+        narracoes.append(f'Tópico {i + 1}: {sub.titulo}.')
+        for item in roteiro:
+            paginas.append({'tipo': 'conteudo', 'md': item['md']})
+            narracoes.append(item['narracao'])
+        # Reporta o avanço tópico a tópico: são chamadas de IA, cada uma longa.
+        _p(20 + int(25 * (i + 1) / len(subs)),
+           f'Escrevendo o roteiro ({i + 1} de {len(subs)})')
+
+    if len(paginas) == 1:
+        raise RuntimeError('Não foi possível montar o roteiro do nível.')
+
     musica, credito_musica = _musica_para(trilha)
     paginas.append({
         'tipo': 'capa',
         'kicker': trilha.titulo,
-        'titulo': 'Tópico concluído',
-        'sub': sub.titulo,
+        'titulo': 'Nível concluído',
+        'sub': nivel.titulo,
         'emblema': '✓',
         'creditos': f'Música: {credito_musica}' if credito_musica else '',
     })
-    narracoes.append('Você concluiu este tópico. Continue na sua trilha de estudos.')
+    narracoes.append('Você concluiu este nível. Continue na sua trilha de estudos.')
 
-    trabalho = tempfile.mkdtemp(prefix=f'video_sub_{sub.pk}_')
+    trabalho = tempfile.mkdtemp(prefix=f'video_nivel_{nivel.pk}_')
     try:
-        slides = video_slides.render_slides(paginas, os.path.join(trabalho, 'slides'))
-        _p(50)
+        _p(45, f'Renderizando {len(paginas)} slides')
+        slides = video_slides.render_slides(paginas, os.path.join(trabalho, 'slides'),
+                                            mascote=video_avatar.ativo())
+        _p(58, 'Narrando os slides')
         audios = video_tts.sintetizar_narracoes(narracoes, os.path.join(trabalho, 'audio'))
-        _p(72)
+        _p(70, 'Animando o apresentador')
+        # Mascote apresentador (opcional): a boca sai do volume destes MP3s e as
+        # cores são as sorteadas para esta trilha.
+        avatares = video_avatar.clipes(
+            audios, os.path.join(trabalho, 'avatar'),
+            paleta=video_avatar.paleta_da_trilha(trilha),
+        )
+        _p(78, 'Montando o vídeo')
 
-        destino_dir = os.path.join(settings.MEDIA_ROOT, 'videos', str(sub.pk))
+        destino_dir = os.path.join(settings.MEDIA_ROOT, 'videos', str(nivel.pk))
         os.makedirs(destino_dir, exist_ok=True)
         nome = f'{uuid.uuid4().hex}.mp4'
         destino = os.path.join(destino_dir, nome)
@@ -120,14 +175,15 @@ def gerar_video(video, profile=None, progresso=None):
             slides, audios, destino,
             work_dir=os.path.join(trabalho, 'montagem'),
             musica=musica,
+            avatares=avatares,
         )
-        _p(96)
+        _p(97, 'Finalizando')
     finally:
         shutil.rmtree(trabalho, ignore_errors=True)
 
-    url = f'{settings.MEDIA_URL}videos/{sub.pk}/{nome}'
+    url = f'{settings.MEDIA_URL}videos/{nivel.pk}/{nome}'
 
-    # Remove um vídeo anterior deste subtópico (regeração), mantendo só o atual.
+    # Remove um vídeo anterior deste nível (regeração), mantendo só o atual.
     if video.arquivo and video.arquivo != url:
         antigo = os.path.join(
             settings.MEDIA_ROOT, video.arquivo.replace(settings.MEDIA_URL, '', 1)
@@ -140,5 +196,8 @@ def gerar_video(video, profile=None, progresso=None):
 
     video.arquivo = url
     video.duracao_seg = int(round(dur))
-    video.fonte_gerado_em = sub.gerado_em or timezone.now()
+    # Marca do conteúdo mais novo que entrou no vídeo: se algum tópico for
+    # regerado depois disso, `desatualizado` passa a oferecer a regeração.
+    gerados = [s.gerado_em for s in subs if s.gerado_em]
+    video.fonte_gerado_em = max(gerados) if gerados else timezone.now()
     return url, video.duracao_seg

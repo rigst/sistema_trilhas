@@ -44,6 +44,52 @@
     {% endif %}
   </section>
 
+  <!-- Vídeo narrado do nível inteiro (gerado sob demanda) -->
+  {% if video_enabled %}<section class="card pad topico-video" id="video-box"
+           data-poll="{% url 'trilhas:video_status' nivel.pk %}"
+           data-status="{% if video %}{{ video.status }}{% endif %}">
+    <h2 class="h3" style="margin:0 0 .5rem"><svg class="ic" aria-hidden="true"><use href="#ic-play"/></svg> Vídeo do nível</h2>
+    {% if video and video.status == 'pronto' %}
+      <video class="tv-player" controls preload="metadata" src="{{ video.arquivo }}"
+             style="width:100%;border-radius:12px;background:#000"></video>
+      <div style="display:flex;flex-wrap:wrap;gap:.6rem;align-items:center;margin-top:.7rem">
+        <a class="btn btn-ghost" href="{{ video.arquivo }}" download>Baixar vídeo</a>
+        <form method="post" action="{% url 'trilhas:video_gerar' nivel.pk %}" style="display:inline">
+          {% csrf_token %}<button class="btn btn-ghost" type="submit">Gerar de novo</button>
+        </form>
+        {% if video.desatualizado %}<span class="muted" style="font-size:.85rem">O conteúdo mudou desde este vídeo. Gere de novo para atualizar.</span>{% endif %}
+      </div>
+    {% elif video and video.status == 'gerando' %}
+      <p class="muted" style="margin:.2rem 0 .8rem">Gerando o vídeo do nível — os tópicos sem conteúdo são escritos antes, para o vídeo sair completo. Leva vários minutos; você pode fechar a página e voltar depois.</p>
+      <div class="tv-prog">
+        <div class="tv-prog-top">
+          <span id="tv-etapa">{{ video.etapa|default:"Preparando…" }}</span>
+          <span id="tv-pct" class="tv-prog-pct">{{ video.progresso_pct }}%</span>
+        </div>
+        <div class="tv-prog-trilho" role="progressbar" aria-valuemin="0" aria-valuemax="100"
+             aria-valuenow="{{ video.progresso_pct }}" aria-label="Progresso da geração do vídeo">
+          <i id="tv-bar" style="width:{{ video.progresso_pct }}%"></i>
+        </div>
+        <div class="tv-prog-baixo muted">
+          <span id="tv-decorrido"></span>
+          <span id="tv-restante"></span>
+        </div>
+      </div>
+    {% elif video and video.status == 'erro' %}
+      <p class="muted" style="margin:.2rem 0 .6rem">Não foi possível gerar o vídeo: {{ video.erro }}</p>
+      <form method="post" action="{% url 'trilhas:video_gerar' nivel.pk %}">
+        {% csrf_token %}<button class="btn btn-primary" type="submit">Tentar de novo</button>
+      </form>
+    {% elif video_pronto_para_gerar %}
+      <p class="muted" style="margin:.2rem 0 .6rem">Transforme o nível inteiro num vídeo narrado, com os slides, diagramas e explicação em voz de todos os tópicos.</p>
+      <form method="post" action="{% url 'trilhas:video_gerar' nivel.pk %}">
+        {% csrf_token %}<button class="btn btn-primary" type="submit">Gerar vídeo do nível</button>
+      </form>
+    {% else %}
+      <p class="muted" style="margin:.2rem 0 0">Gere o conteúdo dos tópicos para poder montar o vídeo do nível.</p>
+    {% endif %}
+  </section>{% endif %}
+
   <!-- Etapas do nível -->
   <div class="card pad etapas">
     <h3 class="h3">Para conquistar o título</h3>
@@ -78,4 +124,50 @@
     {% endif %}
   </div>
 </section>
+{% endblock %}
+
+{% block scripts %}
+{% if video and video.status == 'gerando' %}
+<script>
+/* Progresso do vídeo: barra, etapa e estimativa; recarrega quando termina. */
+(() => {
+  const box = document.getElementById("video-box");
+  if (!box) return;
+  const url = box.dataset.poll;
+  const bar = document.getElementById("tv-bar"),
+        pct = document.getElementById("tv-pct"),
+        etapa = document.getElementById("tv-etapa"),
+        decorrido = document.getElementById("tv-decorrido"),
+        restante = document.getElementById("tv-restante");
+  const trilho = box.querySelector(".tv-prog-trilho");
+
+  /* Arredonda para uma unidade legível: ninguém precisa de "4 min e 37 s". */
+  const duracao = (s) => {
+    if (s < 60) return `${Math.max(1, Math.round(s))} s`;
+    const min = Math.round(s / 60);
+    return min < 60 ? `${min} min` : `${Math.floor(min / 60)} h ${min % 60} min`;
+  };
+
+  const tick = async () => {
+    try {
+      const r = await fetch(url, { headers: { "X-Requested-With": "XMLHttpRequest" } });
+      const d = await r.json();
+      if (d.status !== "gerando") { location.reload(); return; }
+      if (typeof d.progresso_pct === "number") {
+        bar.style.width = d.progresso_pct + "%";
+        pct.textContent = d.progresso_pct + "%";
+        if (trilho) trilho.setAttribute("aria-valuenow", d.progresso_pct);
+      }
+      if (d.etapa) etapa.textContent = d.etapa;
+      decorrido.textContent = d.decorrido_seg ? `${duracao(d.decorrido_seg)} decorridos` : "";
+      restante.textContent = d.restante_seg === null || d.restante_seg === undefined
+        ? "calculando o tempo restante…"
+        : `~${duracao(d.restante_seg)} restantes`;
+    } catch (e) {}
+    setTimeout(tick, 5000);
+  };
+  tick();
+})();
+</script>
+{% endif %}
 {% endblock %}

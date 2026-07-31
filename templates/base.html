@@ -326,9 +326,11 @@
       }
 
       // Duplo-clique numa alternativa: descarta (risca/acinzenta) como eliminada.
+      // Telas onde o próprio clique já responde marcam [data-sem-descarte], para
+      // o duplo-clique não competir com o envio da resposta.
       document.addEventListener("dblclick", (e) => {
         const opt = e.target.closest(".opt");
-        if (!opt) return;
+        if (!opt || opt.closest("[data-sem-descarte]")) return;
         const input = opt.querySelector("input[type=radio]");
         if (!input) return;
         const jaDescartada = opt.classList.contains("descartada");

@@ -43,40 +43,6 @@
     </div>
   </div>
 
-  <!-- Vídeo narrado do tópico (gerado sob demanda) -->
-  {% if video_enabled %}<section class="card pad topico-video" id="video-box"
-           data-poll="{% url 'trilhas:video_status' subtopico.pk %}"
-           data-status="{% if video %}{{ video.status }}{% endif %}">
-    <h2 class="h3" style="margin:0 0 .5rem"><svg class="ic" aria-hidden="true"><use href="#ic-play"/></svg> Vídeo do tópico</h2>
-    {% if video and video.status == 'pronto' %}
-      <video class="tv-player" controls preload="metadata" src="{{ video.arquivo }}"
-             style="width:100%;border-radius:12px;background:#000"></video>
-      <div style="display:flex;flex-wrap:wrap;gap:.6rem;align-items:center;margin-top:.7rem">
-        <a class="btn btn-ghost" href="{{ video.arquivo }}" download>Baixar vídeo</a>
-        <form method="post" action="{% url 'trilhas:video_gerar' subtopico.pk %}" style="display:inline">
-          {% csrf_token %}<button class="btn btn-ghost" type="submit">Gerar de novo</button>
-        </form>
-        {% if video.desatualizado %}<span class="muted" style="font-size:.85rem">O conteúdo mudou desde este vídeo. Gere de novo para atualizar.</span>{% endif %}
-      </div>
-    {% elif video and video.status == 'gerando' %}
-      <p class="muted" style="margin:.2rem 0 .6rem">Gerando o vídeo… leva alguns minutos. Você pode continuar navegando.</p>
-      <div style="height:8px;background:var(--panel-2);border-radius:999px;overflow:hidden">
-        <i id="tv-bar" style="display:block;height:100%;width:{{ video.progresso_pct }}%;background:linear-gradient(90deg,var(--teal),var(--violet));transition:width .4s"></i>
-      </div>
-      <span class="muted" id="tv-pct" style="font-size:.82rem">{{ video.progresso_pct }}%</span>
-    {% elif video and video.status == 'erro' %}
-      <p class="muted" style="margin:.2rem 0 .6rem">Não foi possível gerar o vídeo: {{ video.erro }}</p>
-      <form method="post" action="{% url 'trilhas:video_gerar' subtopico.pk %}">
-        {% csrf_token %}<button class="btn btn-primary" type="submit">Tentar de novo</button>
-      </form>
-    {% else %}
-      <p class="muted" style="margin:.2rem 0 .6rem">Transforme este tópico num vídeo narrado, com os slides, diagramas e explicação em voz, cobrindo todo o conteúdo.</p>
-      <form method="post" action="{% url 'trilhas:video_gerar' subtopico.pk %}">
-        {% csrf_token %}<button class="btn btn-primary" type="submit">Gerar vídeo do tópico</button>
-      </form>
-    {% endif %}
-  </section>{% endif %}
-
   <!-- Leitor imersivo (tela cheia no modo Cards) -->
   <div class="story-shell">
     <div class="story-frame">
@@ -273,27 +239,5 @@
   });
 })();
 </script>
-{% if video and video.status == 'gerando' %}
-<script>
-/* Progresso do vídeo: atualiza a barra e recarrega quando termina/falha. */
-(() => {
-  const box = document.getElementById("video-box");
-  if (!box) return;
-  const url = box.dataset.poll, bar = document.getElementById("tv-bar"),
-        pct = document.getElementById("tv-pct");
-  const tick = async () => {
-    try {
-      const r = await fetch(url, { headers: { "X-Requested-With": "XMLHttpRequest" } });
-      const d = await r.json();
-      if (d.status !== "gerando") { location.reload(); return; }
-      if (bar && typeof d.progresso_pct === "number") bar.style.width = d.progresso_pct + "%";
-      if (pct && typeof d.progresso_pct === "number") pct.textContent = d.progresso_pct + "%";
-    } catch (e) {}
-    setTimeout(tick, 3000);
-  };
-  setTimeout(tick, 3000);
-})();
-</script>
-{% endif %}
 {% endif %}
 {% endblock %}

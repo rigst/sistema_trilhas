@@ -60,9 +60,10 @@ def _documento(corpo_html: str, classe: str = '') -> str:
     )
 
 
-def _slide_conteudo(secao_md: str) -> str:
+def _slide_conteudo(secao_md: str, mascote: bool = False) -> str:
     fragmento = render_md(secao_md)
-    return _documento(f'<div class="vslide-in markdown-body">{fragmento}</div>')
+    return _documento(f'<div class="vslide-in markdown-body">{fragmento}</div>',
+                      classe='vslide--mascote' if mascote else '')
 
 
 def _slide_capa(kicker: str, titulo: str, sub: str = '', emblema: str = '',
@@ -82,12 +83,15 @@ def _slide_capa(kicker: str, titulo: str, sub: str = '', emblema: str = '',
     return _documento(''.join(partes), classe='vslide--cover')
 
 
-def render_slides(paginas: list[dict], out_dir: str) -> list[str]:
+def render_slides(paginas: list[dict], out_dir: str,
+                  mascote: bool = False) -> list[str]:
     """Renderiza cada página em um PNG e devolve os caminhos, na ordem recebida.
 
     ``paginas`` é uma lista de dicts:
       - {'tipo': 'conteudo', 'md': <markdown da seção>}
       - {'tipo': 'capa', 'kicker', 'titulo', 'sub', 'emblema'}
+    ``mascote`` reserva o canto inferior direito para o apresentador do vídeo
+    (as capas não precisam: o conteúdo delas é centralizado).
     Levanta se o Playwright/Chromium não estiver instalado (dependência da feature).
     """
     from playwright.sync_api import sync_playwright  # import tardio (dependência opcional)
@@ -108,7 +112,7 @@ def render_slides(paginas: list[dict], out_dir: str) -> list[str]:
                     pg.get('creditos', ''),
                 )
             else:
-                doc = _slide_conteudo(pg.get('md', ''))
+                doc = _slide_conteudo(pg.get('md', ''), mascote)
             html_path = os.path.join(out_dir, f'slide_{i:03d}.html')
             with open(html_path, 'w', encoding='utf-8') as fh:
                 fh.write(doc)

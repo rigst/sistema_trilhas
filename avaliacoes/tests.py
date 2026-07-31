@@ -188,3 +188,41 @@ class RevisaoAtivaTests(TestCase):
         self.user.revisoes.all().delete()
         resp = self.client.post(reverse('avaliacoes:revisar'), follow=True)
         self.assertEqual(resp.redirect_chain[-1][0], reverse('dashboard'))
+
+
+class TelaCorrecaoTests(TestCase):
+    """A correção precisa ensinar: nas erradas, mostra os textos das alternativas."""
+
+    def setUp(self):
+        self.user = User.objects.create_user('u2', password='x')
+        self.client.force_login(self.user)
+
+    def _resultado(self, respostas):
+        trilha, n1, n2, av = montar_avaliacao(self.user, respostas)
+        # Textos distinguíveis para conferir o que aparece na tela.
+        for i, q in enumerate(av.questoes.all(), start=1):
+            q.alternativas = [
+                {'letra': 'A', 'texto': f'alternativa certa {i}'},
+                {'letra': 'B', 'texto': f'alternativa errada {i}'},
+            ]
+            q.enunciado_md = f'Enunciado completo da pergunta {i}'
+            q.save(update_fields=['alternativas', 'enunciado_md'])
+        corrigir_avaliacao(av, self.user.profile)
+        return self.client.get(reverse('avaliacoes:resultado', args=[av.pk]))
+
+    def test_questao_errada_mostra_escolhida_e_correta_com_texto(self):
+        resp = self._resultado(['B'] + ['A'] * 9)
+        conteudo = resp.content.decode()
+        self.assertContains(resp, 'Enunciado completo da pergunta 1')
+        self.assertIn('alternativa errada 1', conteudo)   # o que ele marcou
+        self.assertIn('alternativa certa 1', conteudo)    # o que era esperado
+        self.assertIn('Resposta correta:', conteudo)
+
+    def test_questao_certa_nao_repete_o_bloco_de_resposta_correta(self):
+        resp = self._resultado(['A'] * 10)
+        self.assertNotContains(resp, 'Resposta correta:')
+
+    def test_questao_em_branco_aparece_como_em_branco(self):
+        resp = self._resultado([''] + ['A'] * 9)
+        self.assertContains(resp, 'em branco')
+        self.assertIn('alternativa certa 1', resp.content.decode())

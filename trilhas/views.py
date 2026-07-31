@@ -13,7 +13,7 @@ from ai import tasks as ai_tasks
 from .mdrender import render_md, render_subtopico
 from .models import (
     CardSalvo, Nivel, Percurso, PerguntaDirecionadora, SessaoSugestao,
-    Subtopico, Trilha, TrilhaSugerida, VideoSubtopico,
+    Subtopico, Trilha, TrilhaSugerida, VideoNivel,
 )
 
 
@@ -531,13 +531,21 @@ def nivel_detalhe(request, pk):
         return redirect('trilhas:detalhe', pk=nivel.trilha_id)
 
     lista = getattr(nivel, 'lista_exercicios', None)
+    video_on = getattr(settings, 'VIDEO_ENABLED', True)
+    subs = list(nivel.subtopicos.all())
     return render(request, 'trilhas/nivel.html', {
         'nivel': nivel,
         'trilha': nivel.trilha,
-        'subtopicos': nivel.subtopicos.all(),
+        'subtopicos': subs,
         'primeiro_nao_lido': nivel.primeiro_nao_lido,
         'exercicios_concluidos': bool(lista and lista.concluida),
         'avaliacao': nivel.avaliacoes.order_by('-criada_em').first(),
+        'video_enabled': video_on,
+        'video': getattr(nivel, 'video', None) if video_on else None,
+        # O vídeo cobre o nível inteiro: só faz sentido com algum tópico pronto.
+        'video_pronto_para_gerar': any(
+            s.status == Subtopico.Status.PRONTO and s.conteudo_md for s in subs
+        ),
     })
 
 
@@ -597,8 +605,6 @@ def topico(request, nivel_pk, ordem):
         'trilha': nivel.trilha,
         'subtopico': atual,
         'subtopicos': subs,
-        'video_enabled': getattr(settings, 'VIDEO_ENABLED', True),
-        'video': VideoSubtopico.objects.filter(subtopico=atual).first() if getattr(settings, 'VIDEO_ENABLED', True) else None,
         'conteudo_html': render_subtopico(atual),
         'passo': idx + 1,
         'total': len(subs),
@@ -626,46 +632,56 @@ def topico_status(request, pk):
 @login_required
 @require_POST
 def video_gerar(request, pk):
-    """Enfileira a geração do vídeo narrado deste subtópico."""
-    from .models import VideoSubtopico
+    """Enfileira a geração do vídeo narrado com todo o conteúdo deste nível."""
     from . import tasks as trilhas_tasks
 
-    sub = get_object_or_404(
-        Subtopico.objects.select_related('nivel__trilha'),
-        pk=pk, nivel__trilha__user=request.user,
+    nivel = get_object_or_404(
+        Nivel.objects.select_related('trilha'), pk=pk, trilha__user=request.user
     )
-    if sub.status != Subtopico.Status.PRONTO or not sub.conteudo_md:
-        messages.error(request, 'Gere o conteúdo do tópico antes de criar o vídeo.')
-        return redirect('trilhas:topico', nivel_pk=sub.nivel_id, ordem=sub.ordem)
+    total = nivel.subtopicos.count()
+    if not total:
+        messages.error(request, 'Este nível ainda não tem tópicos.')
+        return redirect('trilhas:nivel', pk=nivel.pk)
 
-    erro = bloqueio_ia(request.user, tokens_estimados=15000)
+    # A geração cobre o nível inteiro: o que faltar de conteúdo é escrito antes
+    # do roteiro (ver video_pipeline), então a estimativa de tokens conta TODOS
+    # os tópicos, não só os que já estão prontos.
+    faltantes = nivel.subtopicos.exclude(
+        status=Subtopico.Status.PRONTO
+    ).count() + nivel.subtopicos.filter(conteudo_md='').count()
+    erro = bloqueio_ia(
+        request.user, tokens_estimados=15000 * total + 20000 * faltantes
+    )
     if erro:
         messages.error(request, erro)
-        return redirect('trilhas:topico', nivel_pk=sub.nivel_id, ordem=sub.ordem)
+        return redirect('trilhas:nivel', pk=nivel.pk)
 
-    video, _ = VideoSubtopico.objects.get_or_create(subtopico=sub)
+    video, _ = VideoNivel.objects.get_or_create(nivel=nivel)
     # Idempotente: se já está gerando, não reenfileira.
-    if video.status != VideoSubtopico.Status.GERANDO:
-        video.status = VideoSubtopico.Status.GERANDO
+    if video.status != VideoNivel.Status.GERANDO:
+        video.status = VideoNivel.Status.GERANDO
         video.progresso_pct = 0
+        video.etapa = 'Na fila'
+        video.iniciado_em = timezone.now()
         video.erro = ''
-        video.save(update_fields=['status', 'progresso_pct', 'erro', 'atualizado_em'])
-        trilhas_tasks.task_gerar_video_subtopico.delay(video.pk)
+        video.save(update_fields=['status', 'progresso_pct', 'etapa',
+                                  'iniciado_em', 'erro', 'atualizado_em'])
+        trilhas_tasks.task_gerar_video_nivel.delay(video.pk)
 
-    return redirect('trilhas:topico', nivel_pk=sub.nivel_id, ordem=sub.ordem)
+    return redirect('trilhas:nivel', pk=nivel.pk)
 
 
 @login_required
 def video_status(request, pk):
-    from .models import VideoSubtopico
-
     video = get_object_or_404(
-        VideoSubtopico, subtopico_id=pk,
-        subtopico__nivel__trilha__user=request.user,
+        VideoNivel, nivel_id=pk, nivel__trilha__user=request.user,
     )
     return JsonResponse({
         'status': video.status,
         'progresso_pct': video.progresso_pct,
+        'etapa': video.etapa,
+        'decorrido_seg': video.decorrido_seg,
+        'restante_seg': video.restante_seg,
         'url': video.arquivo,
         'erro': video.erro,
     })

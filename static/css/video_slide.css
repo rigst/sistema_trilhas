@@ -42,6 +42,10 @@ html, body {
 .vslide .markdown-body img { max-width: 100%; max-height: 460px; height: auto; border-radius: 14px; }
 .vslide .mermaid svg { max-width: 100%; height: auto; }
 
+/* Com o mascote apresentador ligado (video_avatar), o conteúdo sobe um pouco
+   para liberar o canto inferior direito onde ele fica. */
+.vslide--mascote .markdown-body { padding-bottom: 130px; }
+
 /* Slides de abertura/fecho. */
 .vslide--cover { align-items: center; text-align: center; }
 .vslide--cover .cover-emblema {
