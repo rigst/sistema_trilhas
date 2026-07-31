@@ -41,7 +41,7 @@ from collections import namedtuple
 
 from django.conf import settings
 
-from . import video_montagem
+from . import video_montagem, video_utils
 
 logger = logging.getLogger(__name__)
 
@@ -838,14 +838,19 @@ def clipes(audios: list[str], out_dir: str,
         tam = _tamanho()
         arte = camadas(tam, paleta)
         os.makedirs(out_dir, exist_ok=True)
-        saidas = []
-        for i, audio in enumerate(audios):
-            anim = animacao(bocas_por_quadro(audio), inicio_roteiro=i)
+        saidas = [os.path.join(out_dir, f'mascote_{i:03d}.webm')
+                  for i in range(len(audios))]
+
+        def _um(i: int):
+            anim = animacao(bocas_por_quadro(audios[i]), inicio_roteiro=i)
             if not anim:
                 anim = [Quadro(0, 'aberto', 'neutro', 0, 0, 0, 0, 0)]
-            destino = os.path.join(out_dir, f'mascote_{i:03d}.webm')
-            _compor(anim, arte, tam, destino)
-            saidas.append(destino)
+            _compor(anim, arte, tam, saidas[i])
+
+        # Em paralelo, como os clipes da montagem: boa parte do tempo aqui é o
+        # ffmpeg codificando o WebM, e o Pillow solta o GIL nas composições.
+        video_utils.em_paralelo(_um, list(range(len(audios))),
+                                video_montagem.workers())
         return saidas
     except Exception:
         logger.warning('Mascote do vídeo indisponível; seguindo sem ele.',

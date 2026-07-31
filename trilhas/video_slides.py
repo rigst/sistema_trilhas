@@ -20,9 +20,11 @@ _APP_CSS = _BASE / 'static' / 'css' / 'app.css'
 _SLIDE_CSS = _BASE / 'static' / 'css' / 'video_slide.css'
 _MERMAID_JS = _BASE / 'static' / 'js' / 'mermaid.min.js'
 
-# Dimensões do slide (16:9). device_scale_factor=2 → imagem nítida (2560×1440).
+# Dimensões do slide (16:9). O vídeo sai em 720p e o Ken Burns amplia no máximo
+# 1,10×, então 1,5× (1920×1080) já entrega mais pixels do que o quadro final
+# consome — capturar em 2× só gerava PNG maior para o ffmpeg reduzir depois.
 LARGURA, ALTURA = 1280, 720
-ESCALA = 2
+ESCALA = 1.5
 
 # Script executado no navegador para renderizar os diagramas Mermaid do slide,
 # reproduzindo a configuração de tema do app (base.html).
@@ -116,11 +118,15 @@ def render_slides(paginas: list[dict], out_dir: str,
             html_path = os.path.join(out_dir, f'slide_{i:03d}.html')
             with open(html_path, 'w', encoding='utf-8') as fh:
                 fh.write(doc)
-            pagina.goto(f'file://{html_path}', wait_until='networkidle')
-            # Carrega o Mermaid a partir do arquivo local e renderiza os diagramas.
-            pagina.add_script_tag(path=str(_MERMAID_JS))
-            pagina.evaluate(_MERMAID_RUN)
-            pagina.wait_for_timeout(300)  # deixa o SVG assentar
+            # 'load' basta: a página é autossuficiente (CSS, fontes e imagens em
+            # file://), então não há requisição de rede para 'networkidle' esperar.
+            pagina.goto(f'file://{html_path}', wait_until='load')
+            # O Mermaid só entra nos slides que têm diagrama: carregar e rodar a
+            # biblioteca em todos custava ~0,5s por slide sem nada para desenhar.
+            if 'class="mermaid"' in doc:
+                pagina.add_script_tag(path=str(_MERMAID_JS))
+                pagina.evaluate(_MERMAID_RUN)
+                pagina.wait_for_timeout(300)  # deixa o SVG assentar
             png_path = os.path.join(out_dir, f'slide_{i:03d}.png')
             pagina.screenshot(path=png_path, full_page=True)
             caminhos.append(png_path)

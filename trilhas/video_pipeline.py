@@ -11,10 +11,31 @@ import tempfile
 import uuid
 
 from django.conf import settings
+from django.db import connection
 from django.utils import timezone
 
 from ai import services
-from . import video_avatar, video_montagem, video_slides, video_tts
+from . import video_avatar, video_montagem, video_slides, video_tts, video_utils
+
+# Chamadas de IA simultâneas. Cada uma leva ~50s e é quase toda espera de rede:
+# em série, o roteiro de um nível de 5 tópicos gastava mais de 4 minutos.
+IA_CONCORRENCIA = 4
+
+
+def _ia_em_paralelo(fn, itens, progresso=None):
+    """`video_utils.em_paralelo` para chamadas de IA, fechando a conexão ao fim.
+
+    Cada thread abre conexão própria com o banco (o débito de tokens grava
+    uso); fechá-la evita deixar conexões penduradas no Postgres depois que o
+    pool morre.
+    """
+    def _um(item):
+        try:
+            return fn(item)
+        finally:
+            connection.close()
+
+    return video_utils.em_paralelo(_um, itens, IA_CONCORRENCIA, progresso)
 
 
 # Biblioteca de faixas de fundo (instrumentais, suaves), por clima → arquivo +
@@ -83,20 +104,28 @@ def gerar_video(video, profile=None, progresso=None):
     trilha = nivel.trilha
 
     # O vídeo é do nível INTEIRO: qualquer tópico ainda sem conteúdo é gerado
-    # aqui, antes de tudo, senão o vídeo sairia furado. É síncrono de propósito
-    # — esta task já roda na fila de vídeo, com tempo de sobra.
+    # aqui, antes de tudo, senão o vídeo sairia furado. Acontece dentro desta
+    # task (e não numa fila à parte) porque o roteiro depende do texto pronto.
     faltantes = [
         s for s in nivel.subtopicos.all().order_by('ordem')
         if s.status != Subtopico.Status.PRONTO or not s.conteudo_md
     ]
-    for i, sub in enumerate(faltantes):
-        _p(1 + int(19 * i / len(faltantes)),
-           f'Gerando o conteúdo do tópico {sub.ordem} ({i + 1} de {len(faltantes)})')
-        sub.conteudo_md = services.gerar_conteudo_subtopico(sub, profile)
-        sub.status = Subtopico.Status.PRONTO
-        sub.gerado_em = timezone.now()
-        sub.erro = ''
-        sub.save(update_fields=['conteudo_md', 'status', 'gerado_em', 'erro'])
+    if faltantes:
+        _p(1, f'Gerando o conteúdo de {len(faltantes)} tópico(s)')
+        textos = _ia_em_paralelo(
+            lambda s: services.gerar_conteudo_subtopico(s, profile), faltantes,
+            progresso=lambda pronto, total: _p(
+                1 + int(19 * pronto / total),
+                f'Gerando o conteúdo dos tópicos ({pronto} de {total})'),
+        )
+        # A gravação fica fora das threads: cada subtópico é salvo uma vez, na
+        # ordem, pela conexão principal.
+        for sub, texto in zip(faltantes, textos):
+            sub.conteudo_md = texto
+            sub.status = Subtopico.Status.PRONTO
+            sub.gerado_em = timezone.now()
+            sub.erro = ''
+            sub.save(update_fields=['conteudo_md', 'status', 'gerado_em', 'erro'])
 
     subs = [
         s for s in nivel.subtopicos.all().order_by('ordem')
@@ -116,9 +145,17 @@ def gerar_video(video, profile=None, progresso=None):
     }]
     narracoes = [f'{nivel.titulo}. Vamos começar.']
 
+    # Os roteiros dos tópicos saem em paralelo (uma chamada de IA por tópico,
+    # independentes entre si); a montagem das páginas segue na ordem original.
+    roteiros = _ia_em_paralelo(
+        lambda s: services.gerar_roteiro_video(s, profile), subs,
+        progresso=lambda pronto, total: _p(
+            20 + int(25 * pronto / total),
+            f'Escrevendo o roteiro ({pronto} de {total} tópicos)'),
+    )
+
     # Um capítulo por tópico: capa curta + as seções narradas do conteúdo.
-    for i, sub in enumerate(subs):
-        roteiro = services.gerar_roteiro_video(sub, profile)
+    for i, (sub, roteiro) in enumerate(zip(subs, roteiros)):
         if not roteiro:
             continue
         paginas.append({
@@ -132,9 +169,6 @@ def gerar_video(video, profile=None, progresso=None):
         for item in roteiro:
             paginas.append({'tipo': 'conteudo', 'md': item['md']})
             narracoes.append(item['narracao'])
-        # Reporta o avanço tópico a tópico: são chamadas de IA, cada uma longa.
-        _p(20 + int(25 * (i + 1) / len(subs)),
-           f'Escrevendo o roteiro ({i + 1} de {len(subs)})')
 
     if len(paginas) == 1:
         raise RuntimeError('Não foi possível montar o roteiro do nível.')
@@ -171,11 +205,16 @@ def gerar_video(video, profile=None, progresso=None):
         nome = f'{uuid.uuid4().hex}.mp4'
         destino = os.path.join(destino_dir, nome)
 
+        # A montagem é a etapa mais longa (78% → 95%): reporta clipe a clipe
+        # para a barra não ficar parada por vários minutos.
         dur = video_montagem.montar(
             slides, audios, destino,
             work_dir=os.path.join(trabalho, 'montagem'),
             musica=musica,
             avatares=avatares,
+            progresso=lambda pronto, total: _p(
+                78 + int(17 * pronto / total),
+                f'Montando o vídeo ({pronto} de {total} trechos)'),
         )
         _p(97, 'Finalizando')
     finally:

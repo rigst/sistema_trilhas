@@ -204,10 +204,15 @@ SYSTEM_ROTEIRO_VIDEO = (
     '- NÃO leia código caractere a caractere nem sintaxe de diagrama: EXPLIQUE em '
     'palavras o que aquele código faz ou o que o diagrama/tabela mostra, para quem '
     'só está ouvindo entender tudo.\n'
-    '- Expanda abreviações e símbolos para a forma falada. Mantenha todos os fatos, '
-    'números, nomes e exemplos do material — não resuma a ponto de perder conteúdo.\n'
+    '- Expanda abreviações e símbolos para a forma falada. Preserve os fatos, '
+    'números e nomes que sustentam a ideia da seção; o aluno tem o slide à vista, '
+    'então a voz complementa o que está escrito em vez de ler tudo de novo.\n'
+    '- SEJA CONCISO: de 30 a 55 palavras por seção, NUNCA mais de 65 (~12 a 22 '
+    'segundos de fala). Este limite é rígido: conte as palavras e corte antes de '
+    'entregar. Nada de introdução, recapitulação ou fecho por slide — vá direto '
+    'ao ponto, cortando adjetivos, rodeios e frases de transição longas.\n'
     '- Cada narração deve fluir com a anterior, como um vídeo contínuo (sem repetir '
-    'saudações a cada slide). Duração natural de fala por slide: ~15 a 45 segundos.'
+    'saudações a cada slide).'
     + DEFESA_INJECAO
 )
 

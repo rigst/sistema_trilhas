@@ -257,6 +257,10 @@ VIDEO_AVATAR_TAMANHO = int(os.getenv('VIDEO_AVATAR_TAMANHO', '200'))
 # Cores do personagem: dict com as chaves de trilhas.video_avatar.PALETA que
 # você quiser trocar (o resto fica no padrão). Mudar aqui refaz a arte sozinho.
 VIDEO_AVATAR_PALETA = {}
+# Trechos do vídeo codificados ao mesmo tempo (mascote e clipes do ffmpeg).
+# 0 = decide pelo número de núcleos da máquina; suba só se sobrar CPU, porque a
+# mesma máquina serve o site.
+VIDEO_WORKERS = int(os.getenv('VIDEO_WORKERS', '0'))
 
 # Expiração do visitante (horas de inatividade)
 VISITOR_EXPIRY_HOURS = int(os.getenv('VISITOR_EXPIRY_HOURS', '48'))

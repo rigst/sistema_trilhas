@@ -149,6 +149,8 @@ def dashboard(request):
         'revisoes_devidas': revisoes_devidas,
         'quota': _quota_ctx(request.user),
         'xp_tabela': xp_tabela,
+        'diamante_xp_regra': Profile.XP_POR_DIAMANTE,
+        'diamante_niveis_regra': Profile.DIAMANTE_A_CADA_N_NIVEIS,
     })
 
 

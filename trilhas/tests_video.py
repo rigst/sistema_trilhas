@@ -1,5 +1,7 @@
 """Testes do vídeo do nível e do mascote apresentador (sem ffmpeg/Chromium)."""
 
+import threading
+import time
 from datetime import timedelta
 from unittest import mock
 
@@ -8,7 +10,7 @@ from django.test import SimpleTestCase, TestCase, override_settings
 from django.urls import reverse
 from django.utils import timezone
 
-from trilhas import video_avatar, video_pipeline
+from trilhas import video_avatar, video_pipeline, video_utils
 from trilhas.models import Nivel, Subtopico, Trilha, VideoNivel
 
 User = get_user_model()
@@ -252,6 +254,42 @@ class ClipesTests(SimpleTestCase):
         with mock.patch.object(video_avatar, 'camadas', side_effect=OSError('sem disco')):
             with self.assertLogs('trilhas.video_avatar', level='WARNING'):
                 self.assertIsNone(video_avatar.clipes(['a.mp3'], '/tmp/ignorado'))
+
+
+class EmParaleloTests(SimpleTestCase):
+    """As etapas caras rodam em threads, mas o vídeo depende da ordem."""
+
+    def test_resultados_voltam_na_ordem_de_entrada(self):
+        # O primeiro item é o mais lento de propósito: quem termina antes não
+        # pode furar a fila, senão slides e narrações sairiam trocados.
+        def _lento(n):
+            time.sleep(0.05 if n == 0 else 0)
+            return n * 10
+
+        self.assertEqual(
+            video_utils.em_paralelo(_lento, [0, 1, 2, 3], 4), [0, 10, 20, 30])
+
+    def test_progresso_conta_na_ordem_de_termino(self):
+        vistos = []
+        video_utils.em_paralelo(
+            lambda n: n, [1, 2, 3], 3,
+            progresso=lambda pronto, total: vistos.append((pronto, total)))
+        self.assertEqual(vistos, [(1, 3), (2, 3), (3, 3)])
+
+    def test_falha_de_um_trabalho_sobe(self):
+        def _explode(n):
+            if n == 2:
+                raise RuntimeError('ffmpeg falhou')
+            return n
+
+        with self.assertRaises(RuntimeError):
+            video_utils.em_paralelo(_explode, [1, 2, 3], 2)
+
+    def test_um_trabalho_so_nao_abre_thread(self):
+        atual = threading.current_thread()
+        onde = video_utils.em_paralelo(
+            lambda _: threading.current_thread(), ['x'], 4)
+        self.assertEqual(onde, [atual])
 
 
 @override_settings(VIDEO_ENABLED=True)

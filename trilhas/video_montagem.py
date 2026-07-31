@@ -16,8 +16,15 @@ import subprocess
 
 from django.conf import settings
 
+from . import video_utils
+
 LARGURA, ALTURA, FPS = 1280, 720, 30
 COR_FUNDO = '0x0C1020'  # var(--bg) do tema escuro
+
+# Quadro de trabalho do Ken Burns: o slide entra aqui e o zoompan recorta daqui
+# para 720p. É o tamanho em que os slides já são capturados (video_slides.ESCALA),
+# então na prática o scale abaixo é passagem direta — nada é reamostrado à toa.
+SUPER_L, SUPER_A = 1920, 1080
 
 # Respiro do mascote até as bordas do quadro. A posição é fixa de propósito: o
 # movimento acontece dentro do círculo (ver video_avatar), então o disco fica
@@ -66,11 +73,14 @@ def _clipe(png: str, audio: str, destino: str, avatar: str | None = None):
     """
     dur = max(0.8, duracao(audio))
     frames = max(1, math.ceil(dur * FPS))
-    # Fit do slide no quadro (nada é cortado), depois zoom lento (Ken Burns).
+    # Fit do slide no quadro de trabalho (nada é cortado) e zoom lento (Ken
+    # Burns) já reduzindo para 720p. O recorte sai direto do PNG em tamanho
+    # original: reduzir para 720p antes do zoom, como se fazia, custava um
+    # reamostramento a mais e entregava um quadro ampliado a partir de menos
+    # pixels do que o slide tinha.
     vf = (
-        f'[0:v]scale={LARGURA}:{ALTURA}:force_original_aspect_ratio=decrease,'
-        f'pad={LARGURA}:{ALTURA}:(ow-iw)/2:(oh-ih)/2:color={COR_FUNDO},setsar=1,'
-        f'scale={LARGURA*2}:{ALTURA*2},'
+        f'[0:v]scale={SUPER_L}:{SUPER_A}:force_original_aspect_ratio=decrease,'
+        f'pad={SUPER_L}:{SUPER_A}:(ow-iw)/2:(oh-ih)/2:color={COR_FUNDO},setsar=1,'
         f"zoompan=z='min(zoom+0.0004,1.10)':d={frames}:"
         f"x='iw/2-(iw/zoom/2)':y='ih/2-(ih/zoom/2)':s={LARGURA}x{ALTURA}:fps={FPS}[base]"
     )
@@ -98,6 +108,20 @@ def _clipe(png: str, audio: str, destino: str, avatar: str | None = None):
         '-c:a', 'aac', '-b:a', '128k', '-ar', '44100', '-ac', '2',
         destino,
     ])
+
+
+def workers() -> int:
+    """Quantos clipes codificar ao mesmo tempo.
+
+    O x264 não satura sozinho os núcleos disponíveis no preset veryfast, então
+    dois ffmpeg lado a lado rendem ~20% a mais que um de cada vez. O teto é o
+    número de núcleos: acima disso eles só disputam CPU entre si (e a máquina
+    ainda serve o site). VIDEO_WORKERS no settings/.env sobrepõe.
+    """
+    forcado = getattr(settings, 'VIDEO_WORKERS', 0) or 0
+    if forcado:
+        return max(1, int(forcado))
+    return max(1, min(2, os.cpu_count() or 1))
 
 
 def _concat(clipes: list[str], destino: str, work_dir: str):
@@ -137,23 +161,28 @@ def _faststart(video: str, destino: str):
 
 def montar(slides: list[str], audios: list[str], destino: str,
            work_dir: str, musica: str | None = None,
-           avatares: list[str] | None = None) -> float:
+           avatares: list[str] | None = None,
+           progresso=None) -> float:
     """Monta o vídeo final e devolve sua duração em segundos.
 
     ``slides`` e ``audios`` são listas paralelas (mesmo tamanho, mesma ordem).
     ``musica`` é opcional; se ausente ou inexistente, o vídeo sai só com narração.
     ``avatares`` (clipes do mascote, na mesma ordem) também é opcional.
+    ``progresso`` é um callback opcional ``fn(prontos, total)``: os clipes são
+    codificados em paralelo, mas esta é a etapa mais longa e vale mostrar avanço.
     """
     if not slides or len(slides) != len(audios):
         raise ValueError('slides e audios devem ter o mesmo tamanho e não vazios.')
 
     os.makedirs(work_dir, exist_ok=True)
-    clipes = []
-    for i, (png, aud) in enumerate(zip(slides, audios)):
-        clipe = os.path.join(work_dir, f'clipe_{i:03d}.mp4')
-        _clipe(png, aud, clipe,
+    clipes = [os.path.join(work_dir, f'clipe_{i:03d}.mp4')
+              for i in range(len(slides))]
+
+    def _um(i: int):
+        _clipe(slides[i], audios[i], clipes[i],
                avatar=avatares[i] if avatares and i < len(avatares) else None)
-        clipes.append(clipe)
+
+    video_utils.em_paralelo(_um, list(range(len(clipes))), workers(), progresso)
 
     concat = os.path.join(work_dir, 'sem_musica.mp4')
     _concat(clipes, concat, work_dir)
