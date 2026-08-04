@@ -15,6 +15,7 @@ from .models import (
 )
 
 _md = render_md
+_LETRAS_ALTERNATIVAS = frozenset({'A', 'B', 'C', 'D'})
 
 
 @login_required
@@ -79,8 +80,15 @@ def avaliacao_submeter(request, pk):
     if avaliacao.status != Avaliacao.Status.PRONTA:
         return redirect('avaliacoes:detalhe', pk=avaliacao.pk)
 
+    respostas = []
     for questao in avaliacao.questoes.all():
         alt = (request.POST.get(f'alt_{questao.pk}') or '').strip()
+        if alt not in _LETRAS_ALTERNATIVAS:
+            messages.error(request, 'Escolha uma alternativa válida em cada questão.')
+            return redirect('avaliacoes:detalhe', pk=avaliacao.pk)
+        respostas.append((questao, alt))
+
+    for questao, alt in respostas:
         Resposta.objects.update_or_create(
             questao=questao,
             defaults={'alternativa_escolhida': alt},
@@ -205,6 +213,8 @@ def exercicio_verificar(request, pk):
         }, status=409)
 
     escolhida = (request.POST.get('alternativa') or '').strip().upper()
+    if escolhida not in _LETRAS_ALTERNATIVAS:
+        return JsonResponse({'erro': 'Alternativa inválida.'}, status=400)
     correta = (ex.gabarito or '').strip().upper()
     acertou = bool(escolhida) and escolhida == correta
     ex.alternativa_escolhida = escolhida
@@ -361,6 +371,8 @@ def questao_revisao_verificar(request, pk):
         }, status=409)
 
     escolhida = (request.POST.get('alternativa') or '').strip().upper()
+    if escolhida not in _LETRAS_ALTERNATIVAS:
+        return JsonResponse({'erro': 'Alternativa inválida.'}, status=400)
     correta = (q.gabarito or '').strip().upper()
     acertou = bool(escolhida) and escolhida == correta
     q.alternativa_escolhida = escolhida

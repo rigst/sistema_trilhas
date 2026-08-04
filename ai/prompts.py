@@ -309,7 +309,7 @@ SCHEMA_AVALIACAO = {
                         'items': {
                             'type': 'object',
                             'properties': {
-                                'letra': {'type': 'string'},
+                                'letra': {'type': 'string', 'enum': ['A', 'B', 'C', 'D']},
                                 'texto': {'type': 'string'},
                             },
                             'required': ['letra', 'texto'],
@@ -344,7 +344,7 @@ SCHEMA_EXERCICIOS = {
                         'items': {
                             'type': 'object',
                             'properties': {
-                                'letra': {'type': 'string'},
+                                'letra': {'type': 'string', 'enum': ['A', 'B', 'C', 'D']},
                                 'texto': {'type': 'string'},
                             },
                             'required': ['letra', 'texto'],
@@ -443,7 +443,7 @@ SCHEMA_REVISAO = {
                         'items': {
                             'type': 'object',
                             'properties': {
-                                'letra': {'type': 'string'},
+                                'letra': {'type': 'string', 'enum': ['A', 'B', 'C', 'D']},
                                 'texto': {'type': 'string'},
                             },
                             'required': ['letra', 'texto'],

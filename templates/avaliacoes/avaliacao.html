@@ -46,7 +46,7 @@
           <div class="q-enun-body markdown-body">{{ q.enunciado_md|md }}</div>
         </div>
         <div class="opts">
-          {% for alt in q.alternativas %}
+          {% for alt in q.alternativas|slice:":4" %}
             <label class="opt"><input type="radio" name="alt_{{ q.pk }}" value="{{ alt.letra }}" required><div class="opt-texto markdown-body"><strong>{{ alt.letra }})</strong> {{ alt.texto|md_inline }}</div></label>
           {% endfor %}
         </div>

@@ -100,7 +100,7 @@
           {% if questao %}
             <div class="fc-pergunta fc-enunciado markdown-body">{{ questao.enunciado }}</div>
             <div class="fc-opts" role="group" aria-label="Alternativas">
-              {% for a in questao.alternativas %}
+              {% for a in questao.alternativas|slice:":4" %}
                 <button type="button" class="fc-opt" data-letra="{{ a.letra|upper }}">
                   <span class="fc-opt-letra">{{ a.letra|upper }}</span> <span class="fc-opt-texto markdown-body">{{ a.texto|md_inline }}</span>
                 </button>

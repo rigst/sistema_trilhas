@@ -639,24 +639,92 @@ def gerar_roteiro_video(subtopico, profile=None):
 # 4. Avaliação (Sonnet gera; correção objetiva determinística por gabarito)
 # ---------------------------------------------------------------------------
 
+_ALTERNATIVA_PLACEHOLDERS = {
+    'dup', 'outra', 'outro', 'outras', 'outros', 'alternativa',
+    'opcao', 'opção', 'nenhuma', 'nenhum', 'n/a', 'na', 'etc',
+}
+_LETRAS_ALTERNATIVAS = ('A', 'B', 'C', 'D')
+
+
+def _alternativas_normalizadas(alternativas, gabarito):
+    """Normaliza alternativas e rejeita conjuntos que não podem ser exibidos.
+
+    Structured outputs garante o formato de cada objeto, mas não garante a
+    quantidade, as letras ou a qualidade do texto. A IA às vezes repete uma
+    alternativa, deixa um placeholder ("dup", "outra") ou entrega somente uma
+    opção. O conjunto aceito é exatamente A, B, C e D.
+    """
+    por_letra = {}
+    textos = set()
+    for alternativa in alternativas or []:
+        if not isinstance(alternativa, dict):
+            continue
+        letra = str(alternativa.get('letra', '')).strip().upper()
+        texto = str(alternativa.get('texto', '')).strip()
+        texto_chave = ' '.join(texto.split())
+        texto_placeholder = re.sub(r'[\s.,;:!?…]+$', '', texto_chave.casefold()).strip()
+        if letra not in _LETRAS_ALTERNATIVAS or not texto:
+            continue
+        if letra in por_letra or texto_chave in textos:
+            continue
+        if texto_placeholder in _ALTERNATIVA_PLACEHOLDERS:
+            continue
+        por_letra[letra] = {'letra': letra, 'texto': texto}
+        textos.add(texto_chave)
+
+    letras = sorted(por_letra, key=_LETRAS_ALTERNATIVAS.index)
+    if letras != list(_LETRAS_ALTERNATIVAS):
+        return None
+    gabarito = str(gabarito or '').strip().upper()
+    if gabarito not in por_letra:
+        return None
+    return [por_letra[letra] for letra in letras]
+
+
 def _questoes_validas(items):
     """Filtra questões estruturalmente completas: enunciado preenchido,
-    4+ alternativas com letra/texto e gabarito apontando para uma delas.
+    exatamente quatro alternativas A-D com letra/texto e gabarito apontando
+    para uma delas.
     O JSON schema dos structured outputs não impõe minItems, então modelos
     ocasionalmente devolvem menos itens ou itens degenerados."""
     validas = []
     for q in items or []:
+        if not isinstance(q, dict):
+            continue
         enunciado = (q.get('enunciado') or '').strip()
-        alts = [
-            a for a in (q.get('alternativas') or [])
-            if isinstance(a, dict)
-            and str(a.get('letra', '')).strip() and str(a.get('texto', '')).strip()
-        ]
-        letras = {str(a['letra']).strip().upper() for a in alts}
         gabarito = (q.get('gabarito') or '').strip().upper()
-        if enunciado and len(alts) >= 4 and gabarito in letras:
+        alts = _alternativas_normalizadas(q.get('alternativas'), gabarito)
+        if enunciado and alts:
             validas.append({**q, 'alternativas': alts, 'gabarito': gabarito})
     return validas
+
+
+def _exercicios_validos(items):
+    validos = []
+    for item in items or []:
+        if not isinstance(item, dict):
+            continue
+        enunciado = (item.get('enunciado') or '').strip()
+        explicacao = (item.get('explicacao') or '').strip()
+        gabarito = (item.get('gabarito') or '').strip().upper()
+        alts = _alternativas_normalizadas(item.get('alternativas'), gabarito)
+        if enunciado and explicacao and alts:
+            validos.append({**item, 'alternativas': alts, 'gabarito': gabarito})
+    return validos
+
+
+def _questoes_revisao_validas(items, quantidade):
+    validas = []
+    for item in items or []:
+        if not isinstance(item, dict):
+            continue
+        enunciado = (item.get('enunciado') or '').strip()
+        explicacao = (item.get('explicacao') or '').strip()
+        gabarito = (item.get('gabarito') or '').strip().upper()
+        alts = _alternativas_normalizadas(item.get('alternativas'), gabarito)
+        if enunciado and explicacao and alts:
+            validas.append({**item, 'alternativas': alts, 'gabarito': gabarito})
+    return validas if len(validas) >= quantidade else []
 
 
 def gerar_avaliacao(avaliacao, profile=None):
@@ -670,9 +738,11 @@ def gerar_avaliacao(avaliacao, profile=None):
         f'Resumo: {nivel.resumo}\n'
         f'Subtópicos:\n{subs}\n\n'
         'Elabore uma avaliação com EXATAMENTE 10 questões objetivas (múltipla '
-        'escolha, 4 a 5 alternativas com uma correta), em dificuldade MÉDIA e ALTA — '
+        'escolha, exatamente 4 alternativas A-D com uma correta), em dificuldade MÉDIA e ALTA — '
         'sem questões fáceis ou triviais; exija raciocínio, aplicação e análise. Preencha '
-        '"alternativas" com objetos {letra, texto} e "gabarito" com a letra correta. '
+        '"alternativas" com EXATAMENTE 4 objetos {letra, texto}, rotulados '
+        'A, B, C e D, sem repetir letras ou textos; nunca use '
+        'placeholders como "dup" ou "outra". Preencha "gabarito" com a letra correta. '
         'Use "peso" 1.0 em todas. Não crie questões dissertativas. Numere em '
         '"ordem" de 1 a 10. Não repita questões nem insira itens de aviso ou '
         'placeholder: cada item deve ser uma questão completa e distinta.'
@@ -812,19 +882,31 @@ def gerar_exercicios(lista, profile=None):
         f'Subtópicos:\n{subs}\n\n'
         'Crie EXATAMENTE 5 exercícios de prática, TODOS objetivos (múltipla escolha), '
         'em dificuldade MÉDIA e ALTA — sem exercícios fáceis ou triviais; exija '
-        'aplicação e raciocínio. Para cada um: "alternativas" com {letra, texto} e "gabarito" '
+        'aplicação e raciocínio. Para cada um: "alternativas" com EXATAMENTE 4 '
+        'objetos {letra, texto}, rotulados A, B, C e D, sem repetir '
+        'letras ou textos e sem placeholders como "dup" ou "outra"; "gabarito" '
         'com a letra correta. Não crie exercícios dissertativos. Sempre preencha '
         '"explicacao" com um comentário didático que será mostrado como feedback. '
         'Numere em "ordem" de 1 a 5.'
     )
-    data = _gerar_json(
-        prompts.SYSTEM_EXERCICIOS, user, prompts.SCHEMA_EXERCICIOS, profile,
-        model=_model_geral(), effort=getattr(settings, 'AI_EFFORT_GERAL', 'medium'),
-    )
+    exercicios = []
+    for _tentativa in range(2):
+        data = _gerar_json(
+            prompts.SYSTEM_EXERCICIOS, user, prompts.SCHEMA_EXERCICIOS, profile,
+            model=_model_geral(), effort=getattr(settings, 'AI_EFFORT_GERAL', 'medium'),
+        )
+        exercicios = _exercicios_validos(data.get('exercicios'))
+        if len(exercicios) >= 5:
+            break
+    if len(exercicios) < 5:
+        raise IAError(
+            f'A IA retornou {len(exercicios)} exercícios válidos em vez de 5; '
+            'lista não publicada.'
+        )
 
     lista.exercicios.all().delete()
     objs = []
-    for i, e in enumerate(data.get('exercicios', []), start=1):
+    for i, e in enumerate(exercicios[:5], start=1):
         objs.append(Exercicio(
             lista=lista,
             ordem=e.get('ordem') or i,
@@ -1088,17 +1170,29 @@ def gerar_revisao(revisao, profile=None, trilha_id=None):
         + f'\n\nCrie {n_questoes} questões objetivas de revisão, misturando os '
         'níveis acima, em dificuldade MÉDIA e ALTA (sem questões fáceis ou triviais). Em "origem" coloque o NÚMERO do '
         'nível de referência (1 a ' + str(len(niveis)) + '). Preencha '
-        '"alternativas" com {letra, texto}, "gabarito" com a letra correta e '
+        '"alternativas" com EXATAMENTE 4 objetos {letra, texto}, rotulados '
+        'A, B, C e D, sem repetir letras ou textos e sem placeholders '
+        'como "dup" ou "outra"; "gabarito" com a letra correta e '
         '"explicacao" com um comentário didático. Numere em "ordem" a partir de 1.'
     )
-    data = _gerar_json(
-        prompts.SYSTEM_REVISAO, user, prompts.SCHEMA_REVISAO, profile,
-        model=_model_geral(), effort=getattr(settings, 'AI_EFFORT_GERAL', 'medium'),
-    )
+    questoes = []
+    for _tentativa in range(2):
+        data = _gerar_json(
+            prompts.SYSTEM_REVISAO, user, prompts.SCHEMA_REVISAO, profile,
+            model=_model_geral(), effort=getattr(settings, 'AI_EFFORT_GERAL', 'medium'),
+        )
+        questoes = _questoes_revisao_validas(data.get('questoes'), n_questoes)
+        if questoes:
+            break
+    if not questoes:
+        raise IAError(
+            f'A IA retornou menos de {n_questoes} questões de revisão válidas; '
+            'revisão não publicada.'
+        )
 
     revisao.questoes.all().delete()
     objs = []
-    for i, q in enumerate(data.get('questoes', []), start=1):
+    for i, q in enumerate(questoes[:n_questoes], start=1):
         idx = q.get('origem') or 1
         nv = niveis[idx - 1] if 1 <= idx <= len(niveis) else niveis[0]
         objs.append(QuestaoRevisao(

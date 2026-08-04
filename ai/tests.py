@@ -75,6 +75,25 @@ class QuestoesValidasTests(SimpleTestCase):
         self.assertEqual(_questoes_validas(None), [])
         self.assertEqual(_questoes_validas([]), [])
 
+    def test_remove_duplicata_e_placeholder_da_ultima_alternativa(self):
+        from ai.services import _questoes_validas
+
+        q = _q(1, letras=('A', 'B', 'C', 'D', 'E', 'E'))
+        q['alternativas'][-1]['texto'] = 'dup'
+        validas = _questoes_validas([q])
+        self.assertEqual([a['letra'] for a in validas[0]['alternativas']], ['A', 'B', 'C', 'D'])
+
+    def test_normaliza_quinta_alternativa_para_o_padrao_a_d(self):
+        from ai.services import _questoes_validas
+
+        validas = _questoes_validas([_q(1, letras=('A', 'B', 'C', 'D', 'E'))])
+        self.assertEqual([a['letra'] for a in validas[0]['alternativas']], ['A', 'B', 'C', 'D'])
+
+    def test_rejeita_conjunto_sem_as_quatro_alternativas_base(self):
+        from ai.services import _questoes_validas
+
+        self.assertEqual(_questoes_validas([_q(1, letras=('A', 'B', 'C'))]), [])
+
 
 class GerarAvaliacaoTests(TestCase):
     def setUp(self):
@@ -117,3 +136,30 @@ class GerarAvaliacaoTests(TestCase):
 
         self.assertEqual(gerar_json.call_count, 2)
         self.assertEqual(self.avaliacao.questoes.count(), 1)  # conjunto antigo preservado
+
+    @patch('ai.services._gerar_json')
+    def test_exercicios_repetem_geracao_se_alternativa_estiver_incompleta(self, gerar_json):
+        from ai import services
+        from avaliacoes.models import Exercicio, ListaExercicios
+
+        lista = ListaExercicios.objects.create(nivel=self.avaliacao.nivel)
+        incompleto = {
+            'exercicios': [
+                {'enunciado': 'Pergunta', 'alternativas': [{'letra': 'A', 'texto': 'x'}],
+                 'gabarito': 'A', 'explicacao': 'Explicação'}
+            ]
+        }
+        completo = {
+            'exercicios': [
+                {'enunciado': f'Pergunta {i}',
+                 'alternativas': [{'letra': l, 'texto': f'Alternativa {l}'} for l in ('A', 'B', 'C', 'D')],
+                 'gabarito': 'A', 'explicacao': 'Explicação'}
+                for i in range(1, 6)
+            ]
+        }
+        gerar_json.side_effect = [incompleto, completo]
+
+        services.gerar_exercicios(lista)
+
+        self.assertEqual(gerar_json.call_count, 2)
+        self.assertEqual(Exercicio.objects.filter(lista=lista).count(), 5)

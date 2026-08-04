@@ -48,7 +48,7 @@
         </div>
 
         <div class="opts">
-          {% for alt in ex.alternativas %}
+          {% for alt in ex.alternativas|slice:":4" %}
             <label class="opt {% if ex.respondido_em %}{% if alt.letra == ex.gabarito %}correct{% elif ex.alternativa_escolhida == alt.letra %}wrong{% endif %}{% endif %}">
               <input type="radio" name="ex_{{ ex.pk }}" value="{{ alt.letra }}" {% if ex.alternativa_escolhida == alt.letra %}checked{% endif %} {% if ex.respondido_em %}disabled{% endif %}>
               <div class="opt-texto markdown-body"><strong>{{ alt.letra }})</strong> {{ alt.texto|md_inline }}</div>
