@@ -853,10 +853,13 @@ a.node:not(.lock):hover .nm{color:var(--teal)}
    Markdown e forçamos os blocos de destaque a ocupar toda a largura útil do
    card, em vez de conservar uma coluna estreita do conteúdo original. */
 .sc-in.markdown-body{display:block;align-self:stretch;width:100%;max-width:none;box-sizing:border-box}
+.sc-in.markdown-body>*{max-width:100%;box-sizing:border-box}
 .sc-in.markdown-body>.admonition,
 .sc-in.markdown-body>.mermaid,
 .sc-in.markdown-body>.codehilite,
 .sc-in.markdown-body>table{width:100%;max-width:100%;box-sizing:border-box}
+.sc-in.markdown-body>.admonition>*{max-width:100%;box-sizing:border-box}
+.sc-in.markdown-body>.codehilite>pre{width:100%;max-width:100%;box-sizing:border-box}
 .sc-in>*:first-child{margin-top:0}
 .sc-in>*:last-child,.sc-in .admonition:last-child{margin-bottom:0}
 .mode-cards .markdown-body h2{border-bottom:none;font-size:1.4rem}

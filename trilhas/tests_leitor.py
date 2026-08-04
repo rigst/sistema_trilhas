@@ -157,6 +157,13 @@ class MermaidTests(TestCase):
         trecho = html.split('mermaid')[1][:200]
         self.assertNotIn('<pre', trecho)
 
+    def test_quebra_literal_dentro_do_mermaid_vira_br(self):
+        from trilhas.mdrender import render_md
+        html = render_md('```mermaid\nflowchart TD\n  A["Linha 1\\nLinha 2"]\n```')
+        self.assertIn('class="mermaid"', html)
+        self.assertIn('&lt;br/&gt;', html)
+        self.assertNotIn(r'\\n', html)
+
     def test_codigo_normal_continua_destacado(self):
         from trilhas.mdrender import render_md
         html = render_md('```python\nx = 1\n```')

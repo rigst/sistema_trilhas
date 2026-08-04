@@ -120,6 +120,12 @@ def _extrair_mermaid(texto):
         # Linhas em branco dentro de HTML cru devolvem o parser ao Markdown;
         # o Mermaid não precisa delas.
         codigo = re.sub(r'\n\s*\n', '\n', codigo)
+        # A IA costuma representar quebras de linha dentro dos rótulos do
+        # Mermaid como os dois caracteres literais ``\\n``. O Mermaid não os
+        # interpreta como quebra visual e acaba exibindo "\\n" no diagrama;
+        # convertemos somente dentro do código Mermaid (e não no Markdown ou
+        # em exemplos de Python) para a forma suportada pelo renderizador.
+        codigo = codigo.replace(r'\n', '<br/>')
         return '\n<div class="mermaid">' + html.escape(codigo, quote=False) + '</div>\n'
     return _MERMAID_RE.sub(_rep, texto)
 
