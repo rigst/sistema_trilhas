@@ -183,7 +183,9 @@
     save.setAttribute("aria-label", salvos.has(i) ? "Remover dos salvos" : "Salvar card");
     save.innerHTML = '<svg class="ic" aria-hidden="true"><use href="#ic-bookmark"/></svg>';
     const inner = document.createElement("div");
-    inner.className = "sc-in";
+    // O conteúdo já foi renderizado como Markdown; manter a classe no novo
+    // contêiner preserva as regras de largura e dos cards de destaque.
+    inner.className = "sc-in markdown-body";
     if (g.kicker) {
       const k = document.createElement("div");
       k.className = "sc-kicker";
@@ -221,7 +223,7 @@
     const fim = document.createElement("section");
     fim.className = "story-card story-card--fim";
     const inner = document.createElement("div");
-    inner.className = "sc-in";
+    inner.className = "sc-in markdown-body";
     inner.appendChild(tpl.content.cloneNode(true));
     fim.appendChild(inner);
     src.appendChild(fim);

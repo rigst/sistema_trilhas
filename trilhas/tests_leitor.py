@@ -41,6 +41,7 @@ class TopicoRenderTests(TestCase):
         self.assertIn('story-bars', html)
         self.assertIn('story-final', html)
         self.assertIn('mode-toggle', html)
+        self.assertIn('inner.className = "sc-in markdown-body"', html)
         self.assertIn('+10 XP', html)          # primeira leitura ganha XP
         self.assertIn('is-reader', html)       # corpo em modo leitura
         self.sub.refresh_from_db()
