@@ -27,7 +27,7 @@ def _qualidade(fracao_acertos):
 def aplicar_sm2(revisao):
     """Reagenda a revisão espaçada de cada nível avaliado nesta revisão."""
     por_nivel = defaultdict(lambda: [0, 0])  # nivel -> [acertos, total]
-    for q in revisao.questoes.select_related('nivel').all():
+    for q in revisao.questoes.select_related("nivel").all():
         if q.nivel_id is None or q.respondido_em is None:
             continue
         por_nivel[q.nivel][1] += 1

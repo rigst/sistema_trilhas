@@ -42,11 +42,8 @@ jobs:
       # (nenhum segredo no histórico) e as checagens do Django. O resto roda e
       # reporta enquanto o passivo é zerado — tire da lista conforme resolver.
       #
-      #   ruff       55 achados restantes; além disso `ruff format` nunca foi
-      #              rodado, e reformataria 64 arquivos — enquanto isso o job
-      #              segue vermelho mesmo com os 55 zerados
       #   bandit     19 achados; os 2 "High" são SHA1 em chave de cache,
       #              resolvidos com hashlib.sha1(..., usedforsecurity=False)
       #   pytest    projeto ainda usa `manage.py test`
       #   mypy      código ainda não tipado
-      soft-fail: "mypy,pytest,ruff,bandit,pip-audit"
+      soft-fail: "mypy,pytest,bandit,pip-audit"

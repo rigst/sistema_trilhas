@@ -13,8 +13,8 @@ sobre índices, e todas ganham em rodar algumas ao mesmo tempo.
 import re
 from concurrent.futures import ThreadPoolExecutor, as_completed
 
-_FENCE_RE = re.compile(r'^\s*(```|~~~)')
-_HR_RE = re.compile(r'^\s*---+\s*$')
+_FENCE_RE = re.compile(r"^\s*(```|~~~)")
+_HR_RE = re.compile(r"^\s*---+\s*$")
 
 
 def em_paralelo(fn, itens: list, max_workers: int, progresso=None) -> list:
@@ -63,7 +63,7 @@ def fatiar_secoes(md: str) -> list[str]:
     """
     if not md or not md.strip():
         return []
-    linhas = md.split('\n')
+    linhas = md.split("\n")
     secoes: list[list[str]] = [[]]
     em_fence = False
     for linha in linhas:
@@ -75,5 +75,5 @@ def fatiar_secoes(md: str) -> list[str]:
             secoes.append([])
             continue
         secoes[-1].append(linha)
-    resultado = ['\n'.join(s).strip() for s in secoes]
+    resultado = ["\n".join(s).strip() for s in secoes]
     return [s for s in resultado if s]

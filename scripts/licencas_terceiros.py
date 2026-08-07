@@ -31,8 +31,18 @@ LICENCA_PROJETO = "licença proprietária"
 # Programas chamados por subprocess (não linkados ao código do projeto).
 # Formato: (nome, versão, licença, observação)
 PROGRAMAS_EXTERNOS: list[tuple[str, str, str, str]] = [
-    ("FFmpeg", "6.1.1 (Ubuntu, `--enable-gpl`)", "GPL-2.0-or-later", "Montagem de vídeo, chamado em `trilhas/video_montagem.py`"),
-    ("Chromium (via Playwright)", "1228", "BSD-3-Clause e outras", "Renderização de slides em `trilhas/video_slides.py`"),
+    (
+        "FFmpeg",
+        "6.1.1 (Ubuntu, `--enable-gpl`)",
+        "GPL-2.0-or-later",
+        "Montagem de vídeo, chamado em `trilhas/video_montagem.py`",
+    ),
+    (
+        "Chromium (via Playwright)",
+        "1228",
+        "BSD-3-Clause e outras",
+        "Renderização de slides em `trilhas/video_slides.py`",
+    ),
 ]
 
 # Observações que valem manutenção contínua.
@@ -89,9 +99,7 @@ def licenca_de(dist: metadata.Distribution) -> str:
     ]
     classifiers = [c for c in classifiers if c != "OSI Approved"]
     if classifiers:
-        return " / ".join(
-            c.replace("OSI Approved :: ", "") for c in classifiers
-        )
+        return " / ".join(c.replace("OSI Approved :: ", "") for c in classifiers)
 
     # Campo livre: só serve se for curto — muitos pacotes colam a licença inteira.
     livre = (meta.get("License") or "").strip()
@@ -110,7 +118,7 @@ def diretas() -> set[str]:
         linha = linha.split("#", 1)[0].strip()
         if not linha or linha.startswith("-"):
             continue
-        nome = re.split(r"[\[<>=!~;]", linha, 1)[0].strip()
+        nome = re.split(r"[\[<>=!~;]", linha, maxsplit=1)[0].strip()
         if nome:
             nomes.add(normalizar(nome))
     return nomes
@@ -159,9 +167,7 @@ def main() -> int:
             continue
         (diretos if chave in nomes_diretos else transitivos).append(p)
 
-    atencao = [
-        p for p in diretos + transitivos if COPYLEFT.search(p["licenca"])
-    ]
+    atencao = [p for p in diretos + transitivos if COPYLEFT.search(p["licenca"])]
 
     linhas = [
         f"# Licenças de terceiros — {PROJETO}",

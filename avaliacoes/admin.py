@@ -18,8 +18,8 @@ class ExercicioInline(TabularInline):
 
 @admin.register(ListaExercicios)
 class ListaExerciciosAdmin(ModelAdmin):
-    list_display = ('nivel', 'status', 'criada_em')
-    list_filter = ('status',)
+    list_display = ("nivel", "status", "criada_em")
+    list_filter = ("status",)
     inlines = [ExercicioInline]
 
 
@@ -30,15 +30,15 @@ class QuestaoInline(TabularInline):
 
 @admin.register(Avaliacao)
 class AvaliacaoAdmin(ModelAdmin):
-    list_display = ('nivel', 'tentativa', 'status', 'nota_final', 'aprovado', 'criada_em')
-    list_filter = ('status', 'aprovado')
+    list_display = ("nivel", "tentativa", "status", "nota_final", "aprovado", "criada_em")
+    list_filter = ("status", "aprovado")
     inlines = [QuestaoInline]
 
 
 @admin.register(Titulo)
 class TituloAdmin(ModelAdmin):
-    list_display = ('nome', 'trilha', 'faixa', 'concedido_em')
-    search_fields = ('nome',)
+    list_display = ("nome", "trilha", "faixa", "concedido_em")
+    search_fields = ("nome",)
 
 
 admin.site.register(Resposta)

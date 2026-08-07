@@ -8,12 +8,9 @@ avaliação já respondida) não são bloqueadas para não deixar o usuário pre
 
 from django.core.cache import cache
 
-MSG_SEM_QUOTA = (
-    'Sua cota mensal de IA acabou. Ela é renovada no início do próximo mês.'
-)
+MSG_SEM_QUOTA = "Sua cota mensal de IA acabou. Ela é renovada no início do próximo mês."
 MSG_MUITAS_GERACOES = (
-    'Você disparou muitas gerações de IA em pouco tempo. '
-    'Aguarde alguns minutos e tente de novo.'
+    "Você disparou muitas gerações de IA em pouco tempo. Aguarde alguns minutos e tente de novo."
 )
 
 # Rajada máxima de gerações de IA iniciadas pelo usuário (janela deslizante
@@ -25,7 +22,7 @@ JANELA_GERACOES_S = 10 * 60
 
 def excedeu_limite(chave, limite, janela_s):
     """Contador simples no cache: True quando a chave passou do limite."""
-    key = f'throttle:{chave}'
+    key = f"throttle:{chave}"
     try:
         atual = cache.incr(key)
     except ValueError:
@@ -37,7 +34,7 @@ def excedeu_limite(chave, limite, janela_s):
 def sem_quota_ia(user, tokens_estimados=0):
     """True quando o usuário esgotou a cota mensal de tokens de IA (ou não
     tem saldo para a geração estimada)."""
-    profile = getattr(user, 'profile', None)
+    profile = getattr(user, "profile", None)
     if profile is None:
         return False
     return not profile.tem_quota(tokens_estimados)
@@ -45,7 +42,7 @@ def sem_quota_ia(user, tokens_estimados=0):
 
 def rajada_ia_excedida(user):
     """True quando o usuário estourou o limite de gerações em rajada."""
-    return excedeu_limite(f'ia:{user.pk}', LIMITE_GERACOES, JANELA_GERACOES_S)
+    return excedeu_limite(f"ia:{user.pk}", LIMITE_GERACOES, JANELA_GERACOES_S)
 
 
 def bloqueio_ia(user, tokens_estimados=0):

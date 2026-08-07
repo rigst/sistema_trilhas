@@ -14,11 +14,11 @@ from django.conf import settings
 from .mdrender import render_md
 
 _BASE = settings.BASE_DIR
-_FONTS_CSS = _BASE / 'static' / 'fonts' / 'fonts.css'
-_PYGMENTS_CSS = _BASE / 'static' / 'css' / 'pygments.css'
-_APP_CSS = _BASE / 'static' / 'css' / 'app.css'
-_SLIDE_CSS = _BASE / 'static' / 'css' / 'video_slide.css'
-_MERMAID_JS = _BASE / 'static' / 'js' / 'mermaid.min.js'
+_FONTS_CSS = _BASE / "static" / "fonts" / "fonts.css"
+_PYGMENTS_CSS = _BASE / "static" / "css" / "pygments.css"
+_APP_CSS = _BASE / "static" / "css" / "app.css"
+_SLIDE_CSS = _BASE / "static" / "css" / "video_slide.css"
+_MERMAID_JS = _BASE / "static" / "js" / "mermaid.min.js"
 
 # Dimensões do slide (16:9). O vídeo sai em 720p e o Ken Burns amplia no máximo
 # 1,10×, então 1,5× (1920×1080) já entrega mais pixels do que o quadro final
@@ -50,26 +50,29 @@ def _link(path):
     return f'<link rel="stylesheet" href="file://{path}">'
 
 
-def _documento(corpo_html: str, classe: str = '') -> str:
+def _documento(corpo_html: str, classe: str = "") -> str:
     """Monta a página HTML completa e autossuficiente de um slide."""
     return (
         '<!doctype html><html lang="pt-br" data-theme="escuro"><head>'
         '<meta charset="utf-8">'
-        f'{_link(_FONTS_CSS)}{_link(_PYGMENTS_CSS)}{_link(_APP_CSS)}{_link(_SLIDE_CSS)}'
+        f"{_link(_FONTS_CSS)}{_link(_PYGMENTS_CSS)}{_link(_APP_CSS)}{_link(_SLIDE_CSS)}"
         '</head><body class="is-reader">'
         f'<div class="vslide {classe}">{corpo_html}</div>'
-        '</body></html>'
+        "</body></html>"
     )
 
 
 def _slide_conteudo(secao_md: str, mascote: bool = False) -> str:
     fragmento = render_md(secao_md)
-    return _documento(f'<div class="vslide-in markdown-body">{fragmento}</div>',
-                      classe='vslide--mascote' if mascote else '')
+    return _documento(
+        f'<div class="vslide-in markdown-body">{fragmento}</div>',
+        classe="vslide--mascote" if mascote else "",
+    )
 
 
-def _slide_capa(kicker: str, titulo: str, sub: str = '', emblema: str = '',
-                creditos: str = '') -> str:
+def _slide_capa(
+    kicker: str, titulo: str, sub: str = "", emblema: str = "", creditos: str = ""
+) -> str:
     partes = ['<div class="vslide-in">']
     if emblema:
         partes.append(f'<div class="cover-emblema">{_html.escape(emblema)}</div>')
@@ -81,12 +84,11 @@ def _slide_capa(kicker: str, titulo: str, sub: str = '', emblema: str = '',
     partes.append('<div class="cover-marca">Trilhas de Estudo</div>')
     if creditos:
         partes.append(f'<div class="cover-cred">{_html.escape(creditos)}</div>')
-    partes.append('</div>')
-    return _documento(''.join(partes), classe='vslide--cover')
+    partes.append("</div>")
+    return _documento("".join(partes), classe="vslide--cover")
 
 
-def render_slides(paginas: list[dict], out_dir: str,
-                  mascote: bool = False) -> list[str]:
+def render_slides(paginas: list[dict], out_dir: str, mascote: bool = False) -> list[str]:
     """Renderiza cada página em um PNG e devolve os caminhos, na ordem recebida.
 
     ``paginas`` é uma lista de dicts:
@@ -101,33 +103,35 @@ def render_slides(paginas: list[dict], out_dir: str,
     os.makedirs(out_dir, exist_ok=True)
     caminhos = []
     with sync_playwright() as p:
-        navegador = p.chromium.launch(args=['--no-sandbox', '--force-color-profile=srgb'])
+        navegador = p.chromium.launch(args=["--no-sandbox", "--force-color-profile=srgb"])
         pagina = navegador.new_page(
-            viewport={'width': LARGURA, 'height': ALTURA},
+            viewport={"width": LARGURA, "height": ALTURA},
             device_scale_factor=ESCALA,
         )
         for i, pg in enumerate(paginas):
-            if pg.get('tipo') == 'capa':
+            if pg.get("tipo") == "capa":
                 doc = _slide_capa(
-                    pg.get('kicker', ''), pg.get('titulo', ''),
-                    pg.get('sub', ''), pg.get('emblema', ''),
-                    pg.get('creditos', ''),
+                    pg.get("kicker", ""),
+                    pg.get("titulo", ""),
+                    pg.get("sub", ""),
+                    pg.get("emblema", ""),
+                    pg.get("creditos", ""),
                 )
             else:
-                doc = _slide_conteudo(pg.get('md', ''), mascote)
-            html_path = os.path.join(out_dir, f'slide_{i:03d}.html')
-            with open(html_path, 'w', encoding='utf-8') as fh:
+                doc = _slide_conteudo(pg.get("md", ""), mascote)
+            html_path = os.path.join(out_dir, f"slide_{i:03d}.html")
+            with open(html_path, "w", encoding="utf-8") as fh:
                 fh.write(doc)
             # 'load' basta: a página é autossuficiente (CSS, fontes e imagens em
             # file://), então não há requisição de rede para 'networkidle' esperar.
-            pagina.goto(f'file://{html_path}', wait_until='load')
+            pagina.goto(f"file://{html_path}", wait_until="load")
             # O Mermaid só entra nos slides que têm diagrama: carregar e rodar a
             # biblioteca em todos custava ~0,5s por slide sem nada para desenhar.
             if 'class="mermaid"' in doc:
                 pagina.add_script_tag(path=str(_MERMAID_JS))
                 pagina.evaluate(_MERMAID_RUN)
                 pagina.wait_for_timeout(300)  # deixa o SVG assentar
-            png_path = os.path.join(out_dir, f'slide_{i:03d}.png')
+            png_path = os.path.join(out_dir, f"slide_{i:03d}.png")
             pagina.screenshot(path=png_path, full_page=True)
             caminhos.append(png_path)
         navegador.close()

@@ -15,7 +15,7 @@ import os
 from django.conf import settings
 
 # Voz padrão PT-BR (configurável por VIDEO_TTS_VOICE no settings/.env).
-VOZ_PADRAO = 'pt-BR-AntonioNeural'
+VOZ_PADRAO = "pt-BR-AntonioNeural"
 
 # Sínteses simultâneas. 6 é conservador para não levar throttling do serviço
 # (que é gratuito e sem contrato) e já derruba o tempo da etapa em ~6×.
@@ -23,7 +23,7 @@ CONCORRENCIA = 6
 
 
 def _voz():
-    return getattr(settings, 'VIDEO_TTS_VOICE', VOZ_PADRAO) or VOZ_PADRAO
+    return getattr(settings, "VIDEO_TTS_VOICE", VOZ_PADRAO) or VOZ_PADRAO
 
 
 async def _sintetizar(texto: str, destino: str, voz: str):
@@ -53,8 +53,7 @@ def sintetizar_narracoes(narracoes: list[str], out_dir: str) -> list[str]:
     """
     os.makedirs(out_dir, exist_ok=True)
     voz = _voz()
-    caminhos = [os.path.join(out_dir, f'audio_{i:03d}.mp3')
-                for i in range(len(narracoes))]
+    caminhos = [os.path.join(out_dir, f"audio_{i:03d}.mp3") for i in range(len(narracoes))]
 
     async def _tudo():
         limite = asyncio.Semaphore(CONCORRENCIA)
@@ -62,7 +61,7 @@ def sintetizar_narracoes(narracoes: list[str], out_dir: str) -> list[str]:
         async def _um(i: int, texto: str):
             async with limite:
                 # Sem narração: um ponto curto gera ~0,5s de áudio (evita clipe vazio).
-                await _sintetizar((texto or '').strip() or '.', caminhos[i], voz)
+                await _sintetizar((texto or "").strip() or ".", caminhos[i], voz)
 
         await asyncio.gather(*(_um(i, t) for i, t in enumerate(narracoes)))
 
