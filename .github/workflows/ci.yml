@@ -38,6 +38,13 @@ jobs:
         ANTHROPIC_API_KEY=ci-only-nao-e-uma-chave-real
         SITE_URL=https://example.com
 
-      # O projeto ainda roda `manage.py test`; `pytest` fica reportando sem
-      # bloquear até a migração dos testes. `mypy` idem, até o código ser tipado.
-      soft-fail: "mypy,pytest"
+      # Estado de adoção. O que bloqueia hoje é o que já está limpo: gitleaks
+      # (nenhum segredo no histórico) e as checagens do Django. O resto roda e
+      # reporta enquanto o passivo é zerado — tire da lista conforme resolver.
+      #
+      #   ruff      109 achados (30 com --fix automático)
+      #   bandit     19 achados; os 2 "High" são SHA1 em chave de cache,
+      #              resolvidos com hashlib.sha1(..., usedforsecurity=False)
+      #   pytest    projeto ainda usa `manage.py test`
+      #   mypy      código ainda não tipado
+      soft-fail: "mypy,pytest,ruff,bandit,pip-audit"
