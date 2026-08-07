@@ -1,56 +1,43 @@
 name: CI
 
+# O pipeline vive em github.com/rigst/ci. Ajuste lá vale para todos os projetos.
+
 on:
   push:
     branches: [main]
   pull_request:
 
+permissions:
+  contents: read
+
 jobs:
-  test:
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v4
+  ci:
+    uses: rigst/ci/.github/workflows/python-django.yml@v1
+    secrets: inherit
+    with:
+      python-version: "3.12"
+      django-settings-module: config.settings.production
+      source-paths: "accounts ai avaliacoes config legal trilhas"
 
-      - uses: actions/setup-python@v5
-        with:
-          python-version: "3.12"
-          cache: pip
+      # Valores fictícios, só para os settings de produção carregarem no CI.
+      # Nenhum segredo real entra aqui — os de verdade ficam em Secrets.
+      django-env: |
+        SECRET_KEY=ci-only-0a1B2c3D4e5F6g7H8i9J-kLmNoPqRsTuVwXyZ-abcdefghij
+        ALLOWED_HOSTS=example.com
+        DEBUG=False
+        DB_NAME=postgres
+        DB_USER=postgres
+        DB_PASSWORD=postgres
+        DB_HOST=localhost
+        DB_PORT=5432
+        REDIS_URL=redis://localhost:6379/3
+        CACHE_REDIS_URL=redis://localhost:6379/3
+        SESSION_REDIS_URL=redis://localhost:6379/3
+        CELERY_BROKER_URL=redis://localhost:6379/3
+        CELERY_RESULT_BACKEND=redis://localhost:6379/3
+        ANTHROPIC_API_KEY=ci-only-nao-e-uma-chave-real
+        SITE_URL=https://example.com
 
-      - name: Instalar dependências
-        run: |
-          python -m pip install --upgrade pip
-          pip install -r requirements.txt
-
-      - name: Migrações em dia (sem migração faltando)
-        run: python manage.py makemigrations --check --dry-run
-
-      - name: Testes
-        run: python manage.py test --noinput
-
-      - name: check --deploy (settings de produção)
-        env:
-          DJANGO_SETTINGS_MODULE: config.settings.production
-          # Chave longa e variada só para o check --deploy não emitir W009 no CI.
-          SECRET_KEY: ci-only-0a1B2c3D4e5F6g7H8i9J-kLmNoPqRsTuVwXyZ-abcdefghij
-          ALLOWED_HOSTS: example.com
-          DEBUG: "False"
-          DB_NAME: trilhas
-          DB_USER: trilhas
-          DB_PASSWORD: x
-          DB_HOST: localhost
-          DB_PORT: "5432"
-        run: python manage.py check --deploy --fail-level WARNING
-
-  audit:
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-python@v5
-        with:
-          python-version: "3.12"
-          cache: pip
-      - name: pip-audit (vulnerabilidades nas dependências)
-        run: |
-          python -m pip install --upgrade pip pip-audit
-          pip install -r requirements.txt
-          pip-audit
+      # O projeto ainda roda `manage.py test`; `pytest` fica reportando sem
+      # bloquear até a migração dos testes. `mypy` idem, até o código ser tipado.
+      soft-fail: "mypy,pytest"

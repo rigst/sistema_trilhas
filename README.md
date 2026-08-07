@@ -1,5 +1,10 @@
 # Trilhas de Estudo com IA
 
+[![CI](https://github.com/rigst/sistema_trilhas/actions/workflows/ci.yml/badge.svg)](https://github.com/rigst/sistema_trilhas/actions/workflows/ci.yml)
+[![Licença: AGPL v3](https://img.shields.io/badge/licen%C3%A7a-AGPL--3.0-blue.svg)](LICENSE)
+[![Python 3.12](https://img.shields.io/badge/python-3.12-blue.svg)](https://www.python.org/)
+[![Django 6](https://img.shields.io/badge/django-6.0-092E20.svg)](https://www.djangoproject.com/)
+
 App Django onde o usuário descreve livremente um tema, a IA (Claude) faz
 perguntas direcionadoras, monta um sumário do básico ao avançado e gera o
 conteúdo de cada nível sob demanda. Cada nível termina numa avaliação objetiva
@@ -8,8 +13,8 @@ corrigida por gabarito; ao atingir a nota mínima, o usuário ganha um título
 uma camada de gamificação (XP, níveis de jogador, ofensiva e **diamantes** como
 moeda para criar trilhas) e de revisão espaçada (SM-2).
 
-Segue os padrões dos demais apps em `/var/www` (design system Stölben, Celery +
-Redis, settings split, login com visitante).
+Compartilha as convenções dos demais projetos do autor: design system Stölben,
+Celery + Redis, settings divididos por ambiente e login com visitante.
 
 ## Stack
 Django 6 · Celery + Redis (DB 3) · Anthropic SDK · SQLite (dev) / PostgreSQL (prod).
@@ -77,7 +82,8 @@ Testes:
 ```
 
 ## Produção
-1. Instalar em `/var/www/sistema_trilhas`, criar `venv`, `pip install -r requirements.txt`.
+1. Instalar no diretório da aplicação (o deploy de referência usa
+   `/var/www/sistema_trilhas`), criar `venv`, `pip install -r requirements.txt`.
 2. `.env` com `DJANGO_SETTINGS_MODULE=config.settings.production`, `SECRET_KEY`,
    `ALLOWED_HOSTS`, `DATABASE_*`, `REDIS_URL=redis://localhost:6379/3`, `ANTHROPIC_API_KEY`.
 3. `python manage.py migrate && python manage.py collectstatic`.
@@ -121,11 +127,26 @@ O procedimento completo está em [docs/CONFORMIDADE.md](docs/CONFORMIDADE.md).
 ./venv/bin/python manage.py exportar_documentos_legais             # espelho em git
 ```
 
+## Contribuindo
+
+Veja [CONTRIBUTING.md](CONTRIBUTING.md). O CI é o pipeline compartilhado de
+[rigst/ci](https://github.com/rigst/ci) e precisa passar antes do merge.
+
+## Segurança
+
+Política de reporte e verificações automáticas: [SECURITY.md](SECURITY.md).
+Não abra issue pública para vulnerabilidade.
+
 ## Licença
 
-Software **proprietário** — todos os direitos reservados (ver [LICENSE](LICENSE)).
-O código não é aberto nem redistribuível; o uso do serviço é regido pelos Termos de
-Uso publicados em trilhas.stolben.com.
+[**AGPL-3.0**](LICENSE) — Copyright (C) 2026 Rodrigo Caballero Stölben.
+
+Você pode usar, estudar, modificar e redistribuir. A cláusula que caracteriza a
+AGPL: se você rodar uma versão modificada como serviço acessível pela rede, os
+usuários desse serviço têm direito ao código-fonte correspondente.
+
+O uso da instância hospedada em trilhas.stolben.com continua regido pelos Termos
+de Uso publicados lá — a licença cobre o software, não o serviço operado pelo autor.
 
 As bibliotecas de terceiros permanecem sob suas próprias licenças; o inventário está
 em [docs/LICENCAS-TERCEIROS.md](docs/LICENCAS-TERCEIROS.md), regenerável com:
