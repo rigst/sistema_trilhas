@@ -12,8 +12,14 @@ from ai import tasks as ai_tasks
 
 from .mdrender import render_md, render_subtopico
 from .models import (
-    CardSalvo, Nivel, Percurso, PerguntaDirecionadora, SessaoSugestao,
-    Subtopico, Trilha, TrilhaSugerida, VideoNivel,
+    CardSalvo,
+    Nivel,
+    Percurso,
+    SessaoSugestao,
+    Subtopico,
+    Trilha,
+    TrilhaSugerida,
+    VideoNivel,
 )
 
 
@@ -764,7 +770,7 @@ def certificado(request, pk):
 
     try:
         from weasyprint import HTML
-    except Exception:  # noqa: BLE001
+    except Exception:
         messages.info(request, 'PDF indisponível neste servidor (weasyprint). Exibindo versão web.')
         return HttpResponse(html)
 

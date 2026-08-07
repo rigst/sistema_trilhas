@@ -32,7 +32,7 @@ def _ultima_tentativa(task):
 
 def _pre_gerar_primeiro_topico(trilha):
     """Assim que a trilha é criada, já deixa pronto o 1º tópico do nível 1."""
-    from trilhas.models import Nivel, Subtopico
+    from trilhas.models import Subtopico
 
     nivel = trilha.niveis.order_by('ordem').first()
     if nivel is None:
@@ -58,7 +58,7 @@ def task_gerar_perguntas(self, trilha_id):
         trilha.status = Trilha.Status.AGUARDANDO_RESPOSTAS
         trilha.erro = ''
         trilha.save(update_fields=['status', 'erro', 'atualizada_em'])
-    except Exception as exc:  # noqa: BLE001
+    except Exception as exc:
         if _ultima_tentativa(self):
             trilha.status = Trilha.Status.ERRO
             trilha.erro = str(exc)[:2000]
@@ -81,7 +81,7 @@ def task_gerar_sumario(self, trilha_id):
         trilha.erro = ''
         trilha.save(update_fields=['status', 'erro', 'atualizada_em'])
         _pre_gerar_primeiro_topico(trilha)
-    except Exception as exc:  # noqa: BLE001
+    except Exception as exc:
         if _ultima_tentativa(self):
             trilha.status = Trilha.Status.ERRO
             trilha.erro = str(exc)[:2000]
@@ -108,7 +108,7 @@ def task_gerar_subtopico(self, subtopico_id):
         sub.gerado_em = timezone.now()
         sub.erro = ''
         sub.save(update_fields=['conteudo_md', 'status', 'gerado_em', 'erro'])
-    except Exception as exc:  # noqa: BLE001
+    except Exception as exc:
         if _ultima_tentativa(self):
             sub.status = Subtopico.Status.ERRO
             sub.erro = str(exc)[:2000]
@@ -130,7 +130,7 @@ def task_gerar_avaliacao(self, avaliacao_id):
         avaliacao.status = Avaliacao.Status.PRONTA
         avaliacao.erro = ''
         avaliacao.save(update_fields=['status', 'erro'])
-    except Exception as exc:  # noqa: BLE001
+    except Exception as exc:
         if _ultima_tentativa(self):
             avaliacao.status = Avaliacao.Status.ERRO
             avaliacao.erro = str(exc)[:2000]
@@ -152,7 +152,7 @@ def task_gerar_exercicios(self, lista_id):
         lista.status = ListaExercicios.Status.PRONTA
         lista.erro = ''
         lista.save(update_fields=['status', 'erro'])
-    except Exception as exc:  # noqa: BLE001
+    except Exception as exc:
         if _ultima_tentativa(self):
             lista.status = ListaExercicios.Status.ERRO
             lista.erro = str(exc)[:2000]
@@ -174,7 +174,7 @@ def task_gerar_percurso(self, percurso_id):
         percurso.status = Percurso.Status.PRONTO
         percurso.erro = ''
         percurso.save(update_fields=['status', 'erro'])
-    except Exception as exc:  # noqa: BLE001
+    except Exception as exc:
         if _ultima_tentativa(self):
             percurso.status = Percurso.Status.ERRO
             percurso.erro = str(exc)[:2000]
@@ -196,7 +196,7 @@ def task_gerar_sugestoes(self, sessao_id):
         sessao.status = SessaoSugestao.Status.PRONTO
         sessao.erro = ''
         sessao.save(update_fields=['status', 'erro'])
-    except Exception as exc:  # noqa: BLE001
+    except Exception as exc:
         if _ultima_tentativa(self):
             sessao.status = SessaoSugestao.Status.ERRO
             sessao.erro = str(exc)[:2000]
@@ -218,7 +218,7 @@ def task_gerar_revisao(self, revisao_id, trilha_id=None):
         revisao.status = Revisao.Status.PRONTA
         revisao.erro = ''
         revisao.save(update_fields=['status', 'erro'])
-    except Exception as exc:  # noqa: BLE001
+    except Exception as exc:
         if _ultima_tentativa(self):
             revisao.status = Revisao.Status.ERRO
             revisao.erro = str(exc)[:2000]
@@ -237,7 +237,7 @@ def task_corrigir_avaliacao(self, avaliacao_id):
         return 'avaliação inexistente'
     try:
         services.corrigir_avaliacao(avaliacao, _profile(avaliacao.nivel.trilha.user))
-    except Exception as exc:  # noqa: BLE001
+    except Exception as exc:
         if _ultima_tentativa(self):
             avaliacao.status = Avaliacao.Status.ERRO
             avaliacao.erro = str(exc)[:2000]

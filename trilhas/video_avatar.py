@@ -299,7 +299,7 @@ def _documento(recorte, escala: float, corpo: str, c: dict) -> str:
 
 
 def _svg_fundo(c: dict) -> str:
-    return f'''
+    return '''
 <circle cx="100" cy="100" r="98" fill="url(#disco-fundo)"/>
 <ellipse cx="100" cy="104" rx="82" ry="78" fill="url(#contraluz)"/>'''
 

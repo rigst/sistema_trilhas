@@ -3,7 +3,7 @@ Configurações de desenvolvimento.
 Usa SQLite e sessões em banco de dados.
 """
 
-from .base import *  # noqa: F401, F403
+from .base import *
 
 DEBUG = True
 

@@ -15,6 +15,7 @@ from django.db import connection
 from django.utils import timezone
 
 from ai import services
+
 from . import video_avatar, video_montagem, video_slides, video_tts, video_utils
 
 # Chamadas de IA simultâneas. Cada uma leva ~50s e é quase toda espera de rede:

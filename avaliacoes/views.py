@@ -11,7 +11,12 @@ from trilhas.mdrender import render_md
 from trilhas.models import Nivel, Trilha
 
 from .models import (
-    Avaliacao, Exercicio, ListaExercicios, QuestaoRevisao, Resposta, Revisao,
+    Avaliacao,
+    Exercicio,
+    ListaExercicios,
+    QuestaoRevisao,
+    Resposta,
+    Revisao,
 )
 
 _md = render_md

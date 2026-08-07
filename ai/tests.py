@@ -98,6 +98,7 @@ class QuestoesValidasTests(SimpleTestCase):
 class GerarAvaliacaoTests(TestCase):
     def setUp(self):
         from django.contrib.auth import get_user_model
+
         from avaliacoes.models import Avaliacao
         from trilhas.models import Nivel, Trilha
 

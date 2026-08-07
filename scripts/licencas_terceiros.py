@@ -168,7 +168,7 @@ def main() -> int:
         "",
         f"Gerado por `scripts/licencas_terceiros.py` em {date.today().isoformat()} "
         "a partir dos pacotes instalados no venv de produção.",
-        f"Para regenerar: `./venv/bin/python scripts/licencas_terceiros.py`.",
+        "Para regenerar: `./venv/bin/python scripts/licencas_terceiros.py`.",
         "",
         f"O código deste projeto é licenciado sob **{LICENCA_PROJETO}** (ver `LICENSE`). "
         "As bibliotecas abaixo permanecem sob suas licenças originais.",

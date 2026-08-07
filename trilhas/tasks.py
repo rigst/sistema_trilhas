@@ -14,8 +14,8 @@ from celery import shared_task
     soft_time_limit=3600, time_limit=4200, max_retries=0,
 )
 def task_gerar_video_nivel(self, video_id):
-    from .models import VideoNivel
     from . import video_pipeline
+    from .models import VideoNivel
 
     try:
         video = VideoNivel.objects.select_related(
@@ -41,7 +41,7 @@ def task_gerar_video_nivel(self, video_id):
             'status', 'progresso_pct', 'etapa', 'arquivo', 'duracao_seg',
             'fonte_gerado_em', 'erro', 'atualizado_em',
         ])
-    except Exception as exc:  # noqa: BLE001
+    except Exception as exc:
         video.status = VideoNivel.Status.ERRO
         video.etapa = ''
         video.erro = str(exc)[:2000]

@@ -11,7 +11,7 @@ import re
 
 from django.core.management.base import BaseCommand
 
-from ai.services import IAError, inserir_fotos_conteudo, _gerar_json, _model_geral
+from ai.services import IAError, _gerar_json, _model_geral, inserir_fotos_conteudo
 from trilhas.models import Subtopico
 
 SCHEMA_FOTOS = {

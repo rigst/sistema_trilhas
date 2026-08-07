@@ -4,7 +4,6 @@ from django.contrib.auth import get_user_model
 from django.test import TestCase
 from django.urls import reverse
 
-from trilhas.models import Subtopico
 from trilhas.tests import criar_trilha
 
 User = get_user_model()

@@ -4,7 +4,6 @@ from django.conf import settings
 from django.db import models
 from django.utils import timezone
 
-
 # Conectivos e palavras genéricas ignorados ao montar o monograma (sigla) da
 # trilha, para que as iniciais reflitam o assunto (não o "Trilha de…").
 CONECTIVOS_SIGLA = {

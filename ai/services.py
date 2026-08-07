@@ -1026,7 +1026,7 @@ def _catalogo_percurso(user):
 
 
 def gerar_percurso(percurso, profile=None):
-    from trilhas.models import Nivel, PassoPercurso
+    from trilhas.models import PassoPercurso
 
     catalogo, texto = _catalogo_percurso(percurso.user)
     if not catalogo:
