@@ -42,8 +42,9 @@ jobs:
       # (nenhum segredo no histórico) e as checagens do Django. O resto roda e
       # reporta enquanto o passivo é zerado — tire da lista conforme resolver.
       #
-      #   ruff       79 achados restantes + `ruff format` pendente
-      #              (152 arquivos seriam reformatados nos dois repos)
+      #   ruff       55 achados restantes; além disso `ruff format` nunca foi
+      #              rodado, e reformataria 64 arquivos — enquanto isso o job
+      #              segue vermelho mesmo com os 55 zerados
       #   bandit     19 achados; os 2 "High" são SHA1 em chave de cache,
       #              resolvidos com hashlib.sha1(..., usedforsecurity=False)
       #   pytest    projeto ainda usa `manage.py test`
