@@ -19,6 +19,12 @@ jobs:
       django-settings-module: config.settings.production
       source-paths: "accounts ai avaliacoes config legal trilhas"
 
+      # Os testes rodam em development (SQLite, Celery eager), como já era com
+      # `manage.py test`. Em production o SECURE_SSL_REDIRECT faria todo request
+      # do test client virar 301.
+      test-settings-module: config.settings.development
+      postgres: false
+
       # Valores fictícios, só para os settings de produção carregarem no CI.
       # Nenhum segredo real entra aqui — os de verdade ficam em Secrets.
       django-env: |
