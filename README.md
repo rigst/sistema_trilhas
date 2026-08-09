@@ -2,6 +2,7 @@
 
 [![CI](https://github.com/rigst/sistema_trilhas/actions/workflows/ci.yml/badge.svg)](https://github.com/rigst/sistema_trilhas/actions/workflows/ci.yml)
 [![Cobertura](https://codecov.io/gh/rigst/sistema_trilhas/branch/main/graph/badge.svg)](https://codecov.io/gh/rigst/sistema_trilhas)
+[![Quality Gate](https://sonarcloud.io/api/project_badges/measure?project=rigst_sistema_trilhas&metric=alert_status)](https://sonarcloud.io/summary/new_code?id=rigst_sistema_trilhas)
 [![Licença: AGPL v3](https://img.shields.io/badge/licen%C3%A7a-AGPL--3.0-blue.svg)](LICENSE)
 [![Python 3.12](https://img.shields.io/badge/python-3.12-blue.svg)](https://www.python.org/)
 [![Django 6](https://img.shields.io/badge/django-6.0-092E20.svg)](https://www.djangoproject.com/)
