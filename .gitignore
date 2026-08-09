@@ -14,3 +14,9 @@ celerybeat-schedule
 celerybeat-schedule.*
 celerybeat.pid
 logs/
+
+# Artefatos de cobertura (gerados pelo pytest --cov)
+.coverage
+.coverage.*
+coverage.xml
+htmlcov/
