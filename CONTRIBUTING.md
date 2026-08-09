@@ -27,24 +27,47 @@ O pipeline é o compartilhado de [rigst/ci](https://github.com/rigst/ci). Para
 rodar as mesmas checagens localmente antes de subir:
 
 ```bash
-pip install ruff mypy bandit pip-audit
-ruff check .                              # precisa passar
-ruff format --check .                     # precisa passar
-python manage.py makemigrations --check --dry-run
-bandit -r accounts ai avaliacoes config legal trilhas
-pip-audit
-mypy accounts ai avaliacoes config legal trilhas   # ainda não bloqueia
+pip install ruff mypy bandit pip-audit pytest pytest-django pytest-cov
+APPS="accounts ai avaliacoes config legal trilhas"
+
+ruff check .                              # bloqueia
+ruff format --check .                     # bloqueia
+pytest --cov --cov-report=term-missing    # bloqueia
+bandit -r $APPS --severity-level high     # bloqueia a partir de "high"
+pip-audit                                 # bloqueia
+python manage.py makemigrations --check --dry-run   # bloqueia
+python manage.py check --deploy --fail-level WARNING
+
+mypy $APPS                                # ainda não bloqueia
 ```
 
-`mypy` e `pytest` estão em `soft-fail`: rodam e reportam, mas não derrubam o
-build. O projeto ainda usa `manage.py test`; migrar os testes para `pytest` é
-uma contribuição bem-vinda.
+**Só o `mypy` está em `soft-fail`** — roda e reporta sem derrubar o build. Todo
+o resto bloqueia.
 
-Os testes atuais:
+O `bandit` imprime o relatório inteiro, mas só reprova a partir de severidade
+**alta**. Os achados médios que restam foram auditados um a um (são
+`mark_safe`/`|safe` sobre HTML já sanitizado com allowlist via `nh3`). Se você
+introduzir um achado alto, o build para.
+
+Os testes rodam com `pytest` (configuração em `pytest.ini`). A convenção de
+nomes aqui é `tests.py` e `tests_*.py`, não `test_*.py`.
 
 ```bash
-python manage.py test
+pytest                    # suíte completa
+pytest trilhas            # só um app
+pytest --cov              # com cobertura
 ```
+
+Cobertura acompanhada no [Codecov](https://codecov.io/gh/rigst/sistema_trilhas)
+e no [SonarQube Cloud](https://sonarcloud.io/summary/new_code?id=rigst_sistema_trilhas).
+
+### Uma armadilha ao escrever testes
+
+Não chame `response.close()` dentro de uma `TestCase`. Isso dispara o signal
+`request_finished`, que fecha a conexão do banco dentro do `atomic` do teste —
+e todo teste seguinte da mesma classe morre com `the connection is closed`. Em
+SQLite o sintoma não aparece, então passa despercebido até rodar no PostgreSQL.
+Para consumir um `FileResponse`, itere `response.streaming_content`.
 
 ## Estilo
 
