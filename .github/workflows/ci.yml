@@ -52,3 +52,7 @@ jobs:
       #              resolvidos com hashlib.sha1(..., usedforsecurity=False)
       #   mypy      código ainda não tipado
       soft-fail: "mypy,bandit,pip-audit"
+
+      run-sonar: true
+      sonar-project-key: rigst_sistema_trilhas
+      sonar-organization: rigst
