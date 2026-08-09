@@ -216,14 +216,25 @@
       }
 
       // Tabelas responsivas: cada célula ganha o rótulo da coluna, para o
-      // modo empilhado (fichas) do mobile.
+      // modo empilhado (fichas) do mobile. Se o markdown vier sem <thead>,
+      // usamos a primeira linha como fonte dos rótulos e seguimos com as
+      // linhas restantes.
       document.querySelectorAll(".markdown-body table").forEach((t) => {
-        const ths = Array.from(t.querySelectorAll("thead th")).map((th) => th.textContent.trim());
-        if (!ths.length) return;
-        t.querySelectorAll("tbody tr").forEach((tr) =>
+        const headLabels = Array.from(t.querySelectorAll("thead th"))
+          .map((th) => th.textContent.trim())
+          .filter(Boolean);
+        const firstBodyRow = t.querySelector("tbody tr");
+        const fallbackLabels = headLabels.length ? headLabels : Array.from(
+          (firstBodyRow || t.querySelector("tr"))?.children || []
+        ).map((cell) => cell.textContent.trim()).filter(Boolean);
+        const labels = headLabels.length ? headLabels : fallbackLabels;
+        if (!labels.length) return;
+        t.querySelectorAll("tbody tr").forEach((tr) => {
+          if (!headLabels.length && tr === firstBodyRow) return;
           Array.from(tr.children).forEach((td, i) => {
-            if (ths[i]) td.setAttribute("data-label", ths[i]);
-          }));
+            if (labels[i]) td.setAttribute("data-label", labels[i]);
+          });
+        });
       });
 
       // Visualizador de diagrama em tela cheia (aberto pelo botão ampliar).
