@@ -304,7 +304,7 @@ def paleta_da_trilha(trilha) -> dict:
     (ao contrário de hash(), que muda a cada execução) e sem campo novo no banco.
     """
     chave = str(getattr(trilha, "pk", trilha) or 0).encode()
-    indice = int(hashlib.sha1(chave).hexdigest(), 16) % len(PALETAS)
+    indice = int(hashlib.sha1(chave, usedforsecurity=False).hexdigest(), 16) % len(PALETAS)
     return PALETAS[indice]
 
 
@@ -577,7 +577,7 @@ def _camadas() -> list[tuple[str, tuple, callable]]:
 
 def _dir_cache(tam: int, c: dict) -> str:
     # A paleta entra por hash: trocar uma cor refaz a arte sozinho.
-    marca = hashlib.sha1(repr(sorted(c.items())).encode()).hexdigest()[:8]
+    marca = hashlib.sha1(repr(sorted(c.items())).encode(), usedforsecurity=False).hexdigest()[:8]
     return os.path.join(settings.MEDIA_ROOT, "cache", "avatar", f"v{VERSAO_ARTE}_{tam}_{marca}")
 
 
