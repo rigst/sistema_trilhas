@@ -69,7 +69,9 @@ IMG_RE = re.compile(
 
 def _dividir_secoes(texto):
     """Divide o markdown nas seções entre linhas `---` (fora de cerca de código)."""
-    secoes, atual, em_fence = [], [], False
+    secoes: list[list[str]] = []
+    atual: list[str] = []
+    em_fence = False
     for linha in texto.split("\n"):
         if linha.lstrip().startswith("```"):
             em_fence = not em_fence

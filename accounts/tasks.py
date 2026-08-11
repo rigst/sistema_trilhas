@@ -1,3 +1,5 @@
+from datetime import timedelta
+
 from celery import shared_task
 from django.conf import settings
 from django.contrib.auth import get_user_model
@@ -31,7 +33,7 @@ def enviar_lembretes_streak():
     from accounts.models import Profile
 
     hoje = timezone.localdate()
-    ontem = hoje - timezone.timedelta(days=1)
+    ontem = hoje - timedelta(days=1)
     alvos = (
         Profile.objects.filter(ultimo_estudo=ontem, streak_dias__gte=1, is_visitor=False)
         .exclude(user__email="")

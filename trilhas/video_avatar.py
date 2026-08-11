@@ -38,6 +38,7 @@ import subprocess
 import tempfile
 from array import array
 from collections import namedtuple
+from collections.abc import Callable
 
 from django.conf import settings
 
@@ -109,7 +110,7 @@ PALETA = {
 # determinística pelo id (ver `paleta_da_trilha`): a mesma trilha tem sempre o
 # mesmo apresentador, trilhas diferentes têm apresentadores diferentes. Só as
 # chaves listadas mudam; o resto vem de PALETA.
-PALETAS = (
+PALETAS: tuple[dict[str, str], ...] = (
     {},  # teal/violeta — a paleta base
     {  # âmbar quente, cabelo castanho
         "aro_a": "#F5B54A",
@@ -554,10 +555,10 @@ def _svg_cabeca(boca: int, olhos: str, cejas: str, c: dict) -> str:
 <circle cx="77.6" cy="134.6" r="1.6" fill="#FFFFFF" opacity=".45"/>'''
 
 
-def _camadas() -> list[tuple[str, tuple, callable]]:
+def _camadas() -> list[tuple[str, tuple[int, int, int, int], Callable[..., str]]]:
     """(nome do arquivo, recorte, função que devolve o miolo do SVG)."""
     disco = (0, 0, DISCO, DISCO)
-    itens = [
+    itens: list[tuple[str, tuple[int, int, int, int], Callable[..., str]]] = [
         ("fundo", disco, _svg_fundo),
         ("frente", disco, _svg_frente),
         ("corpo", disco, _svg_corpo),
@@ -863,7 +864,7 @@ def _mascara_disco(lado: int, tam: int, margem: int):
         [(centro - raio) * 4, (centro - raio) * 4, (centro + raio) * 4, (centro + raio) * 4],
         fill=255,
     )
-    return grande.resize((lado, lado), Image.LANCZOS)
+    return grande.resize((lado, lado), Image.Resampling.LANCZOS)
 
 
 def _compor(anim: list[Quadro], arte: dict[str, str], tam: int, destino: str) -> None:
@@ -902,7 +903,7 @@ def _compor(anim: list[Quadro], arte: dict[str, str], tam: int, destino: str) ->
         if pronto is None:
             if len(cache_giro) > 96:
                 cache_giro.clear()
-            pronto = imagem.rotate(round(angulo, 1), resample=Image.BILINEAR)
+            pronto = imagem.rotate(round(angulo, 1), resample=Image.Resampling.BILINEAR)
             cache_giro[chave] = pronto
         return pronto
 
@@ -943,6 +944,10 @@ def _compor(anim: list[Quadro], arte: dict[str, str], tam: int, destino: str) ->
         stdout=subprocess.DEVNULL,
         stderr=subprocess.PIPE,
     )
+    # Os dois pipes foram pedidos logo acima; o assert registra isso para quem
+    # lê e evita que uma mudança no Popen passe despercebida até o AttributeError
+    # em produção, no meio da montagem do vídeo.
+    assert proc.stdin is not None and proc.stderr is not None
     try:
         for q in anim:
             quadro = base.copy()

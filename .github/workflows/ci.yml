@@ -44,16 +44,17 @@ jobs:
         ANTHROPIC_API_KEY=ci-only-nao-e-uma-chave-real
         SITE_URL=https://example.com
 
-      # Estado de adoção: só o mypy ainda não bloqueia, porque o código não
-      # está tipado. Todo o resto já bloqueia.
+      # Nada em soft-fail: toda etapa bloqueia.
       #
-      # O bandit saiu do soft-fail porque o portão passou a ser por severidade:
-      # zero achados altos nos dois repos, e os médios que restam foram
-      # auditados (mark_safe sobre HTML já sanitizado com allowlist do nh3).
-      # O pip-audit saiu porque não há CVE aberta — se aparecer uma, é para
-      # travar mesmo; se virar bloqueio recorrente por CVE de dependência
-      # transitiva, devolva à lista.
-      soft-fail: "mypy"
+      # O bandit saiu porque o portão passou a ser por severidade: zero achados
+      # altos, e os médios que restam foram auditados (mark_safe sobre HTML já
+      # sanitizado com allowlist do nh3). O pip-audit saiu porque não há CVE
+      # aberta — se aparecer uma, é para travar mesmo; se virar bloqueio
+      # recorrente por CVE de dependência transitiva, devolva à lista.
+      #
+      # O mypy foi o último, depois que o plugin do django-stubs entrou no
+      # pipeline compartilhado (324 erros viraram 35) e os 35 foram resolvidos.
+      soft-fail: ""
 
       run-sonar: true
       sonar-project-key: rigst_sistema_trilhas

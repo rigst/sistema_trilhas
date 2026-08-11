@@ -52,7 +52,7 @@ def _normalizar_admonitions(texto):
 
         out.append(m.group(1))  # a linha `!!!` sempre na coluna 0
         i += 1
-        corpo = []
+        corpo: list[tuple[str, int | None]] = []
         if i < len(linhas) and linhas[i].strip() and not linhas[i].startswith(" "):
             # Corpo sem indentação: pega o parágrafo contíguo (até linha vazia),
             # exceto se a linha já for outro marcador de bloco.

@@ -4,6 +4,7 @@ Usa PostgreSQL, Redis para cache/sessões, e configurações de segurança.
 """
 
 import os
+from pathlib import Path
 
 from .base import *
 
@@ -68,7 +69,7 @@ SECURE_CONTENT_TYPE_NOSNIFF = True
 X_FRAME_OPTIONS = "DENY"
 SECURE_PROXY_SSL_HEADER = ("HTTP_X_FORWARDED_PROTO", "https")
 
-STATIC_ROOT = os.getenv("STATIC_ROOT", str(BASE_DIR / "staticfiles"))
+STATIC_ROOT = Path(os.getenv("STATIC_ROOT") or BASE_DIR / "staticfiles")
 
 STORAGES = {
     "default": {

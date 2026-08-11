@@ -309,7 +309,10 @@ def revisao_rapida(request, nivel_pk):
         xp_ganho = profile.XP_EXERCICIO
         profile.registrar_atividade(xp_ganho)
 
-    dias = max(1, (nivel.revisao_proxima - timezone.localdate()).days)
+    # revisao_proxima é null=True: um nível que ainda não teve revisão agendada
+    # estouraria TypeError aqui. Sem data, o piso de 1 dia já é a resposta.
+    proxima = nivel.revisao_proxima
+    dias = max(1, (proxima - timezone.localdate()).days) if proxima else 1
     return JsonResponse(
         {
             "ok": True,

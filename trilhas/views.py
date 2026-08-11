@@ -1,3 +1,5 @@
+from typing import Any
+
 from django.conf import settings
 from django.contrib import messages
 from django.contrib.auth.decorators import login_required
@@ -47,14 +49,16 @@ def _questao_do_dia(nivel, hoje):
     Retorna None se o nível ainda não tem questão objetiva aproveitável."""
     from avaliacoes.models import Exercicio, Questao, QuestaoRevisao
 
-    fontes = [
+    # Any porque os três modelos não compartilham base: o que os une aqui é
+    # terem `gabarito` e `alternativas`, não uma superclasse.
+    fontes: list[Any] = [
         Exercicio.objects.filter(lista__nivel=nivel),
         QuestaoRevisao.objects.filter(nivel=nivel),
         Questao.objects.filter(avaliacao__nivel=nivel),
     ]
-    for qs in fontes:
-        qs = list(qs.exclude(gabarito="").order_by("pk"))
-        candidatas = [q for q in qs if q.alternativas]
+    for fonte in fontes:
+        registros = list(fonte.exclude(gabarito="").order_by("pk"))
+        candidatas = [q for q in registros if q.alternativas]
         if not candidatas:
             continue
         q = candidatas[(hoje.toordinal() * 31 + nivel.pk) % len(candidatas)]
@@ -761,7 +765,7 @@ def salvos(request):
     # Agrupa por trilha (mais recente primeiro dentro do grupo, já pela ordering).
     from collections import OrderedDict
 
-    grupos = OrderedDict()
+    grupos: OrderedDict[Any, list[Any]] = OrderedDict()
     for c in cards:
         grupos.setdefault(c.subtopico.nivel.trilha, []).append(c)
     return render(

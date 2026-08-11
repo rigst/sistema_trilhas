@@ -5,6 +5,8 @@ recusa acontecer no servidor, e `initial=False` garante que ele nunca chegue
 pré-marcado. Nenhum template deve escrever `checked` por conta própria.
 """
 
+from typing import TYPE_CHECKING
+
 from django import forms
 from django.urls import reverse
 from django.utils.functional import lazy
@@ -46,6 +48,10 @@ class AceiteLegalMixin:
     só são coletados de bases que já são formulários, então um mixin declarativo
     seria silenciosamente ignorado ao ser combinado com um ModelForm.
     """
+
+    if TYPE_CHECKING:
+        # Quem traz `fields` é o formulário ao lado do qual o mixin entra.
+        fields: dict[str, forms.Field]
 
     campo_aceite = "aceite_legal"
 

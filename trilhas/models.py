@@ -1,4 +1,5 @@
 import re
+from datetime import timedelta
 
 from django.conf import settings
 from django.db import models
@@ -141,7 +142,7 @@ class Trilha(models.Model):
             return False
         from django.utils import timezone
 
-        limite = timezone.timedelta(hours=self.JANELA_REEMBOLSO_HORAS)
+        limite = timedelta(hours=self.JANELA_REEMBOLSO_HORAS)
         return (timezone.now() - self.criada_em) <= limite
 
     # -- Progresso / gamificação ----------------------------------------
@@ -354,7 +355,7 @@ class Nivel(models.Model):
         self.revisao_intervalo = 1
         self.revisao_repeticoes = 0
         self.revisao_ultima = None
-        self.revisao_proxima = timezone.localdate() + timezone.timedelta(days=1)
+        self.revisao_proxima = timezone.localdate() + timedelta(days=1)
         self.save(
             update_fields=[
                 "revisao_ef",
@@ -387,7 +388,7 @@ class Nivel(models.Model):
         ef = (self.revisao_ef or 2.5) + (0.1 - (5 - q) * (0.08 + (5 - q) * 0.02))
         self.revisao_ef = max(1.3, round(ef, 3))
         self.revisao_ultima = hoje
-        self.revisao_proxima = hoje + timezone.timedelta(days=self.revisao_intervalo)
+        self.revisao_proxima = hoje + timedelta(days=self.revisao_intervalo)
         self.save(
             update_fields=[
                 "revisao_ef",

@@ -1,3 +1,5 @@
+from datetime import timedelta
+
 from django.conf import settings
 from django.db import models
 from django.utils import timezone
@@ -171,7 +173,7 @@ class Profile(models.Model):
 
             if p.ultimo_estudo == hoje:
                 pass
-            elif p.ultimo_estudo == hoje - timezone.timedelta(days=1):
+            elif p.ultimo_estudo == hoje - timedelta(days=1):
                 p.streak_dias += 1
             else:
                 p.streak_dias = 1
@@ -292,10 +294,10 @@ class Profile(models.Model):
         if not self.is_visitor:
             return
         horas = getattr(settings, "VISITOR_EXPIRY_HOURS", 48)
-        novo = timezone.now() + timezone.timedelta(hours=horas)
+        novo = timezone.now() + timedelta(hours=horas)
         # Evita um UPDATE por request: só grava se a janela avançou >30 min
         # (o middleware chama isto a cada acesso do visitante).
-        if self.expires_at and (novo - self.expires_at) < timezone.timedelta(minutes=30):
+        if self.expires_at and (novo - self.expires_at) < timedelta(minutes=30):
             return
         self.expires_at = novo
         self.save(update_fields=["expires_at", "atualizado_em"])

@@ -5,6 +5,7 @@ Compartilhadas entre development e production.
 
 import os
 from pathlib import Path
+from typing import Any
 
 from celery.schedules import crontab
 from dotenv import load_dotenv
@@ -261,7 +262,7 @@ VIDEO_AVATAR = os.getenv("VIDEO_AVATAR", "True") == "True"
 VIDEO_AVATAR_TAMANHO = int(os.getenv("VIDEO_AVATAR_TAMANHO", "200"))
 # Cores do personagem: dict com as chaves de trilhas.video_avatar.PALETA que
 # você quiser trocar (o resto fica no padrão). Mudar aqui refaz a arte sozinho.
-VIDEO_AVATAR_PALETA = {}
+VIDEO_AVATAR_PALETA: dict[str, str] = {}
 # Trechos do vídeo codificados ao mesmo tempo (mascote e clipes do ffmpeg).
 # 0 = decide pelo número de núcleos da máquina; suba só se sobrar CPU, porque a
 # mesma máquina serve o site.
@@ -308,7 +309,7 @@ LEGAL_REDIRECT_URL = "dashboard"
 # Para onde a tela de aceite de visitante posta. A criação do visitante tem
 # rota própria e não precisa de campos extras.
 LEGAL_VISITOR_ACTION = "accounts:entrar_visitante"
-LEGAL_VISITOR_EXTRA = {}
+LEGAL_VISITOR_EXTRA: dict[str, Any] = {}
 
 # Rotas do PWA que o middleware de re-aceite não pode interceptar: um 302 para
 # a tela de aceite seria cacheado pelo service worker.

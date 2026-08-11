@@ -6,6 +6,7 @@ um com o algoritmo SM-2 (implementado em Nivel.registrar_revisao).
 """
 
 from collections import defaultdict
+from typing import Any
 
 from trilhas.models import Nivel
 
@@ -26,7 +27,8 @@ def _qualidade(fracao_acertos):
 
 def aplicar_sm2(revisao):
     """Reagenda a revisão espaçada de cada nível avaliado nesta revisão."""
-    por_nivel = defaultdict(lambda: [0, 0])  # nivel -> [acertos, total]
+    # nivel -> [acertos, total]
+    por_nivel: defaultdict[Any, list[int]] = defaultdict(lambda: [0, 0])
     for q in revisao.questoes.select_related("nivel").all():
         if q.nivel_id is None or q.respondido_em is None:
             continue

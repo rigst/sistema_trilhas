@@ -277,7 +277,7 @@ def inserir_fotos_conteudo(texto: str, contexto: str = "", profile=None) -> str:
     (diretriz da Pexels)."""
     if not texto or "{{" not in texto:
         return texto
-    usadas = set()
+    usadas: set[str] = set()
     itens = []
     for m in _FOTO_MARCADOR_RE.finditer(texto):
         query = m.group(1).strip()
