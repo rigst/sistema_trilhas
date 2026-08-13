@@ -6,6 +6,7 @@ MEDIA_ROOT/videos, atualizando o progresso.
 """
 
 import os
+import re
 import shutil
 import tempfile
 import uuid
@@ -52,6 +53,9 @@ MUSICAS = {
 
 # Categoria da trilha (texto livre da IA) → clima da trilha sonora. Primeira
 # palavra-chave que casar vence; sem match cai no clima 'ambiente' (neutro).
+# As chaves são PREFIXOS DE PALAVRA, casadas com \b: como substring, "ti"
+# (de TI) casava dentro de "matemática", "estatística" e "linguística", e essas
+# categorias iam parar na trilha sonora corporativa.
 _CATEGORIA_CLIMA = [
     (
         ("tecnolog", "program", "dados", "comput", "engenhar", "rede", "software", "ti"),
@@ -80,7 +84,7 @@ def _musica_para(trilha):
     cat = (getattr(trilha, "categoria", "") or "").lower()
     clima = "ambiente"
     for chaves, c in _CATEGORIA_CLIMA:
-        if any(k in cat for k in chaves):
+        if any(re.search(rf"\b{re.escape(k)}", cat) for k in chaves):
             clima = c
             break
     nome, credito = MUSICAS[clima]
