@@ -58,8 +58,11 @@ MIDDLEWARE = [
     # VisitorExpiryMiddleware: nova versão dos termos bloqueia o uso até ser
     # aceita, inclusive para visitantes.
     "legal.middleware.AceiteObrigatorioMiddleware",
-    "accounts.middleware.VisitorExpiryMiddleware",
     "django.contrib.messages.middleware.MessageMiddleware",
+    # Depois do MessageMiddleware: ao expirar a sessão do visitante ele grava um
+    # aviso com messages, e antes daqui request._messages ainda não existe — a
+    # expiração estourava MessageFailure (500) em vez de redirecionar ao login.
+    "accounts.middleware.VisitorExpiryMiddleware",
     "django.middleware.clickjacking.XFrameOptionsMiddleware",
 ]
 
