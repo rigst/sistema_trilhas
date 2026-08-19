@@ -197,7 +197,7 @@ class Trilha(models.Model):
         Sempre condiz com o assunto, ao contrário de um emoji genérico."""
         base = (self.titulo or self.tema_livre or "").strip()
         # Palavras sem pontuação nas bordas (ex.: "Estudos:" -> "Estudos").
-        palavras = [w for w in (re.sub(r"^\W+|\W+$", "", p) for p in base.split()) if w]
+        palavras = [w for w in (re.sub(r"(?:^\W+)|(?:\W+$)", "", p) for p in base.split()) if w]
         signif = [p for p in palavras if p.lower() not in CONECTIVOS_SIGLA] or palavras
         if len(signif) >= 2:
             return (signif[0][:1] + signif[1][:1]).upper()

@@ -26,7 +26,7 @@ from pathlib import Path
 # --------------------------------------------------------------------------
 
 PROJETO = "Trilhas de Estudo com IA"
-LICENCA_PROJETO = "licença proprietária"
+LICENCA_PROJETO = "AGPL-3.0"
 
 # Programas chamados por subprocess (não linkados ao código do projeto).
 # Formato: (nome, versão, licença, observação)
