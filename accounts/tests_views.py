@@ -1,5 +1,6 @@
 """Testes das views de conta, do middleware de visitante e do contexto global."""
 
+from typing import ClassVar
 from unittest import mock
 
 from django.contrib.auth import get_user_model
@@ -124,7 +125,7 @@ class CadastroTests(TestCase):
         cache.clear()
         documento_vigente()
 
-    DADOS = {
+    DADOS: ClassVar[dict[str, str]] = {
         "username": "novo",
         "email": "Novo@Exemplo.com",
         "password1": "senha-bem-longa-123",
