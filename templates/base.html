@@ -49,15 +49,6 @@
     </header>
 
     <main class="container">
-        {% if messages %}
-            <div class="flash-stack" role="status" aria-live="polite">
-                <ul class="flash-list">
-                    {% for message in messages %}
-                        <li class="flash-message {% if message.tags %}flash-{{ message.tags }}{% endif %}">{{ message }}</li>
-                    {% endfor %}
-                </ul>
-            </div>
-        {% endif %}
         {% block content %}{% endblock %}
     </main>
 
@@ -157,6 +148,25 @@
       </div>
     </div>
 
+    {# Avisos: cartões flutuantes no canto, como no app arq. #}
+    {% if messages %}
+    <div class="toasts" role="status" aria-live="polite" data-toasts>
+        {% for message in messages %}
+        <div class="toast toast--{{ message.level_tag|default:'info' }}">
+            <span class="toast-marca" aria-hidden="true">
+                {% if message.level_tag == 'error' %}<svg class="ic"><use href="#ic-erro"/></svg>
+                {% elif message.level_tag == 'success' %}<svg class="ic"><use href="#ic-check"/></svg>
+                {% else %}<svg class="ic"><use href="#ic-alerta"/></svg>{% endif %}
+            </span>
+            <p>{{ message }}</p>
+            <button type="button" class="toast-fechar" aria-label="Dispensar aviso">
+                <svg class="ic" aria-hidden="true"><use href="#ic-fechar"/></svg>
+            </button>
+        </div>
+        {% endfor %}
+    </div>
+    {% endif %}
+
     <footer class="site-footer">
         <div class="container footer-in">
             <div>
@@ -185,13 +195,38 @@
         block.appendChild(btn);
       });
 
-      // Flash messages saem sozinhas depois de alguns segundos.
-      document.querySelectorAll(".flash-message").forEach((msg, i) => {
-        setTimeout(() => {
-          msg.classList.add("saindo");
-          setTimeout(() => msg.remove(), 450);
-        }, 6000 + i * 400);
-      });
+      // Avisos: o X dispensa; os demais saem sozinhos — menos os de erro,
+      // que ficam até o usuário ler e fechar.
+      (() => {
+        const caixa = document.querySelector("[data-toasts]");
+        if (!caixa) return;
+        const fechar = (toast) => {
+          if (toast.classList.contains("saindo")) return;
+          toast.classList.add("saindo");
+          setTimeout(() => {
+            toast.remove();
+            if (!caixa.querySelector(".toast")) caixa.remove();
+          }, 300);
+        };
+        const armar = () => {
+          caixa.querySelectorAll(".toast").forEach((toast, i) => {
+            toast.querySelector(".toast-fechar")?.addEventListener("click", () => fechar(toast));
+            if (toast.classList.contains("toast--error")) return;
+            const relogio = setTimeout(() => fechar(toast), 6000 + i * 600);
+            // Com o ponteiro em cima, o aviso espera: quem está lendo não
+            // quer ver o texto sumir no meio da frase.
+            toast.addEventListener("mouseenter", () => clearTimeout(relogio));
+          });
+        };
+        // A festa do diamante cobre a tela até o toque: só depois dela o
+        // relógio começa, senão o aviso expira escondido atrás do overlay.
+        const fx = document.getElementById("diamante-fx");
+        if (!fx) { armar(); return; }
+        const obs = new MutationObserver(() => {
+          if (!fx.isConnected) { obs.disconnect(); armar(); }
+        });
+        obs.observe(document.body, { childList: true, subtree: true });
+      })();
 
       // Caixas "!!! quiz": a resposta fica oculta até o aluno pedir para ver.
       document.querySelectorAll(".markdown-body .admonition.quiz").forEach((box) => {

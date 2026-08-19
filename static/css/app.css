@@ -162,13 +162,40 @@ h1,h2,h3,h4{font-family:var(--disp);letter-spacing:-.01em;line-height:1.15}
 .btn-block{width:100%}
 .btn:disabled{opacity:.55;cursor:not-allowed;transform:none;filter:none}
 
-/* ---- flash ------------------------------------------------------------- */
-.flash-stack{margin:20px 0 0}
-.flash-list{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:.5rem}
-.flash-message{padding:.75rem 1rem;border-radius:11px;font-size:.92rem;border:1px solid var(--line-2);background:var(--panel)}
-.flash-success{border-color:var(--ok-line);background:var(--ok-bg);color:var(--ok-ink)}
-.flash-error{border-color:var(--err-line);background:var(--err-bg);color:var(--err-ink)}
-.flash-info{border-color:var(--info-line);background:var(--info-bg);color:var(--info-ink)}
+/* ---- avisos (toasts) --------------------------------------------------- */
+/* Cartão no canto inferior, como no app arq: entra deslizando, some sozinho
+   e sobe acima do FAB de leitura, que mora no mesmo canto. */
+.toasts{position:fixed;right:1.25rem;bottom:5.25rem;z-index:110;
+  display:flex;flex-direction:column-reverse;gap:.6rem;
+  width:min(23rem,calc(100vw - 2.5rem));pointer-events:none}
+.toast{pointer-events:auto;display:grid;grid-template-columns:auto minmax(0,1fr) auto;
+  gap:.8rem;align-items:center;padding:.85rem .9rem;
+  border:1px solid var(--line-2);border-radius:var(--radius-sm);
+  background:color-mix(in srgb,var(--panel) 82%,transparent);
+  -webkit-backdrop-filter:blur(18px) saturate(150%);backdrop-filter:blur(18px) saturate(150%);
+  box-shadow:var(--shadow);animation:toast-entra .32s cubic-bezier(.2,.7,.3,1) both}
+.toast.saindo{animation:toast-sai .26s ease both}
+.toast p{margin:0;font-size:.9rem;line-height:1.35;color:var(--text)}
+/* Marca em cor cheia com glifo branco: os tons são fixos porque precisam
+   segurar o contraste do branco nos quatro temas de leitura. */
+.toast-marca{--marca:#0E9F63;display:inline-flex;align-items:center;justify-content:center;
+  width:1.7rem;height:1.7rem;flex:none;border-radius:50%;background:var(--marca);color:#fff}
+.toast-marca .ic{width:1rem;height:1rem}
+.toast--error .toast-marca{--marca:#C63C3C}
+.toast--warning .toast-marca{--marca:#A8760E}
+.toast--info .toast-marca,.toast--debug .toast-marca{--marca:#0E7490}
+.toast-fechar{display:inline-flex;align-items:center;justify-content:center;
+  width:1.7rem;height:1.7rem;flex:none;padding:0;border:0;border-radius:8px;
+  background:transparent;color:var(--muted);cursor:pointer;transition:.15s}
+.toast-fechar .ic{width:.9rem;height:.9rem}
+.toast-fechar:hover{background:var(--panel-2);color:var(--text)}
+.toast-fechar:focus-visible{outline:2px solid var(--teal);outline-offset:2px;color:var(--text)}
+@keyframes toast-entra{from{opacity:0;transform:translateY(.8rem) scale(.98)}to{opacity:1;transform:none}}
+@keyframes toast-sai{from{opacity:1;transform:none}to{opacity:0;transform:translateX(1rem)}}
+@supports not ((backdrop-filter:blur(1px)) or (-webkit-backdrop-filter:blur(1px))){
+  .toast{background:var(--panel)}
+}
+@media (max-width:40rem){.toasts{right:.75rem;left:.75rem;bottom:5rem;width:auto}}
 
 /* ---- forms ------------------------------------------------------------- */
 .field{display:flex;flex-direction:column;gap:.4rem;margin-bottom:1.1rem}
@@ -1158,10 +1185,6 @@ input:focus,textarea:focus,select:focus{box-shadow:0 0 0 3px var(--teal-glow)}
 .trilha-card:hover .tc-title{color:var(--teal)}
 .trilha-card .tc-frac{transition:color .2s}
 .trilha-card:hover .tc-frac{color:var(--teal)}
-
-/* Flash messages: entram deslizando e saem sozinhas (JS no base). */
-.flash-message{animation:rise .35s cubic-bezier(.2,.7,.3,1) both}
-.flash-message.saindo{opacity:0;transform:translateY(-8px);transition:.4s}
 
 /* Barra de XP com brilho vivo (sensação de progresso contínuo). */
 .xp-bar{position:relative}
