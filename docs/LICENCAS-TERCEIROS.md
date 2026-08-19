@@ -1,29 +1,30 @@
 # Licenças de terceiros — Trilhas de Estudo com IA
 
-Gerado por `scripts/licencas_terceiros.py` em 2026-07-29 a partir dos pacotes instalados no venv de produção.
+Gerado por `scripts/licencas_terceiros.py` em 2026-08-19 a partir dos pacotes instalados no venv de produção.
 Para regenerar: `./venv/bin/python scripts/licencas_terceiros.py`.
 
-O código deste projeto é licenciado sob **licença proprietária** (ver `LICENSE`). As bibliotecas abaixo permanecem sob suas licenças originais.
+O código deste projeto é licenciado sob **AGPL-3.0** (ver `LICENSE`). As bibliotecas abaixo permanecem sob suas licenças originais.
 
 ## Dependências diretas
 
 | Pacote | Versão | Licença |
 |---|---|---|
-| anthropic | 0.116.0 | MIT License |
+| anthropic | 0.121.0 | MIT License |
 | celery | 5.6.3 | BSD-3-Clause |
-| Django | 6.0.6 | BSD-3-Clause |
+| Django | 6.0.8 | BSD-3-Clause |
 | django-redis | 6.0.0 | BSD License |
-| django-unfold | 0.101.0 | MIT |
+| django-unfold | 0.104.0 | MIT |
 | edge-tts | 7.2.8 | GNU Lesser General Public License v3 (LGPLv3) |
 | gunicorn | 26.0.0 | MIT |
-| Markdown | 3.10.2 | BSD-3-Clause |
+| Markdown | 3.10.3 | BSD-3-Clause |
 | nh3 | 0.3.6 | MIT |
-| playwright | 1.61.0 | Apache-2.0 |
+| pillow | 12.3.0 | MIT-CMU |
+| playwright | 1.62.0 | Apache-2.0 |
 | psycopg2-binary | 2.9.12 | GNU Library or Lesser General Public License (LGPL) |
 | Pygments | 2.20.0 | BSD-2-Clause |
 | python-dotenv | 1.2.2 | BSD-3-Clause |
-| redis | 8.0.1 | MIT |
-| sentry-sdk | 2.64.0 | MIT |
+| redis | 8.1.0 | MIT |
+| sentry-sdk | 2.67.1 | MIT |
 | weasyprint | 69.0 | BSD License |
 
 ## Dependências transitivas
@@ -34,33 +35,38 @@ O código deste projeto é licenciado sob **licença proprietária** (ver `LICEN
 | aiohttp | 3.14.3 | Apache-2.0 AND MIT |
 | aiosignal | 1.4.0 | Apache Software License |
 | amqp | 5.3.1 | BSD License |
-| annotated-types | 0.7.0 | MIT License |
-| anyio | 4.14.1 | MIT |
-| asgiref | 3.11.1 | BSD License |
+| annotated-types | 0.8.0 | MIT |
+| anyio | 4.14.2 | MIT |
+| asgiref | 3.12.1 | BSD License |
+| ast_serialize | 0.8.0 | MIT |
 | attrs | 26.1.0 | MIT |
 | billiard | 4.2.4 | BSD License |
 | brotli | 1.2.0 | MIT |
-| certifi | 2026.6.17 | Mozilla Public License 2.0 (MPL 2.0) |
-| cffi | 2.0.0 | MIT |
+| certifi | 2026.7.22 | Mozilla Public License 2.0 (MPL 2.0) |
+| cffi | 2.1.1 | MIT-0 |
 | charset-normalizer | 3.4.9 | MIT |
 | click | 8.4.2 | BSD-3-Clause |
 | click-didyoumean | 0.3.1 | MIT License |
 | click-plugins | 1.1.1.2 | BSD License |
 | click-repl | 0.3.0 | MIT |
-| cryptography | 49.0.0 | Apache-2.0 OR BSD-3-Clause |
+| coverage | 7.15.4 | Apache-2.0 |
+| cryptography | 50.0.0 | Apache-2.0 OR BSD-3-Clause |
 | cssselect2 | 0.9.0 | BSD License |
 | distro | 1.9.0 | Apache Software License |
+| django-stubs | 6.0.9 | MIT |
+| django-stubs-ext | 6.0.9 | MIT |
 | docstring_parser | 0.18.0 | MIT License |
 | docutils | 0.23 | Public Domain / BSD License / GNU General Public License (GPL) |
 | filelock | 3.32.0 | MIT |
 | fonttools | 4.63.0 | MIT |
 | frozenlist | 1.8.0 | Apache-2.0 |
-| greenlet | 3.5.4 | MIT AND PSF-2.0 |
+| greenlet | 3.5.5 | MIT AND PSF-2.0 |
 | h11 | 0.16.0 | MIT License |
 | httpcore | 1.0.9 | BSD-3-Clause |
 | httpx | 0.28.1 | BSD License |
 | id | 1.6.1 | Apache Software License |
-| idna | 3.18 | BSD-3-Clause |
+| idna | 3.19 | BSD-3-Clause |
+| iniconfig | 2.3.0 | MIT |
 | jaraco.classes | 3.4.0 | MIT License |
 | jaraco.context | 6.1.2 | MIT |
 | jaraco.functools | 4.6.0 | MIT |
@@ -68,43 +74,52 @@ O código deste projeto é licenciado sob **licença proprietária** (ver `LICEN
 | jiter | 0.16.0 | MIT |
 | keyring | 25.7.0 | MIT |
 | kombu | 5.6.2 | BSD-3-Clause |
+| librt | 0.15.0 | MIT |
 | markdown-it-py | 4.2.0 | MIT License |
 | mdurl | 0.1.2 | MIT License |
 | more-itertools | 11.1.0 | MIT |
 | multidict | 6.7.1 | Apache License 2.0 |
-| packaging | 26.2 | Apache-2.0 OR BSD-2-Clause |
-| pillow | 12.3.0 | MIT-CMU |
+| mypy | 2.3.0 | MIT |
+| mypy_extensions | 1.1.0 | MIT |
+| packaging | 26.3 | Apache-2.0 OR BSD-2-Clause |
+| pathspec | 1.1.1 | Mozilla Public License 2.0 (MPL 2.0) |
+| pluggy | 1.6.0 | MIT License |
 | progress | 1.6.1 | ISC |
-| prompt_toolkit | 3.0.52 | BSD License |
+| prompt_toolkit | 3.0.53 | BSD License |
 | propcache | 0.5.2 | Apache Software License |
 | pycparser | 3.0 | BSD-3-Clause |
 | pydantic | 2.13.4 | MIT |
 | pydantic_core | 2.46.4 | MIT |
 | pydyf | 0.12.1 | BSD License |
 | pyee | 13.0.1 | MIT License |
-| pyphen | 0.17.2 | GNU General Public License v2 or later (GPLv2+) / GNU Lesser General Public License v2 or later (LGPLv2+) / Mozilla Public License 1.1 (MPL 1.1) |
+| pyphen | 0.18.1 | GNU General Public License v2 or later (GPLv2+) / GNU Lesser General Public License v2 or later (LGPLv2+) / Mozilla Public License 1.1 (MPL 1.1) |
+| pytest | 9.1.1 | MIT |
+| pytest-cov | 7.1.0 | MIT |
+| pytest-django | 4.14.0 | BSD License |
 | python-dateutil | 2.9.0.post0 | BSD License / Apache Software License |
 | readme_renderer | 45.0 | Apache-2.0 |
 | requests | 2.34.2 | Apache Software License |
 | requests-toolbelt | 1.0.0 | Apache Software License |
 | rfc3986 | 2.0.0 | Apache Software License |
 | rich | 15.0.0 | MIT License |
+| ruff | 0.16.2 | MIT |
 | SecretStorage | 3.5.0 | BSD-3-Clause |
 | six | 1.17.0 | MIT License |
 | sniffio | 1.3.1 | MIT License / Apache Software License |
-| sqlparse | 0.5.5 | BSD License |
+| sqlparse | 0.6.0 | BSD License |
 | tabulate | 0.10.0 | MIT |
 | tinycss2 | 1.5.1 | BSD License |
 | tinyhtml5 | 2.1.0 | MIT License |
 | twine | 6.2.0 | Apache-2.0 |
+| types-PyYAML | 6.0.12.20260724 | Apache-2.0 |
 | typing_extensions | 4.16.0 | PSF-2.0 |
-| typing-inspection | 0.4.2 | MIT |
-| tzdata | 2026.2 | Apache-2.0 |
+| typing-inspection | 0.4.4 | MIT |
+| tzdata | 2026.3 | Apache-2.0 |
 | tzlocal | 5.4.4 | MIT |
 | urllib3 | 2.7.0 | MIT |
 | vine | 5.1.0 | BSD License |
 | wcwidth | 0.8.2 | MIT |
-| webencodings | 0.5.1 | BSD License |
+| webencodings | 0.6.1 | BSD License |
 | yarl | 1.24.5 | Apache-2.0 |
 | zopfli | 0.4.3 | Apache Software License |
 
@@ -125,9 +140,10 @@ Listados para conferência ao redistribuir o código ou ao combinar com componen
 |---|---|---|
 | edge-tts | 7.2.8 | GNU Lesser General Public License v3 (LGPLv3) |
 | psycopg2-binary | 2.9.12 | GNU Library or Lesser General Public License (LGPL) |
-| certifi | 2026.6.17 | Mozilla Public License 2.0 (MPL 2.0) |
+| certifi | 2026.7.22 | Mozilla Public License 2.0 (MPL 2.0) |
 | docutils | 0.23 | Public Domain / BSD License / GNU General Public License (GPL) |
-| pyphen | 0.17.2 | GNU General Public License v2 or later (GPLv2+) / GNU Lesser General Public License v2 or later (LGPLv2+) / Mozilla Public License 1.1 (MPL 1.1) |
+| pathspec | 1.1.1 | Mozilla Public License 2.0 (MPL 2.0) |
+| pyphen | 0.18.1 | GNU General Public License v2 or later (GPLv2+) / GNU Lesser General Public License v2 or later (LGPLv2+) / Mozilla Public License 1.1 (MPL 1.1) |
 
 ## Notas de manutenção
 

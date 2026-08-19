@@ -13,13 +13,18 @@ o PR.
 
 ```bash
 python3 -m venv venv && source venv/bin/activate
-pip install -r requirements.txt
+pip install --require-hashes -r requirements.lock   # ou -r requirements.txt
 cp .env.example .env          # defina ANTHROPIC_API_KEY
 python manage.py migrate
 python manage.py runserver
 ```
 
 Em desenvolvimento o Celery roda em modo *eager* (síncrono), sem Redis.
+
+As dependências são **pin exato**, e o `requirements.lock` trava a árvore
+resolvida com o hash de cada artefato. Ao subir uma versão, mexa no
+`requirements.txt` e regere o lock com `.ci-shared/scripts/gerar_lock.py
+--python-version 3.12`; o job `lock` do CI acusa se os dois divergirem.
 
 ## O que o CI exige
 
@@ -29,20 +34,25 @@ rodar as mesmas checagens localmente antes de subir:
 ```bash
 pip install ruff mypy bandit pip-audit pytest pytest-django pytest-cov
 APPS="accounts ai avaliacoes config legal trilhas"
+git clone --depth 1 -b v1 https://github.com/rigst/ci .ci-shared
 
-ruff check .                              # bloqueia
-ruff format --check .                     # bloqueia
+ruff check --config .ci-shared/configs/ruff.toml .          # bloqueia
+ruff format --check --config .ci-shared/configs/ruff.toml . # bloqueia
+mypy $APPS                                # bloqueia
 pytest --cov --cov-report=term-missing    # bloqueia
 bandit -r $APPS --severity-level high     # bloqueia a partir de "high"
 pip-audit                                 # bloqueia
+python .ci-shared/scripts/conferir_lock.py          # bloqueia
 python manage.py makemigrations --check --dry-run   # bloqueia
 python manage.py check --deploy --fail-level WARNING
-
-mypy $APPS                                # ainda não bloqueia
 ```
 
-**Só o `mypy` está em `soft-fail`** — roda e reporta sem derrubar o build. Todo
-o resto bloqueia.
+**Passe o `--config` do ruff.** Sem ele o ruff usa outra configuração e acusa
+mais de cem achados que o CI não cobra — é ruído, não regressão. A baseline
+compartilhada é a autoridade sobre o que reprova.
+
+**Nada está em `soft-fail`**: as doze etapas bloqueiam. O `mypy` foi o último a
+sair da lista, depois que o plugin do `django-stubs` entrou no pipeline.
 
 O `bandit` imprime o relatório inteiro, mas só reprova a partir de severidade
 **alta**. Os achados médios que restam foram auditados um a um (são
@@ -53,10 +63,18 @@ Os testes rodam com `pytest` (configuração em `pytest.ini`). A convenção de
 nomes aqui é `tests.py` e `tests_*.py`, não `test_*.py`.
 
 ```bash
-pytest                    # suíte completa
+pytest                    # suíte completa (sem os e2e)
 pytest trilhas            # só um app
 pytest --cov              # com cobertura
+pytest -m e2e             # ponta a ponta, num Chromium de verdade
 ```
+
+Os testes marcados `e2e` (`trilhas/tests_e2e.py`) sobem um servidor com
+`live_server` e abrem o navegador, então ficam fora da suíte padrão pelo
+`-m "not e2e"` do `pytest.ini`. Para rodá-los é preciso `playwright install
+chromium`, e a variável `DJANGO_ALLOW_ASYNC_UNSAFE=1` — sem ela a combinação
+`live_server` + Playwright morre em `SynchronousOnlyOperation` na criação do
+banco de teste, num erro que não menciona nenhum dos dois.
 
 Cobertura acompanhada no [Codecov](https://codecov.io/gh/rigst/sistema_trilhas)
 e no [SonarQube Cloud](https://sonarcloud.io/summary/new_code?id=rigst_sistema_trilhas).

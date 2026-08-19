@@ -78,15 +78,25 @@ python manage.py runserver
 ```
 Em dev o Celery roda em modo *eager* (síncrono), sem precisar de Redis.
 
+As dependências são **pin exato** e o `requirements.lock` trava a árvore
+resolvida com hash de cada artefato. Ao mexer em `requirements.txt`, regere o
+lock com o script do CI central (`scripts/gerar_lock.py` de `rigst/ci`) — o job
+`lock` acusa se os dois saírem de sincronia.
+
 Testes (`pytest`, configurado em `pytest.ini`):
 ```bash
-./venv/bin/pytest                # suíte completa
+./venv/bin/pytest                # suíte completa (sem os e2e)
 ./venv/bin/pytest --cov          # com cobertura
+./venv/bin/pytest -m e2e         # ponta a ponta; exige `playwright install chromium`
 ```
+Os testes `e2e` sobem um servidor de verdade e abrem o Chromium, por isso ficam
+fora da suíte padrão via `-m "not e2e"`.
 
 ## Produção
 1. Instalar no diretório da aplicação (o deploy de referência usa
-   `/var/www/sistema_trilhas`), criar `venv`, `pip install -r requirements.txt`.
+   `/var/www/sistema_trilhas`), criar `venv` e
+   `pip install --require-hashes -r requirements.lock` — é o que reproduz
+   exatamente a árvore que o CI validou, transitivas incluídas.
 2. `.env` com `DJANGO_SETTINGS_MODULE=config.settings.production`, `SECRET_KEY`,
    `ALLOWED_HOSTS`, `DATABASE_*`, `REDIS_URL=redis://localhost:6379/3`, `ANTHROPIC_API_KEY`.
 3. `python manage.py migrate && python manage.py collectstatic`.
@@ -135,16 +145,24 @@ O procedimento completo está em [docs/CONFORMIDADE.md](docs/CONFORMIDADE.md).
 O CI é o pipeline compartilhado de [rigst/ci](https://github.com/rigst/ci) e
 precisa passar antes do merge. Todo push roda, em paralelo:
 
+As doze etapas estão ligadas e **nenhuma** está em `soft-fail`: qualquer uma
+que falhe derruba o build.
+
 | Etapa | Ferramenta | Estado |
 |---|---|---|
 | Lint e formatação | `ruff` | bloqueia |
+| Tipos | `mypy` | bloqueia |
 | Testes e cobertura | `pytest` + `pytest-cov` | bloqueia |
 | Segurança do código | `bandit` | bloqueia a partir de severidade alta |
 | Dependências | `pip-audit` | bloqueia |
 | Segredos | `gitleaks` (histórico completo) | bloqueia |
 | Django | `check --deploy` + `makemigrations --check` | bloqueia |
+| Licenças | `liccheck` + inventário `pip-licenses` | bloqueia |
+| SBOM | CycloneDX | publica artefato |
+| Lock | `requirements.lock` + `pip --require-hashes` | bloqueia |
+| Ponta a ponta | `pytest -m e2e` com Playwright | bloqueia |
+| Acessibilidade | `axe-core` sobre as telas públicas | bloqueia em impacto `serious` |
 | Agregação | SonarQube Cloud | bloqueia |
-| Tipos | `mypy` | reporta, ainda não bloqueia |
 
 Cobertura no [Codecov](https://codecov.io/gh/rigst/sistema_trilhas); bugs, code
 smells e duplicação no
