@@ -8,7 +8,7 @@ from django.urls import reverse
 
 from ai.services import _catalogo_percurso
 from avaliacoes.models import Titulo
-from trilhas.models import Nivel, Subtopico, Trilha
+from trilhas.models import Nivel, Subtopico, Trilha, sem_pontuacao_nas_bordas
 
 User = get_user_model()
 
@@ -72,6 +72,21 @@ class SiglaTests(TestCase):
 
     def test_vazio(self):
         self.assertEqual(self._sigla(""), "★")
+
+    def test_apara_bordas_sem_comer_o_meio(self):
+        """O que apara as pontas trocou de regex para laço; o contrato é este."""
+        casos = {
+            "Estudos:": "Estudos",
+            '"Cálculo"': "Cálculo",
+            "...redes...": "redes",
+            "pré-cálculo": "pré-cálculo",  # o hífen do meio fica
+            "_privado_": "_privado_",  # underscore é caractere de palavra
+            "!!!": "",
+            "": "",
+        }
+        for entrada, esperado in casos.items():
+            with self.subTest(entrada=entrada):
+                self.assertEqual(sem_pontuacao_nas_bordas(entrada), esperado)
 
 
 class LeituraLivreTests(TestCase):

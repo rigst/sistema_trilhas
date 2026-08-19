@@ -1,4 +1,3 @@
-import re
 from datetime import timedelta
 
 from django.conf import settings
@@ -47,12 +46,22 @@ CONECTIVOS_SIGLA = {
     "introducao",
 }
 
-# Pontuação nas bordas da palavra. Dois padrões em vez de `^\W+|\W+$`: a
-# alternância com âncora dos dois lados é legível ao contrário do que parece
-# (não é `^(\W+|\W+)$`), e envolvê-la em grupos só troca um aviso do Sonar
-# por outro.
-BORDA_ESQUERDA = re.compile(r"^\W+")
-BORDA_DIREITA = re.compile(r"\W+$")
+
+def sem_pontuacao_nas_bordas(palavra: str) -> str:
+    """Apara o que não for letra, dígito ou `_` das pontas ("Estudos:" -> "Estudos").
+
+    Sem regex de propósito: as três formas naturais de escrever isto
+    (`^\\W+|\\W+$`, a mesma agrupada, e `\\W+$` isolada) acendem, cada uma, uma
+    regra diferente do Sonar — precedência, grupo supérfluo e backtracking
+    super-linear. O laço é linear, não tem o que interpretar de precedência, e
+    diz o que faz.
+    """
+    inicio, fim = 0, len(palavra)
+    while inicio < fim and not (palavra[inicio].isalnum() or palavra[inicio] == "_"):
+        inicio += 1
+    while fim > inicio and not (palavra[fim - 1].isalnum() or palavra[fim - 1] == "_"):
+        fim -= 1
+    return palavra[inicio:fim]
 
 
 # Faixa do nível → patamar da medalha (metal) conquistada na trilha.
@@ -204,8 +213,7 @@ class Trilha(models.Model):
         Sempre condiz com o assunto, ao contrário de um emoji genérico."""
         base = (self.titulo or self.tema_livre or "").strip()
         # Palavras sem pontuação nas bordas (ex.: "Estudos:" -> "Estudos").
-        limpas = (BORDA_DIREITA.sub("", BORDA_ESQUERDA.sub("", p)) for p in base.split())
-        palavras = [w for w in limpas if w]
+        palavras = [w for w in (sem_pontuacao_nas_bordas(p) for p in base.split()) if w]
         signif = [p for p in palavras if p.lower() not in CONECTIVOS_SIGLA] or palavras
         if len(signif) >= 2:
             return (signif[0][:1] + signif[1][:1]).upper()
