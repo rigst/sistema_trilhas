@@ -1517,11 +1517,13 @@ html{overflow-x:clip} /* o full-bleed usa 100vw; nunca gera rolagem lateral */
 
 .registro-item { margin: 0; }
 
+/* Rótulo de 11px em caixa alta: precisa de 4.5:1, que o t500 não alcança em
+   nenhum dos quatro temas (3.8 a 4.1). Sobe um degrau na escala. */
 .registro dt {
   font-size: .6875rem;
   letter-spacing: .08em;
   text-transform: uppercase;
-  color: var(--legal-t500);
+  color: var(--legal-t700);
   margin: 0 0 .125rem;
 }
 

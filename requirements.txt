@@ -1,32 +1,41 @@
-Django>=6.0,<7.0
-celery>=5.4,<6.0
-redis>=5.0,<9.0
-python-dotenv>=1.0,<2.0
+# Pins exatos, nas versões que produção roda hoje. A faixa saiu quando o job
+# `lock` do CI entrou: ele exige `==` em toda linha, porque só assim o
+# requirements.lock (com os hashes de tudo, inclusive transitivas) pode ser
+# conferido contra este arquivo.
+#
+# Para atualizar: suba o pin aqui e regere o lock com o script do CI central —
+#   python .ci-shared/scripts/gerar_lock.py --python-version 3.12
+# O Dependabot bump a linha daqui, mas não conhece o .lock; o job `lock` é
+# quem acusa a divergência entre os dois.
+Django==6.0.8
+celery==5.6.3
+redis==8.1.0
+python-dotenv==1.2.2
 # IA (Anthropic / Claude)
-anthropic>=0.40
+anthropic==0.121.0
 # Renderização de Markdown do conteúdo dos níveis (+ destaque de sintaxe)
-markdown>=3.5
-Pygments>=2.17
+markdown==3.10.3
+Pygments==2.20.0
 # Sanitização por allowlist do HTML gerado (conteúdo vindo da IA)
-nh3>=0.2
+nh3==0.3.6
 # Certificado em PDF (fase futura) — opcional
-weasyprint>=60
+weasyprint==69.0
 # Vídeo do tópico (slideshow narrado sob demanda):
 #   - edge-tts: narração PT-BR (grátis, vozes neurais da Microsoft)
 #   - playwright: Chromium headless para renderizar os slides e a arte do mascote
 #   - Pillow: compõe os quadros do mascote apresentador (trilhas/video_avatar.py)
 # Requer também o ffmpeg no sistema e `playwright install chromium` no venv.
-edge-tts>=6.1
-playwright>=1.44
-Pillow>=10.0
+edge-tts==7.2.8
+playwright==1.62.0
+Pillow==12.3.0
 # Produção
-gunicorn>=22.0,<27.0
-psycopg2-binary>=2.9,<3.0
-django-redis>=5.4,<7.0
+gunicorn==26.0.0
+psycopg2-binary==2.9.12
+django-redis==6.0.0
 # Monitoramento de erros (ativo só com SENTRY_DSN definido)
-sentry-sdk>=2.0,<3.0
+sentry-sdk==2.67.1
 
 # Conformidade legal (app `legal`): sanitização das políticas (markdown e nh3
 # já constam acima).
 # Tema do admin.
-django-unfold>=0.101,<1.0
+django-unfold==0.104.0

@@ -59,3 +59,36 @@ jobs:
       run-sonar: true
       sonar-project-key: rigst_sistema_trilhas
       sonar-organization: rigst
+
+      # O cadastro por e-mail responde 404 enquanto SIGNUP_ENABLED for False, e
+      # é uma das telas públicas que a auditoria precisa ver. Os testes que
+      # dependem do valor usam override_settings, inclusive o do caso False,
+      # então ligar aqui não muda o veredito da suíte.
+      test-env: |
+        SIGNUP_ENABLED=True
+
+      # Inventário de licenças + SBOM: nada a configurar, o projeto passa na
+      # política padrão (AGPL-3.0 aceita permissivas e copyleft da família).
+      run-licencas: true
+      run-sbom: true
+
+      # Lock com hashes: confere requirements.lock contra o requirements.txt
+      # (que agora traz pin exato) e instala com --require-hashes. Resolvido
+      # para 3.12, a mesma versão que o servidor roda.
+      run-lock: true
+
+      # Ponta a ponta: trilhas/tests_e2e.py, sob o marcador `e2e`, que o
+      # pytest.ini tira da suíte padrão. O playwright já é dependência de
+      # runtime (renderiza os slides do vídeo).
+      run-e2e: true
+
+      # Acessibilidade: só as telas que existem sem sessão — o axe roda
+      # deslogado. Vale o padrão `serious` como limite de reprovação: as cinco
+      # páginas passam limpas hoje, então não há dívida para tolerar.
+      run-a11y: true
+      a11y-paths: |
+        /login/
+        /accounts/cadastro/
+        /termos/
+        /privacidade/
+        /offline/
