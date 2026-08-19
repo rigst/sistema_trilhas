@@ -47,6 +47,13 @@ CONECTIVOS_SIGLA = {
     "introducao",
 }
 
+# Pontuação nas bordas da palavra. Dois padrões em vez de `^\W+|\W+$`: a
+# alternância com âncora dos dois lados é legível ao contrário do que parece
+# (não é `^(\W+|\W+)$`), e envolvê-la em grupos só troca um aviso do Sonar
+# por outro.
+BORDA_ESQUERDA = re.compile(r"^\W+")
+BORDA_DIREITA = re.compile(r"\W+$")
+
 
 # Faixa do nível → patamar da medalha (metal) conquistada na trilha.
 FAIXA_TIER = {
@@ -197,7 +204,8 @@ class Trilha(models.Model):
         Sempre condiz com o assunto, ao contrário de um emoji genérico."""
         base = (self.titulo or self.tema_livre or "").strip()
         # Palavras sem pontuação nas bordas (ex.: "Estudos:" -> "Estudos").
-        palavras = [w for w in (re.sub(r"(?:^\W+)|(?:\W+$)", "", p) for p in base.split()) if w]
+        limpas = (BORDA_DIREITA.sub("", BORDA_ESQUERDA.sub("", p)) for p in base.split())
+        palavras = [w for w in limpas if w]
         signif = [p for p in palavras if p.lower() not in CONECTIVOS_SIGLA] or palavras
         if len(signif) >= 2:
             return (signif[0][:1] + signif[1][:1]).upper()
