@@ -37,8 +37,8 @@ jobs:
         DB_HOST=localhost
         DB_PORT=5432
         REDIS_URL=redis://localhost:6379/3
-        CACHE_REDIS_URL=redis://localhost:6379/3
-        SESSION_REDIS_URL=redis://localhost:6379/3
+        CACHE_REDIS_URL=redis://localhost:6379/4
+        SESSION_REDIS_URL=redis://localhost:6379/5
         CELERY_BROKER_URL=redis://localhost:6379/3
         CELERY_RESULT_BACKEND=redis://localhost:6379/3
         ANTHROPIC_API_KEY=ci-only-nao-e-uma-chave-real
