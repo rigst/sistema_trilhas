@@ -139,6 +139,10 @@ retenção de até 30 dias do lado dela.
 Os registros de acesso do nginx são mantidos por **6 meses**, como exige o art. 15 do
 Marco Civil (`deploy/logrotate/stolben-acesso` e `deploy/nginx_acesso.py`).
 
+As conversas do chat de dúvidas são apagadas **90 dias** depois da última mensagem
+(`chat.tasks.purgar_conversas_antigas`, no beat), e o aluno pode apagá-las na hora pelo
+botão do painel.
+
 O procedimento completo está em [docs/CONFORMIDADE.md](docs/CONFORMIDADE.md).
 
 ```bash

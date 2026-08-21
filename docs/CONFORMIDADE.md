@@ -98,10 +98,18 @@ forjáveis.
 
 ```bash
 ./venv/bin/python manage.py migrate
-./venv/bin/python manage.py importar_documentos_legais --publicar   # só na 1ª vez
-./venv/bin/python manage.py collectstatic --noinput                 # unfold traz estáticos
-sudo systemctl restart trilhas
+./venv/bin/python manage.py importar_documentos_legais   # cria os rascunhos novos
+./venv/bin/python manage.py collectstatic --noinput      # unfold traz estáticos
+sudo systemctl restart trilhas trilhas_celery
 ```
+
+Todos com `DJANGO_SETTINGS_MODULE=config.settings.production` — sem isso o `migrate`
+acerta o sqlite de desenvolvimento e a tabela nova continua faltando no Postgres.
+O `importar_documentos_legais` cria **rascunho**; publicar é ação de admin (seção 2), que
+é onde se decide se a mudança é material. O `--publicar` serve ao seed inicial.
+
+O `trilhas_celery` entra na lista porque as tasks de IA rodam nele: worker prefork já tem
+os módulos em memória e segue respondendo com a versão antiga do código.
 
 > O `trilhas.service` (gunicorn) não define `ExecReload`, então use `restart`
 > (`reload` responde "Job type reload is not applicable").
@@ -109,7 +117,27 @@ sudo systemctl restart trilhas
 `collectstatic` precisa das variáveis de produção: o app usa
 `ManifestStaticFilesStorage`, e um estático fora do manifesto derruba a página com 500.
 
-## 5. PWA e a allowlist do middleware
+## 5. Retenção das conversas do chat de dúvidas
+
+O chat é a única entrada de texto livre do app, e a política promete prazo: conversa
+parada há mais de `CHAT_RETENCAO_DIAS` (90) é apagada. Quem cumpre é
+`chat.tasks.purgar_conversas_antigas`, agendada no `CELERY_BEAT_SCHEDULE` para as 4h30 —
+ou seja, depende do `trilhas_celery.service` estar de pé (ele roda worker **e** beat).
+
+```bash
+# Conferir que o expurgo está no beat e quanto ele apagaria agora
+./venv/bin/python manage.py shell -c "from chat.tasks import purgar_conversas_antigas; print(purgar_conversas_antigas())"
+```
+
+O aluno também apaga a conversa na hora, pelo botão no próprio painel (LGPD art. 18, no
+lugar onde o dado foi criado). E `Conversa.user` é `CASCADE`: o expurgo de visitantes
+(`accounts.tasks.cleanup_expired_visitors`, que faz `queryset.delete()` nas contas
+expiradas) leva as conversas junto, como a política diz.
+
+Nada do conteúdo das conversas vai para log: não há `LOGGING` configurado, o Sentry sobe
+com `send_default_pii=False` e o campo `Mensagem.erro` guarda só a mensagem da exceção.
+
+## 6. PWA e a allowlist do middleware
 
 `/sw.js` e `/offline/` entram em `LEGAL_ALLOWLIST_EXTRA` (`config/settings/base.py`). Sem
 isso, o service worker receberia 302 para a tela de re-aceite e o navegador cacharia o
