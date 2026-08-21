@@ -46,6 +46,38 @@
   const urlStatus = (id) => URLS.status.replace(/\/0\/status\/$/, `/${id}/status/`);
   const aoFim = () => { fluxo.scrollTop = fluxo.scrollHeight; };
 
+  /* A bolha nasce na largura máxima (88%) e o texto quebra onde couber, então
+     sobra um vão à direita das linhas curtas. Aqui ela é encaixada na maior
+     linha realmente desenhada. Só vale para a fala do aluno: é texto puro e
+     não muda depois. Encolher até a maior linha é estável — nenhuma linha
+     precisa quebrar de novo, porque todas já cabiam nessa largura. */
+  const encaixar = (el) => {
+    el.style.width = "";
+    const faixa = document.createRange();
+    faixa.selectNodeContents(el);
+    const porLinha = new Map();
+    for (const r of faixa.getClientRects()) {
+      if (!r.width) continue;
+      const linha = Math.round(r.top);
+      const atual = porLinha.get(linha);
+      porLinha.set(linha, atual ? [Math.min(atual[0], r.left), Math.max(atual[1], r.right)]
+                                : [r.left, r.right]);
+    }
+    if (porLinha.size < 2) return;  // uma linha só já está encaixada
+    const maior = Math.max(...[...porLinha.values()].map(([e, d]) => d - e));
+    const estilo = getComputedStyle(el);
+    const bordas = parseFloat(estilo.paddingLeft) + parseFloat(estilo.paddingRight);
+    el.style.width = `${Math.ceil(maior + bordas) + 1}px`;
+  };
+
+  const encaixarTodas = () => fluxo.querySelectorAll(".chat-bolha--aluno").forEach(encaixar);
+  // A resposta é lida de cima para baixo: o painel para com o começo dela à
+  // vista e não se mexe mais enquanto o texto cresce. Perseguir a última linha
+  // arrastaria o texto embaixo dos olhos de quem está lendo.
+  const aoTopoDe = (el) => {
+    fluxo.scrollTop += el.getBoundingClientRect().top - fluxo.getBoundingClientRect().top - 8;
+  };
+
   const aviso = (texto, alerta) => {
     rodape.textContent = texto || "";
     rodape.classList.toggle("alerta", !!alerta);
@@ -61,14 +93,16 @@
 
   /* ---- bolhas ---------------------------------------------------------- */
 
-  const bolha = (dados) => {
+  const bolha = (dados, rolar = "fim") => {
     const el = document.createElement("div");
     el.className = `chat-bolha chat-bolha--${dados.papel === "aluno" ? "aluno" : "ia"}`;
     el.dataset.id = dados.id;
-    pintar(el, dados);
     fluxo.appendChild(el);
+    pintar(el, dados);
     if (vazio) vazio.hidden = true;
-    aoFim();
+    if (dados.papel === "aluno") encaixar(el);
+    if (rolar === "fim") aoFim();
+    else if (rolar === "topo") aoTopoDe(el);
     return el;
   };
 
@@ -92,7 +126,6 @@
       if (falta <= 0) { relogio = null; return; }
       mostrado += Math.max(2, Math.ceil(falta / 12));
       corpo.textContent = buffer.slice(0, mostrado);
-      aoFim();
       relogio = setTimeout(passo, 30);
     };
 
@@ -132,9 +165,11 @@
     const aplicar = () => {
       el.innerHTML = dados.html || "";
       el.classList.add("markdown-body");
-      if (window.__mermaidRefresh) window.__mermaidRefresh(el);
+      // A resposta pode trazer diagrama numa página que não tinha nenhum, e aí
+      // o mermaid ainda não foi carregado — daí __carregarMermaid, não só o
+      // refresh (que sem a biblioteca deixa a caixa vazia).
+      if (window.__carregarMermaid) window.__carregarMermaid(el);
       if (window.__armarCopiar) window.__armarCopiar(el);
-      aoFim();
     };
     if (el._revelador) { el._revelador.encerrar(aplicar); el._revelador = null; } else aplicar();
   };
@@ -177,7 +212,7 @@
       const d = await r.json();
       if (!r.ok) { aviso(d.erro || "Não deu para enviar agora.", true); terminar(); return; }
       bolha(d.pergunta);
-      acompanhar(bolha(d.resposta), d.resposta.id);
+      acompanhar(bolha(d.resposta, "topo"), d.resposta.id);
     } catch (e) {
       aviso("Sem conexão com o servidor.", true);
       terminar();
@@ -282,26 +317,39 @@
       carregar();
       campo.focus();
     });
+
+    const apagar = document.createElement("button");
+    apagar.type = "button";
+    apagar.className = "chat-item-apagar";
+    apagar.title = "Apagar esta conversa";
+    apagar.innerHTML =
+      '<svg class="ic" aria-hidden="true"><use href="#ic-lixeira"/></svg>' +
+      `<span class="visually-hidden">Apagar a conversa de ${c.rotulo}</span>`;
+    apagar.addEventListener("click", async (e) => {
+      // Sem isto o clique subiria para o cartão e abriria o que se ia apagar.
+      e.stopPropagation();
+      if (!window.confirm(`Apagar a conversa de "${c.rotulo}"?`)) return;
+      const corpo = new URLSearchParams({ conversa: c.id });
+      await fetch(URLS.limpar, {
+        method: "POST",
+        headers: { "X-CSRFToken": csrf.value, "X-Requested-With": "XMLHttpRequest" },
+        body: corpo,
+      });
+      bt.remove();
+      if (!lista.querySelector(".chat-item")) carregarLista();
+      // Apagada a conversa aberta, o painel volta para a da página.
+      if (conversaId === c.id) {
+        conversaId = null;
+        contexto.textContent = tituloDaPagina();
+        fluxo.querySelectorAll(".chat-bolha").forEach((b) => b.remove());
+        if (vazio) vazio.hidden = false;
+      }
+    });
+    bt.appendChild(apagar);
     return bt;
   };
 
   btSalvas.addEventListener("click", () => verLista(lista.hasAttribute("hidden")));
-
-  document.getElementById("chat-limpar").addEventListener("click", async () => {
-    if (!fluxo.querySelector(".chat-bolha")) return;
-    if (!window.confirm("Apagar esta conversa?")) return;
-    await fetch(URLS.limpar, {
-      method: "POST",
-      headers: { "X-CSRFToken": csrf.value, "X-Requested-With": "XMLHttpRequest" },
-      body: corpoComAlvo(),
-    });
-    // Apagada a conversa aberta pela lista, o painel volta para a da página.
-    conversaId = null;
-    contexto.textContent = tituloDaPagina();
-    fluxo.querySelectorAll(".chat-bolha").forEach((b) => b.remove());
-    if (vazio) vazio.hidden = false;
-    terminar();
-  });
 
   /* ---- abrir e fechar -------------------------------------------------- */
 
@@ -313,6 +361,9 @@
       painel.classList.remove("saindo");
       painel.removeAttribute("hidden");
       if (!carregado) carregar();
+      // O mermaid só desenha nó visível: um tema trocado com o painel fechado
+      // deixaria os diagramas do histórico com as cores antigas.
+      else if (window.__mermaidRefresh) window.__mermaidRefresh(painel, true);
       campo.focus();
       return;
     }
@@ -345,6 +396,14 @@
     return TRILHA ? "Sobre esta trilha" : "Sobre o que você está estudando";
   };
   contexto.textContent = tituloDaPagina();
+
+  // O encaixe depende da largura e do corpo da fonte: os dois mudam em tempo
+  // de execução (girar o celular, o A+/A− do FAB de leitura).
+  if (window.ResizeObserver) new ResizeObserver(encaixarTodas).observe(fluxo);
+  new MutationObserver(encaixarTodas).observe(document.documentElement, {
+    attributes: true,
+    attributeFilter: ["style"],
+  });
 
   try {
     if (!localStorage.getItem("trilhas-chat-visto")) abrir.classList.add("chama");

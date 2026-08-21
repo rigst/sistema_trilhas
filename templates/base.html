@@ -371,14 +371,29 @@
           });
         }).catch(() => {});
       };
-      const diagramas = document.querySelectorAll(".mermaid");
-      if (diagramas.length) {
-        diagramas.forEach((d) => { d.dataset.src = d.textContent; });
-        const ms = document.createElement("script");
-        ms.src = "{% static 'js/mermaid.min.js' %}";
-        ms.onload = () => window.__mermaidRefresh();
-        document.body.appendChild(ms);
-      }
+      // A biblioteca é pesada: entra só quando existe diagrama para desenhar.
+      // Exposto porque conteúdo injetado depois do load (respostas do chat)
+      // também pode trazer diagrama, e aí ela ainda não está na página.
+      let promessaMermaid = null;
+      window.__carregarMermaid = (escopo) => {
+        const alvo = escopo || document;
+        const diagramas = alvo.querySelectorAll(".mermaid");
+        if (!diagramas.length) return Promise.resolve(false);
+        diagramas.forEach((d) => { if (!d.dataset.src) d.dataset.src = d.textContent; });
+        if (window.mermaid) { window.__mermaidRefresh(alvo, true); return Promise.resolve(true); }
+        if (!promessaMermaid) {
+          promessaMermaid = new Promise((ok, falha) => {
+            const ms = document.createElement("script");
+            ms.src = "{% static 'js/mermaid.min.js' %}";
+            ms.onload = ok;
+            ms.onerror = falha;
+            document.body.appendChild(ms);
+          });
+        }
+        return promessaMermaid.then(() => { window.__mermaidRefresh(alvo, true); return true; })
+                              .catch(() => false);
+      };
+      window.__carregarMermaid(document);
 
       // Duplo-clique numa alternativa: descarta (risca/acinzenta) como eliminada.
       // Telas onde o próprio clique já responde marcam [data-sem-descarte], para

@@ -830,6 +830,18 @@ a.node:not(.lock):hover .nm{color:var(--teal)}
 @keyframes chat-chama{0%,100%{box-shadow:0 0 24px var(--teal-glow),inset 0 1px 0 rgba(255,255,255,.22)}
   50%{box-shadow:0 0 34px 6px var(--teal-glow),inset 0 1px 0 rgba(255,255,255,.22)}}
 
+/* Textura do painel: a MESMA grade de pontos do fundo do app (o "mapa
+   estelar"), em escala menor. O ponto muda por tema — claro no escuro, escuro
+   no claro e no papel —, senão some ou vira sujeira. */
+.chat-panel{--chat-ponto:rgba(231,234,246,.055);--chat-brilho:rgba(45,212,191,.07)}
+:root[data-theme="claro"] .chat-panel{--chat-ponto:rgba(17,24,45,.05);--chat-brilho:rgba(14,156,136,.06)}
+:root[data-theme="papel"] .chat-panel{--chat-ponto:rgba(70,52,25,.08);--chat-brilho:rgba(12,132,116,.06)}
+:root[data-theme="preto"] .chat-panel{--chat-ponto:rgba(255,255,255,.05);--chat-brilho:rgba(45,212,191,.06)}
+.chat-fluxo,.chat-lista{
+  background-image:radial-gradient(120% 45% at 50% 0,var(--chat-brilho),transparent 70%),
+                   radial-gradient(var(--chat-ponto) 1px,transparent 1.2px);
+  background-size:auto,18px 18px}
+
 .chat-panel{position:absolute;right:0;bottom:64px;display:flex;flex-direction:column;
   width:min(24rem,calc(100vw - 2rem));height:min(70vh,34rem);
   background:var(--panel);border:1px solid var(--line-2);border-radius:var(--radius);
@@ -841,11 +853,12 @@ a.node:not(.lock):hover .nm{color:var(--teal)}
 @keyframes chat-abre{from{opacity:0;transform:translateY(14px) scale(.94)}to{opacity:1;transform:none}}
 @keyframes chat-fecha{from{opacity:1;transform:none}to{opacity:0;transform:translateY(10px) scale(.96)}}
 
-.chat-topo{display:flex;align-items:center;gap:.5rem;padding:.85rem 1rem;
+.chat-topo{display:flex;align-items:center;gap:.4rem;padding:.5rem .55rem .5rem .85rem;
   border-bottom:1px solid var(--line);background:var(--panel-2)}
 .chat-topo>div{flex:1;min-width:0}
-.chat-titulo{margin:0;font-family:var(--disp);font-weight:600;font-size:.95rem;color:var(--text)}
-.chat-sub{margin:.1rem 0 0;font-size:.75rem;color:var(--muted);
+.chat-titulo{margin:0;font-family:var(--disp);font-weight:600;font-size:.9rem;
+  line-height:1.25;color:var(--text)}
+.chat-sub{margin:0;font-size:.72rem;line-height:1.35;color:var(--muted);
   white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .chat-acao{width:2rem;height:2rem;display:grid;place-items:center;flex:none;
   background:none;border:none;border-radius:var(--radius-xs);color:var(--dim);cursor:pointer}
@@ -854,12 +867,12 @@ a.node:not(.lock):hover .nm{color:var(--teal)}
 .chat-acao .ic{width:16px;height:16px}
 
 .chat-fluxo{flex:1;overflow-y:auto;overscroll-behavior:contain;
-  padding:1rem;display:flex;flex-direction:column;gap:.75rem}
+  padding:.8rem .75rem;display:flex;flex-direction:column;gap:.6rem}
 .chat-fluxo[hidden]{display:none} /* display próprio não pode vencer o hidden */
 .chat-vazio{margin:auto 0;font-size:.85rem;line-height:1.5;color:var(--muted);text-align:center}
 
 .chat-bolha{max-width:88%;padding:.6rem .8rem;border-radius:var(--radius-sm);
-  font-size:.88rem;line-height:1.55;word-wrap:break-word;overflow-wrap:anywhere;
+  font-size:.88rem;line-height:1.55;overflow-wrap:break-word;text-wrap:wrap;
   animation:bolha-entra .32s cubic-bezier(.2,.7,.3,1) both}
 /* Cada uma entra do seu lado: a do aluno pela direita, a da IA pela esquerda. */
 @keyframes bolha-entra{from{opacity:0;transform:translateY(10px) scale(.97)}to{opacity:1;transform:none}}
@@ -879,10 +892,20 @@ a.node:not(.lock):hover .nm{color:var(--teal)}
 .chat-bolha p{margin:0 0 .5rem}
 .chat-bolha p:last-child{margin-bottom:0}
 .chat-bolha ul,.chat-bolha ol{margin:.3rem 0 .5rem;padding-left:1.2rem}
-.chat-bolha pre{margin:.5rem 0;padding:.6rem;border-radius:var(--radius-xs);
-  background:var(--bg);overflow-x:auto;font-size:.82rem}
-.chat-bolha code{font-family:var(--mono);font-size:.85em}
-.chat-bolha table{width:100%;font-size:.8rem}
+.chat-bolha pre{margin:.5rem 0;padding:.55rem;border-radius:var(--radius-xs);
+  background:var(--bg);font-size:.8rem;line-height:1.5;
+  white-space:pre-wrap;overflow-wrap:anywhere;overflow-x:hidden}
+.chat-bolha code{font-family:var(--mono);font-size:.85em;overflow-wrap:anywhere}
+.chat-bolha .codehilite{max-width:100%;overflow:hidden}
+.chat-bolha .codehilite pre{margin:0}
+/* A quebra some a indentação de código; a marca à esquerda diz onde a linha
+   continua sem precisar de régua. */
+.chat-bolha pre{border-left:2px solid var(--line-2)}
+.chat-bolha table{width:100%;table-layout:fixed;font-size:.78rem}
+.chat-bolha th,.chat-bolha td{overflow-wrap:anywhere;padding:.25rem .35rem}
+.chat-bolha .mermaid{max-width:100%;overflow:hidden;margin:.4rem 0}
+.chat-bolha .mermaid svg{max-width:100%;height:auto}
+.chat-bolha img{max-width:100%;height:auto}
 .chat-digitando{display:inline-flex;gap:.25rem;vertical-align:middle}
 .chat-digitando i{width:.32rem;height:.32rem;border-radius:50%;background:var(--dim);
   animation:chat-pulso 1.1s infinite}
@@ -906,7 +929,20 @@ a.node:not(.lock):hover .nm{color:var(--teal)}
 .chat-item:nth-child(n+6){animation-delay:.2s}
 .chat-item:focus-visible{outline:2px solid var(--teal);outline-offset:2px}
 .chat-item.atual{border-color:var(--teal);background:var(--panel-2)}
-.chat-item-topo{display:flex;align-items:baseline;gap:.5rem}
+.chat-item{position:relative}
+.chat-item-topo{display:flex;align-items:baseline;gap:.5rem;padding-right:1.4rem}
+/* A lixeira mora dentro do cartão, mas é um botão à parte: apagar não pode ser
+   o alvo de quem só queria abrir a conversa. */
+.chat-item-apagar{position:absolute;top:.35rem;right:.35rem;
+  width:1.7rem;height:1.7rem;display:grid;place-items:center;
+  background:none;border:none;border-radius:var(--radius-xs);
+  color:var(--dim);cursor:pointer;opacity:0;transition:.15s}
+.chat-item:hover .chat-item-apagar,.chat-item-apagar:focus-visible{opacity:1}
+.chat-item-apagar:hover{color:var(--red);background:var(--glass-a)}
+.chat-item-apagar:focus-visible{outline:2px solid var(--teal);outline-offset:1px}
+.chat-item-apagar .ic{width:15px;height:15px}
+/* Sem ponteiro não existe hover: no toque a lixeira fica sempre visível. */
+@media (hover:none){.chat-item-apagar{opacity:.7}}
 .chat-item-nome{flex:1;min-width:0;font-weight:600;font-size:.86rem;
   white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .chat-item-quando{flex:none;font-size:.7rem;color:var(--dim)}
@@ -916,7 +952,7 @@ a.node:not(.lock):hover .nm{color:var(--teal)}
   display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
 .chat-lista-vazia{margin:auto;padding:1rem;font-size:.85rem;color:var(--muted);text-align:center}
 
-.chat-form{display:flex;align-items:flex-end;gap:.5rem;padding:.7rem;
+.chat-form{display:flex;align-items:flex-end;gap:.45rem;padding:.55rem;
   border-top:1px solid var(--line)}
 .chat-form textarea{flex:1;max-height:7rem;padding:.55rem .7rem;font-size:.88rem;
   line-height:1.45;border-radius:var(--radius-sm);resize:none}
@@ -934,7 +970,8 @@ a.node:not(.lock):hover .nm{color:var(--teal)}
 .chat-enviar:disabled{opacity:.45;cursor:default;filter:none;transform:none;box-shadow:none}
 .chat-enviar:focus-visible{outline:2px solid var(--teal);outline-offset:2px}
 .chat-enviar .ic{width:18px;height:18px}
-.chat-rodape{margin:0;padding:0 1rem .7rem;font-size:.72rem;color:var(--dim);min-height:1rem}
+.chat-rodape{margin:0;padding:0 .85rem .5rem;font-size:.72rem;line-height:1.3;color:var(--dim)}
+.chat-rodape:empty{display:none}
 .chat-rodape.alerta{color:var(--amber)}
 
 /* Sem backdrop-filter o painel já é opaco; o fallback aqui é o do toast. */

@@ -271,7 +271,15 @@ SYSTEM_CHAT = (
     "O texto é renderizado como Markdown: use **negrito** nos termos-chave, "
     "listas curtas quando forem passos, crases para código inline e bloco cercado "
     "com a linguagem (```python) para mais de uma linha. Não use títulos (#) nem "
-    "caixas `!!!` — o espaço é estreito. Nunca escreva HTML." + ESCOPO_CHAT + DEFESA_INJECAO
+    "caixas `!!!` — o espaço é estreito. Nunca escreva HTML.\n"
+    "LARGURA: o painel tem cerca de 40 caracteres de largura e o texto quebra "
+    "sozinho. Escreva linhas de código CURTAS (até ~40 caracteres), quebrando "
+    "chamadas longas em várias linhas, e prefira tabelas de no máximo 2 colunas "
+    "com células de poucas palavras. Diagramas Mermaid só quando forem "
+    "indispensáveis para a resposta: `flowchart TD` (vertical), no máximo 4 "
+    "caixas e rótulos de até 3 palavras — na dúvida, explique em uma frase."
+    + ESCOPO_CHAT
+    + DEFESA_INJECAO
 )
 
 SYSTEM_ROTEIRO_VIDEO = (
