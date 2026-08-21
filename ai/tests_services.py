@@ -896,14 +896,22 @@ class ResponderDuvidaTests(TestCase):
         self.sub = Subtopico.objects.create(
             nivel=nivel, ordem=1, titulo="Índices", conteudo_md="Um índice evita o seq scan."
         )
-        self.conversa = Conversa.objects.create(user=self.user, subtopico=self.sub)
+        self.conversa = Conversa.objects.create(user=self.user, trilha=self.trilha)
 
     def _mensagens(self, pergunta="Por que o índice ajuda?"):
         from chat.models import Mensagem
 
-        Mensagem.objects.create(conversa=self.conversa, papel=Mensagem.Papel.ALUNO, texto=pergunta)
+        Mensagem.objects.create(
+            conversa=self.conversa,
+            subtopico=self.sub,
+            papel=Mensagem.Papel.ALUNO,
+            texto=pergunta,
+        )
         return Mensagem.objects.create(
-            conversa=self.conversa, papel=Mensagem.Papel.IA, status=Mensagem.Status.GERANDO
+            conversa=self.conversa,
+            subtopico=self.sub,
+            papel=Mensagem.Papel.IA,
+            status=Mensagem.Status.GERANDO,
         )
 
     def _responder(self, texto="Porque ele evita varrer a tabela.", pedacos=None, msg=None):
@@ -986,7 +994,10 @@ class ResponderDuvidaTests(TestCase):
         from chat.models import Mensagem
 
         sozinha = Mensagem.objects.create(
-            conversa=self.conversa, papel=Mensagem.Papel.IA, status=Mensagem.Status.GERANDO
+            conversa=self.conversa,
+            subtopico=self.sub,
+            papel=Mensagem.Papel.IA,
+            status=Mensagem.Status.GERANDO,
         )
         with self.assertRaises(IAError):
             services.responder_duvida(sozinha, self.profile)

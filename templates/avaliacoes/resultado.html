@@ -1,6 +1,8 @@
 {% extends "base.html" %}
 {% load md %}
 {% block title %}Resultado · {{ nivel.titulo }}{% endblock %}
+{# O chat é da trilha inteira: toda página dela diz qual é. #}
+{% block body_attrs %} data-trilha="{{ nivel.trilha.pk }}"{% endblock %}
 
 {% block content %}
 <section class="page narrow">

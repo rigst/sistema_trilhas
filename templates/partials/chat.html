@@ -14,6 +14,7 @@ leitura (o partial é incluído ali dentro), então herda posição e z-index.
      data-historico="{% url 'chat:historico' %}"
      data-limpar="{% url 'chat:limpar' %}"
      data-status="{% url 'chat:mensagem_status' 0 %}"
+     data-conversas="{% url 'chat:conversas' %}"
      data-max="{{ chat_max_chars }}"
      hidden>
   {% csrf_token %}
@@ -22,6 +23,11 @@ leitura (o partial é incluído ali dentro), então herda posição e z-index.
       <p class="chat-titulo">Tirar uma dúvida</p>
       <p class="chat-sub" id="chat-contexto">Sobre o que você está estudando</p>
     </div>
+    <button type="button" class="chat-acao" id="chat-salvas" aria-expanded="false"
+            aria-controls="chat-lista" title="Conversas salvas">
+      <svg class="ic" aria-hidden="true"><use href="#ic-list"/></svg>
+      <span class="visually-hidden">Ver as conversas salvas</span>
+    </button>
     <button type="button" class="chat-acao" id="chat-limpar" title="Apagar esta conversa">
       <svg class="ic" aria-hidden="true"><use href="#ic-refresh"/></svg>
       <span class="visually-hidden">Apagar esta conversa</span>
@@ -38,6 +44,8 @@ leitura (o partial é incluído ali dentro), então herda posição e z-index.
       para um assunto novo, vale criar uma trilha dele.
     </p>
   </div>
+
+  <div class="chat-lista" id="chat-lista" role="list" aria-label="Conversas salvas" hidden></div>
 
   <form class="chat-form" id="chat-form">
     <label class="visually-hidden" for="chat-pergunta">Sua dúvida</label>

@@ -95,20 +95,32 @@ class ConversaTests(TestCase):
 
     def test_uma_conversa_geral_por_aluno(self):
         Conversa.objects.create(user=self.user)
-        _conversa, criada = Conversa.objects.get_or_create(user=self.user, subtopico=None)
+        _conversa, criada = Conversa.objects.get_or_create(user=self.user, trilha=None)
 
         self.assertFalse(criada)
         self.assertEqual(Conversa.objects.filter(user=self.user).count(), 1)
 
-    def test_rotulo_diz_de_qual_topico_e_a_conversa(self):
-        from trilhas.models import Nivel, Subtopico, Trilha
+    def test_rotulo_diz_de_qual_trilha_e_a_conversa(self):
+        from trilhas.models import Trilha
 
-        trilha = Trilha.objects.create(user=self.user, tema_livre="t", titulo="T")
-        nivel = Nivel.objects.create(trilha=trilha, ordem=1, titulo="N1")
-        sub = Subtopico.objects.create(nivel=nivel, ordem=1, titulo="Índices")
+        trilha = Trilha.objects.create(user=self.user, tema_livre="t", titulo="Bancos")
 
         self.assertIn("geral", str(Conversa.objects.create(user=self.user)))
-        self.assertIn("Índices", str(Conversa.objects.create(user=self.user, subtopico=sub)))
+        self.assertIn("Bancos", str(Conversa.objects.create(user=self.user, trilha=trilha)))
+
+    def test_contexto_mostra_o_ultimo_topico_perguntado(self):
+        from trilhas.models import Nivel, Subtopico, Trilha
+
+        trilha = Trilha.objects.create(user=self.user, tema_livre="t", titulo="Bancos")
+        nivel = Nivel.objects.create(trilha=trilha, ordem=1, titulo="N1")
+        sub = Subtopico.objects.create(nivel=nivel, ordem=1, titulo="Índices")
+        conversa = Conversa.objects.create(user=self.user, trilha=trilha)
+        Mensagem.objects.create(conversa=conversa, papel=Mensagem.Papel.ALUNO, texto="a")
+        Mensagem.objects.create(
+            conversa=conversa, subtopico=sub, papel=Mensagem.Papel.ALUNO, texto="b"
+        )
+
+        self.assertEqual(conversa.contexto, "Índices")
 
     def test_rotulo_da_mensagem_mostra_o_comeco_do_texto(self):
         conversa = Conversa.objects.create(user=self.user)

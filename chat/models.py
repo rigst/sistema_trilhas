@@ -11,11 +11,13 @@ def chave_parcial(mensagem_id):
 
 
 class Conversa(models.Model):
-    """Fio de dúvidas de um aluno sobre um subtópico.
+    """Fio de dúvidas de um aluno dentro de uma trilha.
 
-    Uma conversa por (aluno, subtópico): quem volta ao tópico reencontra o que
-    perguntou ali, e o contexto mandado ao modelo casa sempre com o histórico.
-    A conversa sem subtópico (`None`) é a "geral", usada fora do leitor.
+    Uma conversa por (aluno, trilha): o fio acompanha o aluno por todos os
+    níveis e tópicos daquela trilha, então uma dúvida puxa a outra mesmo depois
+    de virar a página. Qual página estava aberta na hora fica em cada mensagem
+    (`Mensagem.subtopico`), que é o que alimenta o contexto do modelo.
+    A conversa sem trilha (`None`) é a "geral", usada fora das trilhas.
     """
 
     user = models.ForeignKey(
@@ -23,11 +25,11 @@ class Conversa(models.Model):
         on_delete=models.CASCADE,
         related_name="conversas",
     )
-    # CASCADE até o usuário e até o subtópico: o expurgo de visitantes apaga a
+    # CASCADE até o usuário e até a trilha: o expurgo de visitantes apaga a
     # conta com um `queryset.delete()`, e a política promete que os dados vão
     # junto. Nada de SET_NULL aqui, que deixaria conversa órfã para trás.
-    subtopico = models.ForeignKey(
-        "trilhas.Subtopico",
+    trilha = models.ForeignKey(
+        "trilhas.Trilha",
         on_delete=models.CASCADE,
         related_name="conversas",
         null=True,
@@ -46,20 +48,32 @@ class Conversa(models.Model):
             # conflita com NULL, então a conversa geral (subtopico=None) escapa
             # da restrição e o aluno acumularia uma por pergunta.
             models.UniqueConstraint(
-                fields=["user", "subtopico"],
-                name="conversa_unica_por_subtopico",
-                condition=models.Q(subtopico__isnull=False),
+                fields=["user", "trilha"],
+                name="conversa_unica_por_trilha",
+                condition=models.Q(trilha__isnull=False),
             ),
             models.UniqueConstraint(
                 fields=["user"],
                 name="conversa_geral_unica",
-                condition=models.Q(subtopico__isnull=True),
+                condition=models.Q(trilha__isnull=True),
             ),
         ]
 
     def __str__(self):
-        alvo = self.subtopico.titulo if self.subtopico else "geral"
-        return f"Conversa de {self.user} ({alvo})"
+        return f"Conversa de {self.user} ({self.rotulo})"
+
+    @property
+    def rotulo(self):
+        """Como a conversa aparece na lista de conversas salvas."""
+        return self.trilha.titulo if self.trilha else "Conversa geral"
+
+    @property
+    def contexto(self):
+        """De onde foi a última pergunta — a trilha é longa, o tópico situa."""
+        for mensagem in reversed(list(self.mensagens.all())):
+            if mensagem.subtopico is not None:
+                return mensagem.subtopico.titulo
+        return ""
 
 
 class Mensagem(models.Model):
@@ -76,6 +90,16 @@ class Mensagem(models.Model):
         ERRO = "erro", "Erro"
 
     conversa = models.ForeignKey(Conversa, on_delete=models.CASCADE, related_name="mensagens")
+    # Página aberta quando a pergunta foi feita: é o material que vai no
+    # contexto do modelo. SET_NULL porque apagar um tópico não pode apagar a
+    # dúvida que o aluno teve sobre ele.
+    subtopico = models.ForeignKey(
+        "trilhas.Subtopico",
+        on_delete=models.SET_NULL,
+        related_name="mensagens_chat",
+        null=True,
+        blank=True,
+    )
     papel = models.CharField(max_length=6, choices=Papel.choices)
     texto = models.TextField(blank=True)
     status = models.CharField(

@@ -40,6 +40,9 @@ INSTALLED_APPS = [
     "django.contrib.sessions",
     "django.contrib.messages",
     "django.contrib.staticfiles",
+    # Instalado pelo naturaltime() da lista de conversas do chat: sem o app, o
+    # catálogo de tradução dele não carrega e a data sai meio em inglês.
+    "django.contrib.humanize",
     # Apps do projeto
     "accounts",
     "trilhas",

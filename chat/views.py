@@ -1,16 +1,21 @@
 """Endpoints do chat de dúvidas (JSON, consumidos pelo painel flutuante)."""
 
+import re
+
 from django.conf import settings
 from django.contrib.auth.decorators import login_required
+from django.contrib.humanize.templatetags.humanize import naturaltime
 from django.core.cache import cache
 from django.http import Http404, JsonResponse
 from django.shortcuts import get_object_or_404
+from django.urls import reverse
+from django.utils.text import Truncator
 from django.views.decorators.http import require_POST
 
 from accounts.quota import bloqueio_chat
 from ai import tasks as ai_tasks
 from trilhas.mdrender import render_md
-from trilhas.models import Subtopico
+from trilhas.models import Subtopico, Trilha
 
 from .models import Conversa, Mensagem, chave_parcial
 
@@ -18,32 +23,72 @@ from .models import Conversa, Mensagem, chave_parcial
 # histórico + resposta). Serve só para barrar quem já não tem esse saldo.
 TOKENS_POR_PERGUNTA = 3000
 
+# Marcação de Markdown na prévia da lista de conversas: ali o texto é exibido
+# como texto puro, e "**Atraso** — o tempo…" fica com os asteriscos à mostra.
+_MARCACAO_MD = re.compile(r"[*_`~#>]+|\[(.*?)\]\(.*?\)")
+
+
+def _previa(texto):
+    limpo = _MARCACAO_MD.sub(lambda m: m.group(1) or "", texto).strip()
+    return Truncator(" ".join(limpo.split())).chars(90)
+
 
 def _exige_chat_ligado():
     if not getattr(settings, "CHAT_ENABLED", True):
         raise Http404("Chat desativado.")
 
 
-def _conversa_do_pedido(request, criar=False):
-    """Conversa do subtópico informado (ou a geral).
+def _param(request, nome):
+    return (request.POST.get(nome) or request.GET.get(nome) or "").strip()
 
-    O subtópico vem do cliente, então a posse é conferida no próprio filtro —
-    404 para o que não é do usuário, como no resto do app. Só o envio cria a
-    conversa: abrir o painel numa página nova não pode deixar linha vazia para
+
+def _conversa_do_pedido(request, criar=False):
+    """Conversa pedida: por id (uma salva, reaberta pela lista) ou pelo
+    subtópico da página — e, sem nenhum dos dois, a conversa geral.
+
+    Os dois vêm do cliente, então a posse é conferida no próprio filtro: 404
+    para o que não é do usuário, como no resto do app. Só o envio cria a
+    conversa; abrir o painel numa página nova não pode deixar linha vazia para
     trás em cada visita.
     """
-    bruto = (request.POST.get("subtopico") or request.GET.get("subtopico") or "").strip()
-    subtopico = None
-    if bruto.isdigit():
-        subtopico = get_object_or_404(
-            Subtopico.objects.select_related("nivel__trilha"),
-            pk=int(bruto),
-            nivel__trilha__user=request.user,
+    escolhida = _param(request, "conversa")
+    if escolhida.isdigit():
+        return get_object_or_404(
+            Conversa.objects.select_related("trilha"),
+            pk=int(escolhida),
+            user=request.user,
         )
+
+    trilha = _trilha_da_pagina(request)
     if criar:
-        conversa, _ = Conversa.objects.get_or_create(user=request.user, subtopico=subtopico)
+        conversa, _ = Conversa.objects.get_or_create(user=request.user, trilha=trilha)
         return conversa
-    return Conversa.objects.filter(user=request.user, subtopico=subtopico).first()
+    return Conversa.objects.filter(user=request.user, trilha=trilha).first()
+
+
+def _trilha_da_pagina(request):
+    """Trilha em que o aluno está, pelo id que o template põe no `body`.
+
+    Aceita também o subtópico e sobe até a trilha dele: assim uma página que
+    conhece só o tópico não precisa passar os dois.
+    """
+    bruto = _param(request, "trilha")
+    if bruto.isdigit():
+        return get_object_or_404(Trilha, pk=int(bruto), user=request.user)
+    sub = _subtopico_da_pagina(request)
+    return sub.nivel.trilha if sub else None
+
+
+def _subtopico_da_pagina(request):
+    """Página de leitura aberta, se houver — é o material que vai no contexto."""
+    bruto = _param(request, "subtopico")
+    if not bruto.isdigit():
+        return None
+    return get_object_or_404(
+        Subtopico.objects.select_related("nivel__trilha"),
+        pk=int(bruto),
+        nivel__trilha__user=request.user,
+    )
 
 
 def _payload(mensagem):
@@ -81,17 +126,25 @@ def enviar(request):
         )
 
     conversa = _conversa_do_pedido(request, criar=True)
+    # A conversa é da trilha inteira, mas cada pergunta lembra de que página
+    # saiu: é dali que sai o material mandado ao modelo.
+    aqui = _subtopico_da_pagina(request)
     feita = Mensagem.objects.create(
         conversa=conversa,
+        subtopico=aqui,
         papel=Mensagem.Papel.ALUNO,
         texto=pergunta,
         status=Mensagem.Status.PRONTA,
     )
     resposta = Mensagem.objects.create(
         conversa=conversa,
+        subtopico=aqui,
         papel=Mensagem.Papel.IA,
         status=Mensagem.Status.GERANDO,
     )
+    # Marca a atividade já no envio: se a resposta falhar, a conversa ainda
+    # sobe na lista de salvas — perguntar É atividade.
+    conversa.save(update_fields=["atualizada_em"])
     ai_tasks.task_responder_duvida.delay(resposta.pk)
     return JsonResponse({"pergunta": _payload(feita), "resposta": _payload(resposta)})
 
@@ -122,10 +175,50 @@ def historico(request):
     profile = getattr(request.user, "profile", None)
     return JsonResponse(
         {
+            "conversa": conversa.pk if conversa else None,
+            "rotulo": conversa.rotulo if conversa else "",
+            "contexto": conversa.contexto if conversa else "",
             "mensagens": [_payload(m) for m in mensagens],
             "restantes": profile.chat_tokens_restantes if profile else 0,
         }
     )
+
+
+@login_required
+def conversas(request):
+    """Conversas salvas do aluno, para reabrir e continuar.
+
+    Só as que têm alguma fala: uma conversa criada e abandonada no meio do
+    envio não é histórico, é lixo de tela.
+    """
+    _exige_chat_ligado()
+    fila = (
+        Conversa.objects.filter(user=request.user)
+        .select_related("trilha")
+        .prefetch_related("mensagens__subtopico")
+        .order_by("-atualizada_em")[:50]
+    )
+    itens = []
+    for conversa in fila:
+        falas = [m for m in conversa.mensagens.all() if m.texto]
+        if not falas:
+            continue
+        itens.append(
+            {
+                "id": conversa.pk,
+                "rotulo": conversa.rotulo,
+                "contexto": conversa.contexto,
+                "previa": _previa(falas[-1].texto),
+                "quando": naturaltime(conversa.atualizada_em),
+                "total": len(falas),
+                "url": (
+                    reverse("trilhas:detalhe", args=[conversa.trilha_id])
+                    if conversa.trilha_id
+                    else ""
+                ),
+            }
+        )
+    return JsonResponse({"conversas": itens})
 
 
 @login_required

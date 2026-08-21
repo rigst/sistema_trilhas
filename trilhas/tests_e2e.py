@@ -99,6 +99,17 @@ def test_chat_de_duvidas_abre_e_fecha(live_server, pagina):
     assert painel.evaluate("el => getComputedStyle(el.parentElement).position") == "fixed"
     expect(pagina.locator("#chat-pergunta")).to_be_focused()
 
+    # A lista de conversas salvas troca de lugar com o fluxo da conversa.
+    pagina.click("#chat-salvas")
+    expect(pagina.locator("#chat-lista")).to_be_visible()
+    expect(pagina.locator("#chat-fluxo")).to_be_hidden()
+    expect(pagina.locator(".chat-lista-vazia")).to_be_visible()
+
+    # Esc fecha a lista primeiro; só o segundo fecha o painel.
+    pagina.keyboard.press("Escape")
+    expect(pagina.locator("#chat-lista")).to_be_hidden()
+    expect(painel).to_be_visible()
+
     pagina.keyboard.press("Escape")
     expect(painel).to_be_hidden()
     expect(botao).to_have_attribute("aria-expanded", "false")

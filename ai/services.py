@@ -22,6 +22,7 @@ import json
 import os
 import random
 import re
+import time
 import urllib.parse
 import urllib.request
 import uuid
@@ -1409,10 +1410,15 @@ def limpar_marcador_escopo(texto):
     return (texto or "").lstrip().removeprefix(MARCADOR_FORA_ESCOPO).strip()
 
 
-def _contexto_chat(conversa):
-    """Bloco que vai no system: os assuntos permitidos e a página aberta."""
+def _contexto_chat(mensagem):
+    """Bloco que vai no system: os assuntos permitidos e a página aberta.
+
+    A conversa é da trilha inteira; a página vem da mensagem, porque o aluno
+    muda de tópico sem trocar de conversa.
+    """
     from trilhas.models import Trilha
 
+    conversa = mensagem.conversa
     trilhas = Trilha.objects.filter(user=conversa.user, ativa=True).order_by("titulo")
     assuntos = "\n".join(
         f"- {t.titulo}" + (f" ({t.categoria})" if t.categoria else "") for t in trilhas
@@ -1421,8 +1427,10 @@ def _contexto_chat(conversa):
         "\n\nTRILHAS DO ALUNO (os assuntos permitidos):\n"
         + (assuntos or "- (nenhuma trilha ativa ainda)")
     ]
+    if conversa.trilha_id:
+        partes.append(f'\n\nA conversa é da trilha "{conversa.trilha.titulo}".')
 
-    sub = conversa.subtopico
+    sub = mensagem.subtopico
     if sub is not None:
         limite = getattr(settings, "CHAT_CONTEXTO_MAX_CHARS", 6000)
         nivel = sub.nivel
@@ -1480,24 +1488,27 @@ def responder_duvida(mensagem, profile=None):
     model = _model_geral()
     chave = chave_parcial(mensagem.pk)
     acumulado = []
-    desde_o_ultimo_flush = 0
+    proximo_flush = 0.0
 
     with client.messages.stream(
         model=model,
         max_tokens=getattr(settings, "AI_MAX_TOKENS_CHAT", 1200),
-        system=_system_cache(prompts.SYSTEM_CHAT + _contexto_chat(mensagem.conversa)),
+        system=_system_cache(prompts.SYSTEM_CHAT + _contexto_chat(mensagem)),
         messages=turnos,
         thinking={"type": "adaptive"},
         output_config={"effort": getattr(settings, "AI_EFFORT_CHAT", "low")},
     ) as stream:
         for pedaco in stream.text_stream:
             acumulado.append(pedaco)
-            desde_o_ultimo_flush += 1
-            # Um set a cada punhado de pedaços: o polling do painel roda a cada
-            # 1,2 s, então gravar a cada token só gastaria Redis à toa.
-            if desde_o_ultimo_flush >= 20:
+            # Flush por TEMPO, não por número de pedaços: os pedaços variam de
+            # uma letra a uma frase, e contar pedaço fazia a resposta chegar ao
+            # painel em blocos irregulares. A cada 250 ms o texto que já existe
+            # está lá, e o painel (que busca a cada 600 ms) revela em ritmo
+            # constante.
+            agora = time.monotonic()
+            if agora >= proximo_flush:
                 cache.set(chave, "".join(acumulado), PARCIAL_TTL_S)
-                desde_o_ultimo_flush = 0
+                proximo_flush = agora + 0.25
         final = stream.get_final_message()
 
     _debitar(profile, final.usage, model, balde="chat")

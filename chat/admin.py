@@ -7,16 +7,25 @@ from .models import Conversa, Mensagem
 class MensagemInline(TabularInline):
     model = Mensagem
     extra = 0
-    fields = ("papel", "status", "texto", "tokens_entrada", "tokens_saida", "criada_em")
+    fields = (
+        "papel",
+        "subtopico",
+        "status",
+        "texto",
+        "tokens_entrada",
+        "tokens_saida",
+        "criada_em",
+    )
     readonly_fields = ("criada_em",)
+    raw_id_fields = ("subtopico",)
 
 
 @admin.register(Conversa)
 class ConversaAdmin(ModelAdmin):
-    list_display = ("user", "subtopico", "criada_em", "atualizada_em")
+    list_display = ("user", "trilha", "criada_em", "atualizada_em")
     list_filter = ("criada_em",)
-    search_fields = ("user__username", "subtopico__titulo")
-    raw_id_fields = ("subtopico",)
+    search_fields = ("user__username", "trilha__titulo")
+    raw_id_fields = ("trilha",)
     inlines = [MensagemInline]
 
 

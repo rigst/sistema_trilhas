@@ -1,5 +1,7 @@
 {% extends "base.html" %}
 {% block title %}{{ trilha.titulo|default:"Trilha" }} · Trilhas de Estudo{% endblock %}
+{# O chat é da trilha inteira: toda página dela diz qual é. #}
+{% block body_attrs %} data-trilha="{{ trilha.pk }}"{% endblock %}
 
 {% block content %}
 <section class="page">
