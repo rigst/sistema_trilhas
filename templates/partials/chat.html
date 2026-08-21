@@ -1,0 +1,53 @@
+{% load static %}
+{% comment %}
+Chat de dúvidas: botão na quina e painel. O botão mora na coluna do FAB de
+leitura (o partial é incluído ali dentro), então herda posição e z-index.
+{% endcomment %}
+<button class="reader-fab-btn chat-fab-btn" id="chat-abrir" type="button"
+        aria-expanded="false" aria-controls="chat-painel" title="Tirar uma dúvida">
+  <svg class="ic" aria-hidden="true"><use href="#ic-chat"/></svg>
+  <span class="visually-hidden">Abrir o chat de dúvidas</span>
+</button>
+
+<div class="chat-panel" id="chat-painel" role="dialog" aria-label="Chat de dúvidas"
+     data-enviar="{% url 'chat:enviar' %}"
+     data-historico="{% url 'chat:historico' %}"
+     data-limpar="{% url 'chat:limpar' %}"
+     data-status="{% url 'chat:mensagem_status' 0 %}"
+     data-max="{{ chat_max_chars }}"
+     hidden>
+  {% csrf_token %}
+  <header class="chat-topo">
+    <div>
+      <p class="chat-titulo">Tirar uma dúvida</p>
+      <p class="chat-sub" id="chat-contexto">Sobre o que você está estudando</p>
+    </div>
+    <button type="button" class="chat-acao" id="chat-limpar" title="Apagar esta conversa">
+      <svg class="ic" aria-hidden="true"><use href="#ic-refresh"/></svg>
+      <span class="visually-hidden">Apagar esta conversa</span>
+    </button>
+    <button type="button" class="chat-acao" id="chat-fechar" title="Fechar">
+      <svg class="ic" aria-hidden="true"><use href="#ic-fechar"/></svg>
+      <span class="visually-hidden">Fechar o chat</span>
+    </button>
+  </header>
+
+  <div class="chat-fluxo" id="chat-fluxo" role="log" aria-live="polite" aria-label="Conversa">
+    <p class="chat-vazio" id="chat-vazio">
+      Pergunte sobre o que está estudando agora. Respondo dentro das suas trilhas —
+      para um assunto novo, vale criar uma trilha dele.
+    </p>
+  </div>
+
+  <form class="chat-form" id="chat-form">
+    <label class="visually-hidden" for="chat-pergunta">Sua dúvida</label>
+    <textarea id="chat-pergunta" name="pergunta" rows="1" maxlength="{{ chat_max_chars }}"
+              placeholder="Qual é a sua dúvida?" autocomplete="off"></textarea>
+    <button type="submit" class="chat-enviar" id="chat-enviar" title="Enviar">
+      <svg class="ic" aria-hidden="true"><use href="#ic-enviar"/></svg>
+      <span class="visually-hidden">Enviar a pergunta</span>
+    </button>
+  </form>
+  <p class="chat-rodape" id="chat-rodape"></p>
+</div>
+<script src="{% static 'js/chat.js' %}" defer></script>

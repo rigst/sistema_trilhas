@@ -14,4 +14,5 @@ def criar_profile(sender, instance, created, **kwargs):
         Profile.objects.create(
             user=instance,
             quota_tokens_mes=getattr(settings, "QUOTA_TOKENS_DEFAULT", 3_000_000),
+            chat_quota_tokens_mes=getattr(settings, "QUOTA_CHAT_TOKENS_DEFAULT", 400_000),
         )

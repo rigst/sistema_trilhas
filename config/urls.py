@@ -58,6 +58,7 @@ urlpatterns = [
     path("", trilhas_views.dashboard, name="dashboard"),
     path("trilhas/", include("trilhas.urls")),
     path("avaliacoes/", include("avaliacoes.urls")),
+    path("chat/", include("chat.urls")),
 ]
 
 if settings.DEBUG:

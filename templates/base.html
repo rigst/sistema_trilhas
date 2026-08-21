@@ -24,7 +24,7 @@
     <link rel="stylesheet" href="{% static 'css/app.css' %}">
     <link rel="stylesheet" href="{% static 'css/pygments.css' %}">
 </head>
-<body class="{% block body_class %}{% endblock %}">
+<body class="{% block body_class %}{% endblock %}"{% block body_attrs %}{% endblock %}>
     {% include 'partials/icons.html' %}
     <header class="site-header">
         <div class="container">
@@ -124,6 +124,7 @@
           <p class="rp-hint">O leitor avança ao fim do tempo. Navegar manualmente reinicia a contagem.</p>
         </div>
       </div>
+      {# O chat entra por último na coluna: é ele que fica na quina. #}
       <button class="reader-fab-btn js-reader-toggle" type="button" aria-expanded="false" aria-controls="reader-panel" title="Aparência e leitura">
         <span aria-hidden="true">Aa</span><span class="visually-hidden">Ajustar aparência e tamanho do texto</span>
       </button>
@@ -146,6 +147,7 @@
           </div>
         </div>
       </div>
+      {% if user.is_authenticated and chat_habilitado %}{% include 'partials/chat.html' %}{% endif %}
     </div>
 
     {# Avisos: cartões flutuantes no canto, como no app arq. #}
@@ -181,19 +183,26 @@
 
     <script>
     (() => {
-      // Botão "copiar" nos blocos de código.
-      document.querySelectorAll(".markdown-body .codehilite").forEach((block) => {
-        if (block.querySelector(".copy-btn")) return;
-        const btn = document.createElement("button");
-        btn.type = "button"; btn.className = "copy-btn"; btn.textContent = "Copiar";
-        btn.addEventListener("click", () => {
-          const code = block.querySelector("pre")?.innerText || block.innerText;
-          navigator.clipboard.writeText(code).then(() => {
-            btn.textContent = "Copiado!"; setTimeout(() => (btn.textContent = "Copiar"), 1500);
+      // Botão "copiar" nos blocos de código. Exposto porque conteúdo injetado
+      // depois do load (respostas do chat) precisa do mesmo tratamento — e aí o
+      // escopo já É o .markdown-body, não um ancestral dele.
+      window.__armarCopiar = (escopo) => {
+        const raiz = escopo || document;
+        const alvo = raiz === document ? ".markdown-body .codehilite" : ".codehilite";
+        raiz.querySelectorAll(alvo).forEach((block) => {
+          if (block.querySelector(".copy-btn")) return;
+          const btn = document.createElement("button");
+          btn.type = "button"; btn.className = "copy-btn"; btn.textContent = "Copiar";
+          btn.addEventListener("click", () => {
+            const code = block.querySelector("pre")?.innerText || block.innerText;
+            navigator.clipboard.writeText(code).then(() => {
+              btn.textContent = "Copiado!"; setTimeout(() => (btn.textContent = "Copiar"), 1500);
+            });
           });
+          block.appendChild(btn);
         });
-        block.appendChild(btn);
-      });
+      };
+      window.__armarCopiar(document);
 
       // Avisos: o X dispensa; os demais saem sozinhos — menos os de erro,
       // que ficam até o usuário ler e fechar.

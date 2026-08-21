@@ -33,7 +33,7 @@ rodar as mesmas checagens localmente antes de subir:
 
 ```bash
 pip install ruff mypy bandit pip-audit pytest pytest-django pytest-cov
-APPS="accounts ai avaliacoes config legal trilhas"
+APPS="accounts ai avaliacoes chat config legal trilhas"
 git clone --depth 1 -b v1 https://github.com/rigst/ci .ci-shared
 
 ruff check --config .ci-shared/configs/ruff.toml .          # bloqueia

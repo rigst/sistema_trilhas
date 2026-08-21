@@ -45,6 +45,7 @@ INSTALLED_APPS = [
     "trilhas",
     "avaliacoes",
     "ai",
+    "chat",
     "legal",
 ]
 
@@ -155,6 +156,11 @@ CELERY_BEAT_SCHEDULE = {
         "task": "accounts.tasks.cleanup_expired_visitors",
         "schedule": int(os.getenv("CLEANUP_INTERVAL_MINUTES", "60")) * 60,
     },
+    # Expurgo das conversas do chat (retenção prometida na política).
+    "purgar-conversas": {
+        "task": "chat.tasks.purgar_conversas_antigas",
+        "schedule": crontab(hour=4, minute=30),
+    },
     # Lembrete diário de ofensiva (streak) — no-op até STREAK_REMINDERS_ENABLED.
     "streak-reminders": {
         "task": "accounts.tasks.enviar_lembretes_streak",
@@ -241,6 +247,36 @@ AI_PRICES = {
 # Quotas mensais (tokens) — usuário comum e visitante
 QUOTA_TOKENS_DEFAULT = int(os.getenv("QUOTA_TOKENS_DEFAULT", "3000000"))
 QUOTA_TOKENS_VISITOR = int(os.getenv("QUOTA_TOKENS_VISITOR", "300000"))
+
+# ==============================================================================
+# Chat de dúvidas (widget flutuante)
+# ==============================================================================
+
+# Desligar aqui tira o botão da tela e faz os endpoints responderem 404 — é o
+# jeito de subir o código antes da política de privacidade nova ir ao ar.
+CHAT_ENABLED = os.getenv("CHAT_ENABLED", "True").lower() in ("true", "1", "yes")
+
+# Balde de tokens PRÓPRIO, separado de QUOTA_TOKENS_*: conversar não pode
+# impedir o aluno de gerar o próximo nível. ~3k tokens por pergunta (contexto do
+# tópico + histórico + resposta), então 400k ≈ 130 perguntas no mês.
+QUOTA_CHAT_TOKENS_DEFAULT = int(os.getenv("QUOTA_CHAT_TOKENS_DEFAULT", "400000"))
+QUOTA_CHAT_TOKENS_VISITOR = int(os.getenv("QUOTA_CHAT_TOKENS_VISITOR", "40000"))
+
+# Resposta de dúvida é curta e precisa chegar rápido: teto baixo e esforço baixo.
+AI_MAX_TOKENS_CHAT = int(os.getenv("AI_MAX_TOKENS_CHAT", "1200"))
+AI_EFFORT_CHAT = os.getenv("AI_EFFORT_CHAT", "low")
+
+# Teto do texto livre: é a primeira caixa do app sem limite natural de tamanho.
+CHAT_MAX_CHARS_PERGUNTA = int(os.getenv("CHAT_MAX_CHARS_PERGUNTA", "1000"))
+# Rajada, em contador de cache com chave própria (não gasta a das gerações).
+CHAT_LIMITE_MENSAGENS = int(os.getenv("CHAT_LIMITE_MENSAGENS", "20"))
+CHAT_JANELA_S = int(os.getenv("CHAT_JANELA_S", "600"))
+# Quantas falas anteriores acompanham a pergunta (teto do custo de contexto).
+CHAT_HISTORICO_TURNOS = int(os.getenv("CHAT_HISTORICO_TURNOS", "8"))
+# O conteúdo de um subtópico chega a 32k tokens; vai truncado.
+CHAT_CONTEXTO_MAX_CHARS = int(os.getenv("CHAT_CONTEXTO_MAX_CHARS", "6000"))
+# Expurgo automático das conversas (prometido na política de privacidade).
+CHAT_RETENCAO_DIAS = int(os.getenv("CHAT_RETENCAO_DIAS", "90"))
 
 
 # ==============================================================================

@@ -21,6 +21,12 @@ class Profile(models.Model):
     quota_tokens_mes = models.BigIntegerField("quota mensal de tokens", default=0)
     quota_ref = models.DateField("mês de referência da quota", default=timezone.localdate)
 
+    # Balde separado para o chat de dúvidas: conversar não pode consumir o que
+    # o aluno guardou para gerar o próximo nível. O mês de referência é o mesmo
+    # (quota_ref), então os dois zeram juntos na virada.
+    chat_tokens_usados_mes = models.BigIntegerField("tokens do chat no mês", default=0)
+    chat_quota_tokens_mes = models.BigIntegerField("quota mensal do chat", default=0)
+
     custo_acumulado = models.DecimalField(
         "custo acumulado (USD)", max_digits=12, decimal_places=4, default=0
     )
@@ -61,8 +67,16 @@ class Profile(models.Model):
         hoje = timezone.localdate()
         if (self.quota_ref.year, self.quota_ref.month) != (hoje.year, hoje.month):
             self.tokens_usados_mes = 0
+            self.chat_tokens_usados_mes = 0
             self.quota_ref = hoje
-            self.save(update_fields=["tokens_usados_mes", "quota_ref", "atualizado_em"])
+            self.save(
+                update_fields=[
+                    "tokens_usados_mes",
+                    "chat_tokens_usados_mes",
+                    "quota_ref",
+                    "atualizado_em",
+                ]
+            )
 
     @property
     def tokens_restantes(self):
@@ -80,7 +94,29 @@ class Profile(models.Model):
         self._rollover_se_novo_mes()
         return min(round(self.tokens_usados_mes / self.quota_tokens_mes * 100), 100)
 
-    def registrar_uso(self, input_tokens, output_tokens, custo_usd):
+    @property
+    def chat_tokens_restantes(self):
+        self._rollover_se_novo_mes()
+        return max(self.chat_quota_tokens_mes - self.chat_tokens_usados_mes, 0)
+
+    def tem_quota_chat(self, tokens_estimados=0):
+        return self.chat_tokens_restantes >= tokens_estimados
+
+    @property
+    def chat_quota_pct_usado(self):
+        """% do balde do chat já consumido (0–100), para a barra no painel."""
+        if not self.chat_quota_tokens_mes:
+            return 0
+        self._rollover_se_novo_mes()
+        return min(round(self.chat_tokens_usados_mes / self.chat_quota_tokens_mes * 100), 100)
+
+    # Baldes de tokens: "geral" é a quota que gera trilhas e avaliações; "chat"
+    # é a do widget de dúvidas. O custo em dólar soma nos dois casos, porque é
+    # gasto de verdade — o que muda é de qual limite mensal ele sai.
+    BALDE_GERAL = "geral"
+    BALDE_CHAT = "chat"
+
+    def registrar_uso(self, input_tokens, output_tokens, custo_usd, balde=BALDE_GERAL):
         """Debita o uso de IA da quota do usuário.
 
         Débito atômico no banco (F expressions): gerações concorrentes não se
@@ -88,12 +124,13 @@ class Profile(models.Model):
         """
         self._rollover_se_novo_mes()
         total = int(input_tokens) + int(output_tokens)
+        campo = "chat_tokens_usados_mes" if balde == self.BALDE_CHAT else "tokens_usados_mes"
         Profile.objects.filter(pk=self.pk).update(
-            tokens_usados_mes=models.F("tokens_usados_mes") + total,
+            **{campo: models.F(campo) + total},
             custo_acumulado=models.F("custo_acumulado") + custo_usd,
             atualizado_em=timezone.now(),
         )
-        self.refresh_from_db(fields=["tokens_usados_mes", "custo_acumulado"])
+        self.refresh_from_db(fields=[campo, "custo_acumulado"])
 
     # -- Gamificação -----------------------------------------------------
     # Faixa de XP por atividade

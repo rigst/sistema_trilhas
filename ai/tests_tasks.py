@@ -330,3 +330,86 @@ class TaskRevisaoTests(TestCase):
             rodar_uma_vez(tasks.task_gerar_revisao, self.revisao.pk, retries=ULTIMA)
         self.revisao.refresh_from_db()
         self.assertEqual(self.revisao.status, Revisao.Status.ERRO)
+
+
+class TaskResponderDuvidaTests(TestCase):
+    """A task da dúvida destoa das demais: só uma retentativa, porque o aluno
+    está com o painel aberto esperando."""
+
+    def setUp(self):
+        from chat.models import Conversa, Mensagem
+
+        self.user = User.objects.create_user("duvida-task", password="x")
+        self.conversa = Conversa.objects.create(user=self.user)
+        Mensagem.objects.create(
+            conversa=self.conversa, papel=Mensagem.Papel.ALUNO, texto="Por quê?"
+        )
+        self.msg = Mensagem.objects.create(
+            conversa=self.conversa, papel=Mensagem.Papel.IA, status=Mensagem.Status.GERANDO
+        )
+
+    def test_grava_a_resposta_pronta(self):
+        with mock.patch.object(tasks.services, "responder_duvida", return_value="Porque sim."):
+            rodar(tasks.task_responder_duvida, self.msg.pk)
+
+        self.msg.refresh_from_db()
+        self.assertEqual(self.msg.status, "pronta")
+        self.assertEqual(self.msg.texto, "Porque sim.")
+
+    def test_fora_de_escopo_vira_status_recusada_sem_o_marcador(self):
+        resposta = "[FORA_DE_ESCOPO]\nIsso não está nas suas trilhas."
+        with mock.patch.object(tasks.services, "responder_duvida", return_value=resposta):
+            rodar(tasks.task_responder_duvida, self.msg.pk)
+
+        self.msg.refresh_from_db()
+        self.assertEqual(self.msg.status, "recusada")
+        self.assertEqual(self.msg.texto, "Isso não está nas suas trilhas.")
+
+    def test_erro_na_ultima_tentativa_persiste_o_status(self):
+        ultima = tasks.TASK_KW_CHAT["max_retries"]
+        with (
+            mock.patch.object(tasks.services, "responder_duvida", side_effect=RuntimeError("boom")),
+            self.assertRaises(RuntimeError),
+        ):
+            rodar_uma_vez(tasks.task_responder_duvida, self.msg.pk, retries=ultima)
+
+        self.msg.refresh_from_db()
+        self.assertEqual(self.msg.status, "erro")
+        self.assertIn("boom", self.msg.erro)
+
+    def test_erro_no_meio_do_ciclo_nao_marca_erro(self):
+        with (
+            mock.patch.object(tasks.services, "responder_duvida", side_effect=RuntimeError("boom")),
+            self.assertRaises(RuntimeError),
+        ):
+            rodar_uma_vez(tasks.task_responder_duvida, self.msg.pk, retries=0)
+
+        self.msg.refresh_from_db()
+        self.assertEqual(self.msg.status, "gerando")
+
+    def test_parcial_do_cache_e_descartado_no_fim(self):
+        from django.core.cache import cache
+
+        from chat.models import chave_parcial
+
+        cache.set(chave_parcial(self.msg.pk), "meio caminho")
+        with mock.patch.object(tasks.services, "responder_duvida", return_value="Pronto."):
+            rodar(tasks.task_responder_duvida, self.msg.pk)
+
+        self.assertIsNone(cache.get(chave_parcial(self.msg.pk)))
+
+    def test_mensagem_inexistente_nao_retenta(self):
+        with mock.patch.object(tasks.services, "responder_duvida") as responder:
+            resultado = rodar(tasks.task_responder_duvida, 999999)
+
+        self.assertEqual(resultado.result, "mensagem inexistente")
+        responder.assert_not_called()
+
+    def test_mensagem_ja_respondida_e_ignorada(self):
+        from chat.models import Mensagem
+
+        Mensagem.objects.filter(pk=self.msg.pk).update(status=Mensagem.Status.PRONTA)
+        with mock.patch.object(tasks.services, "responder_duvida") as responder:
+            rodar(tasks.task_responder_duvida, self.msg.pk)
+
+        responder.assert_not_called()

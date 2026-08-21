@@ -876,3 +876,137 @@ class GerarRevisaoTests(TestCase):
             services.gerar_revisao(self.revisao)
 
         self.assertEqual(self.revisao.questoes.count(), 6)
+
+
+class ResponderDuvidaTests(TestCase):
+    def setUp(self):
+        from chat.models import Conversa
+        from trilhas.models import Nivel, Subtopico, Trilha
+
+        self.user = User.objects.create_user("duvida", password="x")
+        self.profile = self.user.profile
+        self.profile.quota_tokens_mes = 1_000_000
+        self.profile.chat_quota_tokens_mes = 100_000
+        self.profile.save(update_fields=["quota_tokens_mes", "chat_quota_tokens_mes"])
+
+        self.trilha = Trilha.objects.create(
+            user=self.user, tema_livre="bancos", titulo="Bancos de dados"
+        )
+        nivel = Nivel.objects.create(trilha=self.trilha, ordem=1, titulo="N1")
+        self.sub = Subtopico.objects.create(
+            nivel=nivel, ordem=1, titulo="Índices", conteudo_md="Um índice evita o seq scan."
+        )
+        self.conversa = Conversa.objects.create(user=self.user, subtopico=self.sub)
+
+    def _mensagens(self, pergunta="Por que o índice ajuda?"):
+        from chat.models import Mensagem
+
+        Mensagem.objects.create(conversa=self.conversa, papel=Mensagem.Papel.ALUNO, texto=pergunta)
+        return Mensagem.objects.create(
+            conversa=self.conversa, papel=Mensagem.Papel.IA, status=Mensagem.Status.GERANDO
+        )
+
+    def _responder(self, texto="Porque ele evita varrer a tabela.", pedacos=None, msg=None):
+        stream = mock.MagicMock()
+        stream.__enter__.return_value = stream
+        stream.text_stream = iter(pedacos if pedacos is not None else [texto])
+        stream.get_final_message.return_value = resposta_fake(
+            texto, usage=usage_fake(entrada=800, saida=120)
+        )
+        client = mock.Mock()
+        client.messages.stream.return_value = stream
+        with mock.patch.object(services, "get_client", return_value=client):
+            return services.responder_duvida(msg or self._mensagens(), self.profile), client
+
+    def test_devolve_o_texto_e_debita_no_balde_do_chat(self):
+        texto, _client = self._responder()
+
+        self.assertEqual(texto, "Porque ele evita varrer a tabela.")
+        self.profile.refresh_from_db()
+        self.assertEqual(self.profile.chat_tokens_usados_mes, 920)
+        self.assertEqual(self.profile.tokens_usados_mes, 0)
+
+    def test_o_material_da_pagina_vai_no_system(self):
+        _texto, client = self._responder()
+
+        system = client.messages.stream.call_args.kwargs["system"][0]["text"]
+        self.assertIn("Um índice evita o seq scan.", system)
+        self.assertIn("Bancos de dados", system)  # a lista de assuntos permitidos
+
+    @override_settings(CHAT_CONTEXTO_MAX_CHARS=10)
+    def test_material_longo_e_truncado(self):
+        self.sub.conteudo_md = "x" * 5000
+        self.sub.save(update_fields=["conteudo_md"])
+
+        _texto, client = self._responder()
+
+        system = client.messages.stream.call_args.kwargs["system"][0]["text"]
+        self.assertNotIn("x" * 11, system)
+
+    def test_a_pergunta_vai_delimitada(self):
+        _texto, client = self._responder()
+
+        turnos = client.messages.stream.call_args.kwargs["messages"]
+        self.assertEqual(turnos[-1]["role"], "user")
+        self.assertIn('"""Por que o índice ajuda?"""', turnos[-1]["content"])
+
+    @override_settings(CHAT_HISTORICO_TURNOS=2)
+    def test_historico_e_cortado_no_limite(self):
+        from chat.models import Mensagem
+
+        for i in range(6):
+            Mensagem.objects.create(
+                conversa=self.conversa,
+                papel=Mensagem.Papel.ALUNO if i % 2 == 0 else Mensagem.Papel.IA,
+                texto=f"fala {i}",
+            )
+        _texto, client = self._responder()
+
+        turnos = client.messages.stream.call_args.kwargs["messages"]
+        self.assertLessEqual(len(turnos), 2)
+
+    def test_conversa_nunca_comeca_pelo_assistente(self):
+        from chat.models import Mensagem
+
+        Mensagem.objects.create(conversa=self.conversa, papel=Mensagem.Papel.IA, texto="Olá!")
+        _texto, client = self._responder()
+
+        turnos = client.messages.stream.call_args.kwargs["messages"]
+        self.assertEqual(turnos[0]["role"], "user")
+
+    def test_fala_em_geracao_nao_entra_no_historico(self):
+        pendente = self._mensagens()
+        _texto, client = self._responder(msg=pendente)
+
+        turnos = client.messages.stream.call_args.kwargs["messages"]
+        self.assertTrue(all(t["content"] for t in turnos))
+        self.assertEqual(len(turnos), 1)
+
+    def test_sem_pergunta_levanta_iaerror(self):
+        from chat.models import Mensagem
+
+        sozinha = Mensagem.objects.create(
+            conversa=self.conversa, papel=Mensagem.Papel.IA, status=Mensagem.Status.GERANDO
+        )
+        with self.assertRaises(IAError):
+            services.responder_duvida(sozinha, self.profile)
+
+    def test_texto_parcial_e_publicado_no_cache(self):
+        from django.core.cache import cache
+
+        from chat.models import chave_parcial
+
+        msg = self._mensagens()
+        pedacos = [f"p{i} " for i in range(25)]
+        self._responder(texto="".join(pedacos), pedacos=pedacos, msg=msg)
+
+        # O flush acontece a cada 20 pedaços: no 20º o cache já tem texto.
+        self.assertIn("p0", cache.get(chave_parcial(msg.pk)) or "")
+
+    def test_marcador_de_escopo_e_reconhecido_e_removido(self):
+        self.assertTrue(services.fora_de_escopo("[FORA_DE_ESCOPO]\nIsso está fora."))
+        self.assertFalse(services.fora_de_escopo("Porque o índice ajuda."))
+        self.assertEqual(
+            services.limpar_marcador_escopo("[FORA_DE_ESCOPO]\nIsso está fora."),
+            "Isso está fora.",
+        )

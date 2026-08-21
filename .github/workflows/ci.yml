@@ -17,7 +17,7 @@ jobs:
     with:
       python-version: "3.12"
       django-settings-module: config.settings.production
-      source-paths: "accounts ai avaliacoes config legal trilhas"
+      source-paths: "accounts ai avaliacoes chat config legal trilhas"
 
       # Os testes rodam em development (SQLite, Celery eager), como já era com
       # `manage.py test`. Em production o SECURE_SSL_REDIRECT faria todo request

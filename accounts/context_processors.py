@@ -4,7 +4,12 @@ from django.utils import timezone
 
 def profile_context(request):
     """Expõe o perfil e dados de quota para todos os templates."""
-    ctx = {"signup_enabled": getattr(settings, "SIGNUP_ENABLED", False)}
+    ctx = {
+        "signup_enabled": getattr(settings, "SIGNUP_ENABLED", False),
+        # O base.html decide pelo flag se o botão do chat existe na página.
+        "chat_habilitado": getattr(settings, "CHAT_ENABLED", True),
+        "chat_max_chars": getattr(settings, "CHAT_MAX_CHARS_PERGUNTA", 1000),
+    }
     user = getattr(request, "user", None)
     if user is None or not user.is_authenticated:
         return ctx
@@ -45,6 +50,8 @@ def profile_context(request):
             "profile": profile,
             "quota_restante": profile.tokens_restantes,
             "quota_total": profile.quota_tokens_mes,
+            "chat_quota_restante": profile.chat_tokens_restantes,
+            "chat_quota_total": profile.chat_quota_tokens_mes,
             "xp": profile.xp,
             "xp_no_nivel": profile.xp_no_nivel,
             "xp_prox_nivel": profile.xp_prox_nivel,

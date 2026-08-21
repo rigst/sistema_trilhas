@@ -78,3 +78,27 @@ def test_aviso_aparece_como_toast_e_o_x_dispensa(live_server, pagina):
 
     pagina.click(".toast-fechar")
     expect(toast).to_have_count(0)
+
+
+def test_chat_de_duvidas_abre_e_fecha(live_server, pagina):
+    """O painel é JS puro (abrir, Esc, foco), então só o navegador prova.
+
+    A resposta da IA não entra aqui: o que se cobre é o widget flutuante.
+    """
+    usuario = get_user_model().objects.create_user("curiosa", password=SENHA)
+    entrar(pagina, live_server, usuario)
+
+    botao = pagina.locator("#chat-abrir")
+    painel = pagina.locator("#chat-painel")
+    expect(botao).to_be_visible()
+    expect(painel).to_be_hidden()
+
+    botao.click()
+    expect(painel).to_be_visible()
+    # Flutuante de verdade: sai da caixa do <main> e fica na quina.
+    assert painel.evaluate("el => getComputedStyle(el.parentElement).position") == "fixed"
+    expect(pagina.locator("#chat-pergunta")).to_be_focused()
+
+    pagina.keyboard.press("Escape")
+    expect(painel).to_be_hidden()
+    expect(botao).to_have_attribute("aria-expanded", "false")

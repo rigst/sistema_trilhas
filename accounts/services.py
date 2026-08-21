@@ -24,7 +24,15 @@ def criar_visitante():
     profile = user.profile
     profile.is_visitor = True
     profile.quota_tokens_mes = getattr(settings, "QUOTA_TOKENS_VISITOR", 300_000)
+    profile.chat_quota_tokens_mes = getattr(settings, "QUOTA_CHAT_TOKENS_VISITOR", 40_000)
     horas = getattr(settings, "VISITOR_EXPIRY_HOURS", 48)
     profile.expires_at = timezone.now() + timedelta(hours=horas)
-    profile.save(update_fields=["is_visitor", "quota_tokens_mes", "expires_at"])
+    profile.save(
+        update_fields=[
+            "is_visitor",
+            "quota_tokens_mes",
+            "chat_quota_tokens_mes",
+            "expires_at",
+        ]
+    )
     return user, senha

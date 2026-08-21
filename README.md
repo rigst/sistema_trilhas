@@ -49,6 +49,11 @@ de input nas chamadas seguintes. Todo uso debita a quota de tokens do `Profile`.
   das paletas de `trilhas/video_avatar.PALETAS`, sorteada pelo id (sempre a
   mesma para a mesma trilha).
 - **Capa** buscada na Pexels com termo escolhido pela IA e baixada para `/media`.
+- **Chat de dúvidas**: painel flutuante na quina, disponível em todas as páginas.
+  Sabe em que tópico o aluno está (o material da página vai no contexto) e só
+  responde sobre os temas das trilhas dele — fora disso, recusa e sugere criar
+  uma trilha do assunto. Tem **balde de tokens próprio** (`QUOTA_CHAT_TOKENS_*`),
+  separado do que gera trilhas, limite de rajada e conversas expurgadas em 90 dias.
 
 ## Economia e progressão
 Regras centrais da gamificação (em `accounts/models.py::Profile` e nos serviços de
@@ -117,6 +122,7 @@ Alterações em template (ex.: `templates/partials/icons.html`) pedem só um res
 - `avaliacoes` — `Avaliacao`, `Questao`, `Resposta`, `Titulo`, `ListaExercicios`/
   `Exercicio`, `Revisao`/`QuestaoRevisao` (revisão espaçada em `spaced.py`).
 - `ai` — `services.py` (Claude), `tasks.py` (Celery), `prompts.py`.
+- `chat` — `Conversa`/`Mensagem` do chat de dúvidas (a chamada à IA fica em `ai`).
 - `legal` — versionamento de Termos/Privacidade e registro de aceites.
 
 ## Conformidade legal (LGPD / Marco Civil)

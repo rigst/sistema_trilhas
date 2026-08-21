@@ -2,6 +2,8 @@
 {% load static %}
 {% block title %}{{ subtopico.titulo }} · {{ nivel.titulo }}{% endblock %}
 {% block body_class %}is-reader{% endblock %}
+{# O chat lê estes dados para saber sobre o que a dúvida é. #}
+{% block body_attrs %} data-subtopico="{{ subtopico.pk }}" data-subtopico-titulo="{{ subtopico.titulo }}"{% endblock %}
 
 {% block content %}
 {% if subtopico.status == 'pendente' or subtopico.status == 'gerando' or subtopico.status == 'erro' %}
