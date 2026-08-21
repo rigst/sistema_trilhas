@@ -32,8 +32,55 @@ EQUILIBRIO_ALTERNATIVAS = (
     "plausíveis e igualmente detalhados — erros sutis e realistas, não opções "
     "obviamente curtas, vagas ou absurdas. Nunca dê pista de comprimento ou de "
     "riqueza de vocabulário: o aluno só deve conseguir acertar sabendo o "
-    "conteúdo. Distribua a letra correta de forma variada entre as questões (não "
-    "concentre em A ou na mais comprida)."
+    "conteúdo."
+)
+
+# Anexado aos mesmos prompts: qualidade dos distratores. Sem isto o modelo cai
+# no padrão de deixar 2 alternativas descartáveis à primeira vista (absolutos,
+# absurdos, "todas as anteriores"), o que reduz a questão a um chute entre duas.
+QUALIDADE_DISTRATORES = (
+    " DISTRATORES (regra rígida): NENHUMA alternativa pode ser eliminável sem "
+    "conhecer o conteúdo. Cada distrator tem de ser uma resposta que um aluno "
+    "razoável, mas com um entendimento incompleto, daria de verdade — baseie-o "
+    "num equívoco comum, numa confusão entre conceitos parecidos, num passo "
+    "trocado do procedimento, num limite/exceção ignorado, num valor ou unidade "
+    "plausível porém errado, ou numa regra aplicada fora do seu contexto válido. "
+    "O distrator precisa estar errado por UM motivo específico e verificável, "
+    "não por ser vago, exagerado ou sem sentido.\n"
+    "PROIBIDO nas alternativas: (a) generalizações absolutas usadas como pista — "
+    '"sempre", "nunca", "todo(s)", "nenhum", "qualquer", "jamais", "impossível", '
+    '"exclusivamente", "somente", "100%", "garante(m)", "em nenhuma hipótese" — '
+    "só use um termo desses se ele for igualmente natural em TODAS as quatro "
+    "alternativas, inclusive na correta; (b) opções absurdas, cômicas, "
+    "anacrônicas ou fora do assunto; (c) definições de outro campo que o aluno "
+    'descarta só pelo vocabulário; (d) "todas as anteriores", "nenhuma das '
+    'anteriores", "as alternativas A e B" ou qualquer opção que dependa da '
+    "posição das outras.\n"
+    "TESTE antes de entregar cada questão: se alguém que nunca estudou o tema "
+    "consegue eliminar duas alternativas só pelo jeito como estão escritas, "
+    "reescreva essas alternativas.\n"
+    "REFERÊNCIA POR LETRA: nunca cite alternativas pela letra no enunciado nem "
+    'na explicação (nada de "a alternativa C está correta"). O sistema '
+    "reordena as alternativas depois de você responder, então identifique a "
+    'resposta pelo CONTEÚDO (ex.: "a opção que atribui o bloqueio ao índice '
+    'ausente"). Distribua a resposta correta entre A, B, C e D — não concentre '
+    "em A e B."
+)
+
+# Anexado aos mesmos prompts: piso de dificuldade. O modelo tende a abrir com
+# perguntas de definição decorada; aqui o alvo é médio-difícil do início ao fim.
+DIFICULDADE_QUESTOES = (
+    " DIFICULDADE (regra rígida): a faixa vai de MÉDIA a DIFÍCIL, do primeiro ao "
+    "último item — nenhuma questão de definição decorada, tradução de sigla ou "
+    "reconhecimento direto de termo que aparece literalmente no material. Toda "
+    "questão deve exigir pelo menos um destes: aplicar o conceito a um caso "
+    "concreto novo; prever o resultado de uma situação, trecho de código ou "
+    "cenário; diagnosticar por que algo falhou ou está errado; escolher entre "
+    "duas abordagens próximas e justificar pelo critério certo; distinguir "
+    "conceitos que costumam ser confundidos; ou identificar a exceção a uma "
+    "regra geral. Prefira enunciados com um caso concreto curto (situação, "
+    'dados, trecho de código) em vez de "o que é X?". Dentro dessa faixa, '
+    "ordene do mais simples ao mais exigente, mas o começo já é médio."
 )
 
 SYSTEM_PERGUNTAS = (
@@ -115,7 +162,7 @@ SYSTEM_SUBTOPICO = (
 SYSTEM_EXERCICIOS = (
     "Você é um tutor que cria exercícios de PRÁTICA para fixar um nível. Use APENAS "
     "questões objetivas (múltipla escolha), cobrindo os subtópicos, em dificuldade "
-    "progressiva (das mais simples às mais difíceis). Para cada exercício, escreva "
+    "crescente dentro da faixa média-difícil. Para cada exercício, escreva "
     "uma explicação clara da resposta, que será mostrada como feedback imediato ao "
     "aluno. Não crie questões dissertativas. Responda em português. "
     "Enunciados, alternativas e explicações são renderizados como Markdown: "
@@ -123,18 +170,23 @@ SYSTEM_EXERCICIOS = (
     "blocos cercados com a linguagem (```python); nas alternativas use crases "
     "para código inline curto ou bloco cercado se tiver mais de uma linha."
     + EQUILIBRIO_ALTERNATIVAS
+    + QUALIDADE_DISTRATORES
+    + DIFICULDADE_QUESTOES
 )
 
 SYSTEM_AVALIACAO = (
     "Você é um avaliador especialista. Elabora avaliações que medem de verdade o "
     "aprendizado de um nível usando APENAS questões objetivas (múltipla escolha), "
-    "em dificuldade progressiva (das mais simples às mais difíceis). As questões "
+    "em dificuldade crescente dentro da faixa média-difícil. As questões "
     "devem cobrir os subtópicos do nível e o conteúdo estudado. Não crie questões "
     "dissertativas. Responda sempre em português. "
     "Enunciados e alternativas são renderizados como Markdown: NUNCA escreva "
     "código como texto corrido — no enunciado use blocos cercados com a "
     "linguagem (```python); nas alternativas use crases para código inline "
-    "curto ou bloco cercado se tiver mais de uma linha." + EQUILIBRIO_ALTERNATIVAS
+    "curto ou bloco cercado se tiver mais de uma linha."
+    + EQUILIBRIO_ALTERNATIVAS
+    + QUALIDADE_DISTRATORES
+    + DIFICULDADE_QUESTOES
 )
 
 SYSTEM_CATEGORIA = (
@@ -174,7 +226,7 @@ SYSTEM_REVISAO = (
     "Você é um tutor que cria REVISÕES espaçadas: um quiz objetivo que mistura "
     "perguntas sobre níveis que o aluno já concluiu em diferentes trilhas, para "
     "reforçar a memória. Use APENAS questões objetivas (múltipla escolha), "
-    "distribuídas entre os níveis fornecidos, com dificuldade variada. Para cada "
+    "distribuídas entre os níveis fornecidos, na faixa média-difícil. Para cada "
     'questão indique em "origem" o número do nível de referência e escreva uma '
     '"explicacao" clara da resposta. Responda em português. '
     "Enunciados, alternativas e explicações são renderizados como Markdown: "
@@ -182,6 +234,8 @@ SYSTEM_REVISAO = (
     "blocos cercados com a linguagem (```python); nas alternativas use crases "
     "para código inline curto ou bloco cercado se tiver mais de uma linha."
     + EQUILIBRIO_ALTERNATIVAS
+    + QUALIDADE_DISTRATORES
+    + DIFICULDADE_QUESTOES
 )
 
 SYSTEM_ROTEIRO_VIDEO = (

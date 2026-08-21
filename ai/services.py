@@ -20,10 +20,12 @@ from __future__ import annotations
 
 import json
 import os
+import random
 import re
 import urllib.parse
 import urllib.request
 import uuid
+from collections import Counter
 from decimal import Decimal
 
 from django.conf import settings
@@ -783,6 +785,80 @@ def _questoes_revisao_validas(items, quantidade):
     return validas if len(validas) >= quantidade else []
 
 
+# --- Embaralhamento das alternativas -----------------------------------------
+#
+# O modelo concentra a resposta certa em A e B, por mais que o prompt peça
+# variedade. Em vez de confiar nele, o conjunto devolvido é reposicionado aqui:
+# cada questão tem as alternativas reordenadas e a letra correta é sorteada de
+# forma equilibrada entre A, B, C e D dentro da mesma avaliação/lista/revisão.
+
+# Referência a alternativa pela letra ("a alternativa C", "(B)", "item D)").
+# O prompt proíbe isso, mas se escapar, embaralhar quebraria o texto — então a
+# questão é mantida como veio.
+_REF_LETRA = re.compile(
+    r"(?:[Aa]lternativas?|[Ll]etras?|[Oo]pç(?:ão|ões)|[Oo]pc(?:ao|oes)|[Ii]te(?:m|ns))"
+    r"\s*(?:[(\[\"'«]\s*)?[A-D]\b"
+    r"|\(\s*[A-D]\s*\)"
+    r"|(?<![\w`])[A-D]\s*\)"
+)
+
+# Alternativa que depende da posição das outras ("nenhuma das anteriores").
+_REF_POSICAO = re.compile(
+    r"\b(?:nenhuma|nenhum|todas|todos|ambas|ambos|as|os)\b[^.]{0,30}?"
+    r"\b(?:anteriores|acima|abaixo|seguintes)\b",
+    re.IGNORECASE,
+)
+
+
+def _pode_embaralhar(questao):
+    """True quando reordenar as alternativas não invalida nenhum texto."""
+    textos = [questao.get("enunciado") or "", questao.get("explicacao") or ""]
+    alternativas = [a.get("texto") or "" for a in questao.get("alternativas") or []]
+    if any(_REF_LETRA.search(t) for t in textos + alternativas):
+        return False
+    return not any(_REF_POSICAO.search(t) for t in alternativas)
+
+
+def _reposicionar(questao, alvo, rng):
+    """Devolve a questão com a alternativa correta na letra `alvo` e as demais
+    redistribuídas em ordem aleatória."""
+    alternativas = questao["alternativas"]
+    correta = next(a["texto"] for a in alternativas if a["letra"] == questao["gabarito"])
+    outras = [a["texto"] for a in alternativas if a["letra"] != questao["gabarito"]]
+    rng.shuffle(outras)
+    restantes = iter(outras)
+    novas = [
+        {"letra": letra, "texto": correta if letra == alvo else next(restantes)}
+        for letra in _LETRAS_ALTERNATIVAS
+    ]
+    return {**questao, "alternativas": novas, "gabarito": alvo}
+
+
+def embaralhar_gabaritos(questoes, rng=None):
+    """Redistribui a letra da resposta certa de um conjunto de questões.
+
+    As letras são escolhidas para equilibrar o conjunto (com 10 questões, entre
+    2 e 3 de cada letra), já contando as questões que não puderam ser
+    embaralhadas por citarem alternativas pela letra ou pela posição.
+    """
+    rng = rng or random.Random()
+    moveis = [i for i, q in enumerate(questoes) if _pode_embaralhar(q)]
+    fixas = set(range(len(questoes))) - set(moveis)
+    contagem = Counter(questoes[i]["gabarito"] for i in fixas)
+
+    alvos = []
+    for _ in moveis:
+        letra = min(_LETRAS_ALTERNATIVAS, key=lambda x: (contagem[x], rng.random()))
+        contagem[letra] += 1
+        alvos.append(letra)
+    rng.shuffle(alvos)
+
+    novas = list(questoes)
+    for i, alvo in zip(moveis, alvos, strict=True):
+        novas[i] = _reposicionar(novas[i], alvo, rng)
+    return novas
+
+
 def gerar_avaliacao(avaliacao, profile=None):
     from avaliacoes.models import Questao
 
@@ -822,10 +898,12 @@ def gerar_avaliacao(avaliacao, profile=None):
             f"A IA retornou {len(questoes)} questões válidas em vez de 10; avaliação não publicada."
         )
 
+    questoes = embaralhar_gabaritos(questoes[:10])
+
     # Só substitui as questões existentes depois de validar o novo conjunto.
     avaliacao.questoes.all().delete()
     objs = []
-    for i, q in enumerate(questoes[:10], start=1):
+    for i, q in enumerate(questoes, start=1):
         objs.append(
             Questao(
                 avaliacao=avaliacao,
@@ -969,9 +1047,11 @@ def gerar_exercicios(lista, profile=None):
             f"A IA retornou {len(exercicios)} exercícios válidos em vez de 5; lista não publicada."
         )
 
+    exercicios = embaralhar_gabaritos(exercicios[:5])
+
     lista.exercicios.all().delete()
     objs = []
-    for i, e in enumerate(exercicios[:5], start=1):
+    for i, e in enumerate(exercicios, start=1):
         objs.append(
             Exercicio(
                 lista=lista,
@@ -1285,9 +1365,11 @@ def gerar_revisao(revisao, profile=None, trilha_id=None):
             "revisão não publicada."
         )
 
+    questoes = embaralhar_gabaritos(questoes[:n_questoes])
+
     revisao.questoes.all().delete()
     objs = []
-    for i, q in enumerate(questoes[:n_questoes], start=1):
+    for i, q in enumerate(questoes, start=1):
         idx = q.get("origem") or 1
         nv = niveis[idx - 1] if 1 <= idx <= len(niveis) else niveis[0]
         objs.append(
