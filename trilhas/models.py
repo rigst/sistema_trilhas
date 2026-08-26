@@ -454,6 +454,15 @@ class Subtopico(models.Model):
         verbose_name_plural = "subtópicos"
         ordering = ["ordem"]
 
+    def save(self, *args, **kwargs):
+        update_fields = kwargs.get("update_fields")
+        if update_fields is not None and "conteudo_md" in update_fields:
+            from django.utils import timezone
+
+            self.gerado_em = timezone.now()
+            kwargs["update_fields"] = list(update_fields) + ["gerado_em"]
+        super().save(*args, **kwargs)
+
     def __str__(self):
         return self.titulo
 
