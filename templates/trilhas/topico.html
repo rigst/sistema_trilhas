@@ -116,35 +116,6 @@
       {% if pergunta_retrieval %}
         </div>
       </div>
-      <script>
-      (function() {
-        const wrap = document.getElementById("retrieval-{{ pergunta_retrieval.pk }}");
-        if (!wrap) return;
-        const alts = wrap.querySelectorAll(".retrieval-alt");
-        const feedback = wrap.querySelector(".retrieval-feedback");
-        const nav = wrap.querySelector(".retrieval-nav");
-        const CSRF = document.querySelector('[name=csrfmiddlewaretoken]');
-        const URL = "{% url 'avaliacoes:retrieval_verificar' pergunta_retrieval.pk %}";
-        alts.forEach(btn => {
-          btn.addEventListener("click", async () => {
-            alts.forEach(b => b.disabled = true);
-            const body = new URLSearchParams({ alternativa: btn.dataset.letra });
-            const r = await fetch(URL, {
-              method: "POST",
-              headers: { "X-CSRFToken": CSRF ? CSRF.value : "", "X-Requested-With": "XMLHttpRequest" },
-              body,
-            });
-            const d = await r.json();
-            btn.classList.add("escolhida");
-            alts.forEach(b => { if (b.dataset.letra === d.gabarito) b.classList.add("correta"); });
-            if (!d.correto) btn.classList.add("errada");
-            feedback.innerHTML = d.feedback_html;
-            feedback.classList.remove("hidden");
-            nav.classList.remove("hidden");
-          });
-        });
-      })();
-      </script>
       {% endif %}
     </div>
   </template>
@@ -279,6 +250,41 @@
     inner.appendChild(tpl.content.cloneNode(true));
     fim.appendChild(inner);
     src.appendChild(fim);
+
+    // Scripts dentro de <template> não executam ao clonar — inicializa retrieval aqui.
+    {% if pergunta_retrieval and not pergunta_retrieval.respondida %}
+    (function() {
+      const wrap = inner.querySelector("#retrieval-{{ pergunta_retrieval.pk }}");
+      if (!wrap) return;
+      const alts = wrap.querySelectorAll(".retrieval-alt");
+      const feedback = wrap.querySelector(".retrieval-feedback");
+      const nav = wrap.querySelector(".retrieval-nav");
+      const CSRF = document.querySelector("[name=csrfmiddlewaretoken]");
+      const VERIFY_URL = "{% url 'avaliacoes:retrieval_verificar' pergunta_retrieval.pk %}";
+      alts.forEach(btn => {
+        btn.addEventListener("click", async () => {
+          alts.forEach(b => b.disabled = true);
+          const body = new URLSearchParams({ alternativa: btn.dataset.letra });
+          try {
+            const r = await fetch(VERIFY_URL, {
+              method: "POST",
+              headers: { "X-CSRFToken": CSRF ? CSRF.value : "", "X-Requested-With": "XMLHttpRequest" },
+              body,
+            });
+            const d = await r.json();
+            btn.classList.add("escolhida");
+            alts.forEach(b => { if (b.dataset.letra === d.gabarito) b.classList.add("correta"); });
+            if (!d.correto) btn.classList.add("errada");
+            feedback.innerHTML = d.feedback_html;
+            feedback.classList.remove("hidden");
+            nav.classList.remove("hidden");
+          } catch(e) {
+            nav.classList.remove("hidden");
+          }
+        });
+      });
+    })();
+    {% endif %}
   }
 
   /* ---- 3. Navegação (deck compartilhado) --------------------------------- */
