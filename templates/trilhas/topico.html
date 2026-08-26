@@ -87,24 +87,19 @@
   <template id="story-final">
     <div class="sc-fim">
       {% if pergunta_retrieval %}
-      <div class="retrieval-wrap" id="retrieval-{{ pergunta_retrieval.pk }}">
-        <div class="retrieval-header">
-          <span class="retrieval-header-icon">🧠</span>
-          <span class="retrieval-header-label">Questão de verificação</span>
+      <div class="q-block retrieval-wrap" id="retrieval-{{ pergunta_retrieval.pk }}" style="text-align:left;width:100%;border-bottom:none;padding:0 0 1rem">
+        <p class="muted" style="font-size:.8rem;margin:0 0 .6rem">🧠 Questão de verificação</p>
+        <div class="q-enun markdown-body">{{ pergunta_retrieval.enunciado_md }}</div>
+        <div class="opts" style="margin-top:.8rem">
+          {% for alt in pergunta_retrieval.alternativas %}
+          <label class="opt{% if pergunta_retrieval.respondida %} {% if alt.letra == pergunta_retrieval.gabarito %}correct{% elif alt.letra == pergunta_retrieval.alternativa_escolhida %}wrong{% endif %}{% endif %}">
+            <input type="radio" name="retrieval_{{ pergunta_retrieval.pk }}" value="{{ alt.letra }}" {% if alt.letra == pergunta_retrieval.alternativa_escolhida %}checked{% endif %} {% if pergunta_retrieval.respondida %}disabled{% endif %} data-letra="{{ alt.letra }}">
+            <div class="opt-texto"><strong>{{ alt.letra }})</strong> {{ alt.texto }}</div>
+          </label>
+          {% endfor %}
         </div>
-        <div class="retrieval-body">
-          <p class="retrieval-enunciado">{{ pergunta_retrieval.enunciado_md }}</p>
-          <div class="retrieval-alts" role="group" aria-label="Alternativas">
-            {% for alt in pergunta_retrieval.alternativas %}
-            <button type="button" class="retrieval-alt{% if pergunta_retrieval.respondida and alt.letra == pergunta_retrieval.alternativa_escolhida %} escolhida{% endif %}{% if pergunta_retrieval.respondida and alt.letra == pergunta_retrieval.gabarito %} correta{% endif %}" data-letra="{{ alt.letra }}" {% if pergunta_retrieval.respondida %}disabled{% endif %}>
-              <span class="retrieval-letra">{{ alt.letra }}</span>
-              <span class="retrieval-alt-texto">{{ alt.texto }}</span>
-            </button>
-            {% endfor %}
-          </div>
-          <div class="retrieval-feedback{% if not pergunta_retrieval.respondida %} hidden{% endif %}{% if pergunta_retrieval.respondida %} {% if pergunta_retrieval.acertou %}correto-fb{% else %}errado-fb{% endif %}{% endif %}" aria-live="polite">
-            {% if pergunta_retrieval.respondida %}{{ pergunta_retrieval.explicacao_md }}{% endif %}
-          </div>
+        <div class="fb markdown-body{% if pergunta_retrieval.respondida %} show {% if pergunta_retrieval.acertou %}ok{% else %}no{% endif %}{% endif %}" aria-live="polite">
+          {% if pergunta_retrieval.respondida %}{{ pergunta_retrieval.explicacao_md }}{% endif %}
         </div>
         <div class="retrieval-nav{% if not pergunta_retrieval.respondida %} hidden{% endif %}">
       {% endif %}
@@ -127,27 +122,19 @@
 
   <!-- Retrieval practice (modo Artigo) -->
   {% if pergunta_retrieval %}
-  <div class="retrieval-wrap retrieval-artigo" id="retrieval-artigo-{{ pergunta_retrieval.pk }}">
-    <div class="retrieval-header">
-      <span class="retrieval-header-icon">🧠</span>
-      <span class="retrieval-header-label">Questão de verificação</span>
+  <div class="card pad-sm" id="retrieval-artigo-{{ pergunta_retrieval.pk }}" style="margin:1.5rem 0">
+    <p class="muted" style="font-size:.8rem;margin:0 0 .7rem">🧠 Questão de verificação</p>
+    <div class="q-enun markdown-body">{{ pergunta_retrieval.enunciado_md }}</div>
+    <div class="opts" style="margin-top:.8rem">
+      {% for alt in pergunta_retrieval.alternativas %}
+      <label class="opt{% if pergunta_retrieval.respondida %} {% if alt.letra == pergunta_retrieval.gabarito %}correct{% elif alt.letra == pergunta_retrieval.alternativa_escolhida %}wrong{% endif %}{% endif %}">
+        <input type="radio" name="retrieval_artigo_{{ pergunta_retrieval.pk }}" value="{{ alt.letra }}" {% if alt.letra == pergunta_retrieval.alternativa_escolhida %}checked{% endif %} {% if pergunta_retrieval.respondida %}disabled{% endif %} data-letra="{{ alt.letra }}">
+        <div class="opt-texto"><strong>{{ alt.letra }})</strong> {{ alt.texto }}</div>
+      </label>
+      {% endfor %}
     </div>
-    <div class="retrieval-body">
-      <p class="retrieval-enunciado">{{ pergunta_retrieval.enunciado_md }}</p>
-      <div class="retrieval-alts" role="group" aria-label="Alternativas">
-        {% for alt in pergunta_retrieval.alternativas %}
-        <button type="button"
-          class="retrieval-alt{% if pergunta_retrieval.respondida and alt.letra == pergunta_retrieval.alternativa_escolhida %} escolhida{% endif %}{% if pergunta_retrieval.respondida and alt.letra == pergunta_retrieval.gabarito %} correta{% endif %}"
-          data-letra="{{ alt.letra }}"
-          {% if pergunta_retrieval.respondida %}disabled{% endif %}>
-          <span class="retrieval-letra">{{ alt.letra }}</span>
-          <span class="retrieval-alt-texto">{{ alt.texto }}</span>
-        </button>
-        {% endfor %}
-      </div>
-      <div class="retrieval-feedback{% if not pergunta_retrieval.respondida %} hidden{% endif %}{% if pergunta_retrieval.respondida %} {% if pergunta_retrieval.acertou %}correto-fb{% else %}errado-fb{% endif %}{% endif %}" aria-live="polite">
-        {% if pergunta_retrieval.respondida %}{{ pergunta_retrieval.explicacao_md }}{% endif %}
-      </div>
+    <div class="fb markdown-body{% if pergunta_retrieval.respondida %} show {% if pergunta_retrieval.acertou %}ok{% else %}no{% endif %}{% endif %}" aria-live="polite">
+      {% if pergunta_retrieval.respondida %}{{ pergunta_retrieval.explicacao_md }}{% endif %}
     </div>
   </div>
   {% endif %}
@@ -288,15 +275,16 @@
     (function() {
       const wrap = inner.querySelector("#retrieval-{{ pergunta_retrieval.pk }}");
       if (!wrap) return;
-      const alts = wrap.querySelectorAll(".retrieval-alt");
-      const feedback = wrap.querySelector(".retrieval-feedback");
+      const inputs = wrap.querySelectorAll("input[type=radio]");
+      const labels = wrap.querySelectorAll("label.opt");
+      const feedback = wrap.querySelector(".fb");
       const nav = wrap.querySelector(".retrieval-nav");
       const CSRF = document.querySelector("[name=csrfmiddlewaretoken]");
       const VERIFY_URL = "{% url 'avaliacoes:retrieval_verificar' pergunta_retrieval.pk %}";
-      alts.forEach(btn => {
-        btn.addEventListener("click", async () => {
-          alts.forEach(b => b.disabled = true);
-          const body = new URLSearchParams({ alternativa: btn.dataset.letra });
+      inputs.forEach(inp => {
+        inp.addEventListener("change", async () => {
+          inputs.forEach(i => i.disabled = true);
+          const body = new URLSearchParams({ alternativa: inp.dataset.letra });
           try {
             const r = await fetch(VERIFY_URL, {
               method: "POST",
@@ -304,12 +292,13 @@
               body,
             });
             const d = await r.json();
-            btn.classList.add("escolhida");
-            alts.forEach(b => { if (b.dataset.letra === d.gabarito) b.classList.add("correta"); });
-            if (!d.correto) btn.classList.add("errada");
+            labels.forEach(l => {
+              const v = l.querySelector("input").dataset.letra;
+              if (v === d.gabarito) l.classList.add("correct");
+              else if (v === inp.dataset.letra && !d.correto) l.classList.add("wrong");
+            });
             feedback.innerHTML = d.feedback_html;
-            feedback.classList.remove("hidden");
-            feedback.classList.add(d.correto ? "correto-fb" : "errado-fb");
+            feedback.className = "fb markdown-body show " + (d.correto ? "ok" : "no");
             if (nav) nav.classList.remove("hidden");
           } catch(e) {
             if (nav) nav.classList.remove("hidden");
@@ -337,14 +326,15 @@
 (function() {
   const wrap = document.getElementById("retrieval-artigo-{{ pergunta_retrieval.pk }}");
   if (!wrap) return;
-  const alts = wrap.querySelectorAll(".retrieval-alt");
-  const feedback = wrap.querySelector(".retrieval-feedback");
+  const inputs = wrap.querySelectorAll("input[type=radio]");
+  const labels = wrap.querySelectorAll("label.opt");
+  const feedback = wrap.querySelector(".fb");
   const CSRF = document.querySelector("[name=csrfmiddlewaretoken]");
   const VERIFY_URL = "{% url 'avaliacoes:retrieval_verificar' pergunta_retrieval.pk %}";
-  alts.forEach(btn => {
-    btn.addEventListener("click", async () => {
-      alts.forEach(b => b.disabled = true);
-      const body = new URLSearchParams({ alternativa: btn.dataset.letra });
+  inputs.forEach(inp => {
+    inp.addEventListener("change", async () => {
+      inputs.forEach(i => i.disabled = true);
+      const body = new URLSearchParams({ alternativa: inp.dataset.letra });
       try {
         const r = await fetch(VERIFY_URL, {
           method: "POST",
@@ -352,11 +342,13 @@
           body,
         });
         const d = await r.json();
-        btn.classList.add("escolhida");
-        alts.forEach(b => { if (b.dataset.letra === d.gabarito) b.classList.add("correta"); });
-        if (!d.correto) btn.classList.add("errada");
+        labels.forEach(l => {
+          const v = l.querySelector("input").dataset.letra;
+          if (v === d.gabarito) l.classList.add("correct");
+          else if (v === inp.dataset.letra && !d.correto) l.classList.add("wrong");
+        });
         feedback.innerHTML = d.feedback_html;
-        feedback.classList.remove("hidden");
+        feedback.className = "fb markdown-body show " + (d.correto ? "ok" : "no");
       } catch(e) {}
     });
   });
