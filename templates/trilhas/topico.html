@@ -120,6 +120,28 @@
     </div>
   </template>
 
+  <!-- Retrieval practice (modo Artigo) -->
+  {% if pergunta_retrieval %}
+  <div class="retrieval-wrap retrieval-artigo" id="retrieval-artigo-{{ pergunta_retrieval.pk }}">
+    <p class="retrieval-kicker">🧠 Teste rápido — verifique o que reteve</p>
+    <p class="retrieval-enunciado">{{ pergunta_retrieval.enunciado_md }}</p>
+    <div class="retrieval-alts" role="group" aria-label="Alternativas">
+      {% for alt in pergunta_retrieval.alternativas %}
+      <button type="button"
+        class="retrieval-alt{% if pergunta_retrieval.respondida and alt.letra == pergunta_retrieval.alternativa_escolhida %} escolhida{% endif %}{% if pergunta_retrieval.respondida and alt.letra == pergunta_retrieval.gabarito %} correta{% endif %}"
+        data-letra="{{ alt.letra }}"
+        {% if pergunta_retrieval.respondida %}disabled{% endif %}>
+        <span class="retrieval-letra">{{ alt.letra }}</span>
+        <span>{{ alt.texto }}</span>
+      </button>
+      {% endfor %}
+    </div>
+    <div class="retrieval-feedback{% if not pergunta_retrieval.respondida %} hidden{% endif %}" aria-live="polite">
+      {% if pergunta_retrieval.respondida %}{{ pergunta_retrieval.explicacao_md }}{% endif %}
+    </div>
+  </div>
+  {% endif %}
+
   <!-- Navegação de documento (modo Artigo) -->
   <nav class="topico-nav">
     {% if anterior %}
@@ -298,6 +320,37 @@
     },
   });
 })();
+
+{% if pergunta_retrieval and not pergunta_retrieval.respondida %}
+// Retrieval — modo Artigo
+(function() {
+  const wrap = document.getElementById("retrieval-artigo-{{ pergunta_retrieval.pk }}");
+  if (!wrap) return;
+  const alts = wrap.querySelectorAll(".retrieval-alt");
+  const feedback = wrap.querySelector(".retrieval-feedback");
+  const CSRF = document.querySelector("[name=csrfmiddlewaretoken]");
+  const VERIFY_URL = "{% url 'avaliacoes:retrieval_verificar' pergunta_retrieval.pk %}";
+  alts.forEach(btn => {
+    btn.addEventListener("click", async () => {
+      alts.forEach(b => b.disabled = true);
+      const body = new URLSearchParams({ alternativa: btn.dataset.letra });
+      try {
+        const r = await fetch(VERIFY_URL, {
+          method: "POST",
+          headers: { "X-CSRFToken": CSRF ? CSRF.value : "", "X-Requested-With": "XMLHttpRequest" },
+          body,
+        });
+        const d = await r.json();
+        btn.classList.add("escolhida");
+        alts.forEach(b => { if (b.dataset.letra === d.gabarito) b.classList.add("correta"); });
+        if (!d.correto) btn.classList.add("errada");
+        feedback.innerHTML = d.feedback_html;
+        feedback.classList.remove("hidden");
+      } catch(e) {}
+    });
+  });
+})();
+{% endif %}
 </script>
 {% endif %}
 {% endblock %}
