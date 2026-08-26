@@ -2026,18 +2026,36 @@ html{overflow-x:clip} /* o full-bleed usa 100vw; nunca gera rolagem lateral */
 
 /* ── Retrieval Practice ─────────────────────────────────────── */
 .retrieval-wrap{width:100%;text-align:left}
-.retrieval-kicker{font-size:.78rem;font-weight:700;text-transform:uppercase;letter-spacing:.08em;color:var(--accent);margin:0 0 .6rem}
-.retrieval-enunciado{font-size:.97rem;margin:0 0 1rem;line-height:1.55}
-.retrieval-alts{display:flex;flex-direction:column;gap:.45rem;margin-bottom:1rem}
-.retrieval-alt{display:flex;align-items:flex-start;gap:.65rem;padding:.6rem .85rem;border:1px solid var(--border);border-radius:8px;background:var(--surface);color:var(--text);cursor:pointer;text-align:left;font-size:.93rem;line-height:1.4;transition:border-color .15s,background .15s}
-.retrieval-alt:hover:not(:disabled){border-color:var(--accent);background:var(--accent-subtle,color-mix(in srgb,var(--accent) 8%,transparent))}
-.retrieval-alt.correta{border-color:var(--green,#22c55e);background:color-mix(in srgb,var(--green,#22c55e) 10%,transparent)!important}
-.retrieval-alt.errada{border-color:var(--red,#ef4444);background:color-mix(in srgb,var(--red,#ef4444) 10%,transparent)!important}
+.retrieval-artigo{margin:2.5rem 0 1.5rem;border-radius:14px;overflow:hidden;border:1px solid var(--border)}
+
+/* cabeçalho do card */
+.retrieval-header{display:flex;align-items:center;gap:.55rem;padding:.75rem 1.1rem;background:var(--accent);color:#fff}
+.retrieval-header-icon{font-size:1.1rem;flex-shrink:0}
+.retrieval-header-label{font-size:.72rem;font-weight:700;text-transform:uppercase;letter-spacing:.09em;opacity:.9}
+.retrieval-body{padding:1.2rem 1.1rem 1.1rem;background:var(--surface)}
+
+/* enunciado */
+.retrieval-enunciado{font-size:1rem;font-weight:600;line-height:1.55;margin:0 0 1.1rem;color:var(--text)}
+
+/* alternativas */
+.retrieval-alts{display:flex;flex-direction:column;gap:.5rem;margin-bottom:.5rem}
+.retrieval-alt{display:flex;align-items:center;gap:0;padding:0;border:1.5px solid var(--border);border-radius:10px;background:var(--bg,var(--surface));color:var(--text);cursor:pointer;text-align:left;font-size:.92rem;line-height:1.45;transition:border-color .15s,background .15s;overflow:hidden}
+.retrieval-alt:hover:not(:disabled){border-color:var(--accent);background:color-mix(in srgb,var(--accent) 6%,transparent)}
+.retrieval-letra{display:grid;place-items:center;flex-shrink:0;width:2.6rem;min-height:2.6rem;align-self:stretch;font-weight:700;font-size:.88rem;background:color-mix(in srgb,var(--accent) 10%,transparent);color:var(--accent);border-right:1.5px solid var(--border);transition:background .15s}
+.retrieval-alt-texto{padding:.55rem .85rem}
+.retrieval-alt.correta{border-color:#22c55e}
+.retrieval-alt.correta .retrieval-letra{background:#22c55e;color:#fff;border-color:#22c55e}
+.retrieval-alt.errada{border-color:#ef4444}
+.retrieval-alt.errada .retrieval-letra{background:#ef4444;color:#fff;border-color:#ef4444}
 .retrieval-alt:disabled{cursor:default}
-.retrieval-letra{font-weight:700;flex-shrink:0;width:1.4em;color:var(--accent)}
-.retrieval-feedback{font-size:.9rem;line-height:1.55;padding:.75rem 1rem;border-radius:8px;background:var(--surface-raised,var(--surface));border:1px solid var(--border);margin-bottom:1rem}
-.retrieval-nav{display:flex;flex-direction:column;align-items:center;text-align:center;gap:.45rem;width:100%}
+
+/* feedback */
+.retrieval-feedback{margin-top:1rem;padding:.85rem 1rem;border-radius:9px;font-size:.88rem;line-height:1.6;border-left:3px solid var(--accent);background:color-mix(in srgb,var(--accent) 6%,transparent)}
+.retrieval-feedback.correto-fb{border-color:#22c55e;background:color-mix(in srgb,#22c55e 8%,transparent)}
+.retrieval-feedback.errado-fb{border-color:#ef4444;background:color-mix(in srgb,#ef4444 8%,transparent)}
+
+/* nav (cards mode only) */
+.retrieval-nav{display:flex;flex-direction:column;align-items:center;text-align:center;gap:.45rem;width:100%;padding-top:.5rem}
 .retrieval-nav .btn{width:100%;max-width:330px;margin-top:.45rem}
 .retrieval-nav .btn:first-of-type{margin-top:1rem}
 .hidden{display:none!important}
-.retrieval-artigo{margin:2rem 0 1rem;padding:1.25rem;border:1px solid var(--border);border-radius:12px;background:var(--surface)}
