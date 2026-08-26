@@ -608,8 +608,6 @@ SCHEMA_RETRIEVAL = {
         "alternativas": {
             "type": "array",
             "items": _ALT_SCHEMA,
-            "minItems": 4,
-            "maxItems": 4,
         },
         "gabarito": {"type": "string", "enum": ["A", "B", "C", "D"]},
         "explicacao": {"type": "string"},
