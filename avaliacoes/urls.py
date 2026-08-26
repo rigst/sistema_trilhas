@@ -25,4 +25,5 @@ urlpatterns = [
         views.questao_revisao_verificar,
         name="revisao_verificar",
     ),
+    path("retrieval/<int:pk>/verificar/", views.retrieval_verificar, name="retrieval_verificar"),
 ]

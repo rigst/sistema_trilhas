@@ -217,6 +217,49 @@ class Revisao(models.Model):
         )
 
 
+class PerguntaRetrieval(models.Model):
+    """Pergunta de retrieval practice: 1 questão gerada após a leitura de um
+    subtópico para forçar a recuperação ativa do conceito central."""
+
+    class Status(models.TextChoices):
+        PENDENTE = "pendente", "Pendente"
+        PRONTA = "pronta", "Pronta"
+        ERRO = "erro", "Erro"
+
+    subtopico = models.OneToOneField(
+        "trilhas.Subtopico", on_delete=models.CASCADE, related_name="pergunta_retrieval"
+    )
+    status = models.CharField(
+        max_length=10, choices=Status.choices, default=Status.PENDENTE, db_index=True
+    )
+    enunciado_md = models.TextField(blank=True)
+    alternativas = models.JSONField(default=list)
+    gabarito = models.CharField(max_length=1, blank=True)
+    explicacao_md = models.TextField(blank=True)
+    erro = models.TextField(blank=True)
+    criado_em = models.DateTimeField(auto_now_add=True)
+
+    alternativa_escolhida = models.CharField(max_length=1, blank=True)
+    respondido_em = models.DateTimeField(null=True, blank=True)
+
+    class Meta:
+        verbose_name = "pergunta de retrieval"
+        verbose_name_plural = "perguntas de retrieval"
+
+    def __str__(self):
+        return f"Retrieval #{self.pk} — {self.subtopico_id}"
+
+    @property
+    def respondida(self):
+        return self.respondido_em is not None
+
+    @property
+    def acertou(self):
+        return bool(self.alternativa_escolhida) and (
+            self.alternativa_escolhida.upper() == self.gabarito.upper()
+        )
+
+
 class QuestaoRevisao(models.Model):
     """Questão objetiva de uma revisão, com origem no nível que a inspirou."""
 

@@ -206,6 +206,29 @@ def task_gerar_sugestoes(self, sessao_id):
 
 
 @shared_task(**TASK_KW)
+def task_gerar_pergunta_retrieval(self, pergunta_id):
+    from avaliacoes.models import PerguntaRetrieval
+
+    try:
+        pergunta = PerguntaRetrieval.objects.select_related(
+            "subtopico__nivel__trilha__user"
+        ).get(pk=pergunta_id)
+    except PerguntaRetrieval.DoesNotExist:
+        return "pergunta inexistente"
+    try:
+        services.gerar_pergunta_retrieval(
+            pergunta, _profile(pergunta.subtopico.nivel.trilha.user)
+        )
+    except Exception as exc:
+        if _ultima_tentativa(self):
+            pergunta.status = PerguntaRetrieval.Status.ERRO
+            pergunta.erro = str(exc)[:2000]
+            pergunta.save(update_fields=["status", "erro"])
+        raise
+    return f"pergunta retrieval gerada {pergunta_id}"
+
+
+@shared_task(**TASK_KW)
 def task_gerar_revisao(self, revisao_id, trilha_id=None):
     from avaliacoes.models import Revisao
 

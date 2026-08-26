@@ -25,6 +25,18 @@ from .models import (
 )
 
 
+def _garantir_pergunta_retrieval(subtopico):
+    """Cria (se não existe) e dispara geração da pergunta de retrieval."""
+    from avaliacoes.models import PerguntaRetrieval
+
+    pr, created = PerguntaRetrieval.objects.get_or_create(subtopico=subtopico)
+    if created or pr.status == PerguntaRetrieval.Status.ERRO:
+        pr.status = PerguntaRetrieval.Status.PENDENTE
+        pr.erro = ""
+        pr.save(update_fields=["status", "erro"])
+        ai_tasks.task_gerar_pergunta_retrieval.delay(pr.pk)
+
+
 def _pre_gerar_exercicios(nivel):
     """Garante que a lista de exercícios do nível já esteja sendo gerada."""
     from avaliacoes.models import ListaExercicios
@@ -650,6 +662,18 @@ def topico(request, nivel_pk, ordem):
         if atual.eh_ultimo:
             _pre_gerar_exercicios(nivel)
 
+        # Gera pergunta de retrieval para este subtópico (se ainda não existe).
+        _garantir_pergunta_retrieval(atual)
+
+    # Passa a pergunta de retrieval para o template (só se já estiver pronta).
+    pergunta_retrieval = None
+    try:
+        pr = atual.pergunta_retrieval
+        if pr.status == "pronta":
+            pergunta_retrieval = pr
+    except Exception:
+        pass
+
     return render(
         request,
         "trilhas/topico.html",
@@ -665,6 +689,7 @@ def topico(request, nivel_pk, ordem):
             "proximo": subs[idx + 1] if idx + 1 < len(subs) else None,
             "ganhou_xp": ganhou_xp,
             "xp_topico": getattr(getattr(request.user, "profile", None), "XP_TOPICO", 10),
+            "pergunta_retrieval": pergunta_retrieval,
             "salvos_indices": list(
                 CardSalvo.objects.filter(user=request.user, subtopico=atual).values_list(
                     "indice", flat=True

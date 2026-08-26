@@ -86,16 +86,66 @@
   <!-- Card final (montado pelo leitor em modo cards) -->
   <template id="story-final">
     <div class="sc-fim">
-      <span class="fim-badge" aria-hidden="true">✓</span>
-      <h2 class="h2" style="margin:0">Tópico concluído</h2>
-      {% if ganhou_xp %}<p class="fim-xp">+{{ xp_topico }} XP</p>{% endif %}
-      <p class="muted" style="margin:.15rem 0 0;font-size:.9rem">{{ subtopico.titulo }} · tópico {{ passo }} de {{ total }}</p>
-      {% if proximo %}
-        <a class="btn btn-primary" href="{% url 'trilhas:topico' nivel.pk proximo.ordem %}">Próximo: {{ proximo.titulo }} →</a>
-      {% else %}
-        <a class="btn btn-primary" href="{% url 'avaliacoes:exercicios' nivel.pk %}">Concluir e praticar <svg class="ic" aria-hidden="true"><use href="#ic-sword"/></svg></a>
+      {% if pergunta_retrieval %}
+      <div class="retrieval-wrap" id="retrieval-{{ pergunta_retrieval.pk }}">
+        <p class="retrieval-kicker">🧠 Teste rápido — verifique o que reteve</p>
+        <p class="retrieval-enunciado markdown-body">{{ pergunta_retrieval.enunciado_md }}</p>
+        <div class="retrieval-alts" role="group" aria-label="Alternativas">
+          {% for alt in pergunta_retrieval.alternativas %}
+          <button type="button" class="retrieval-alt{% if pergunta_retrieval.respondida and alt.letra == pergunta_retrieval.alternativa_escolhida %} escolhida{% endif %}{% if pergunta_retrieval.respondida and alt.letra == pergunta_retrieval.gabarito %} correta{% endif %}" data-letra="{{ alt.letra }}" {% if pergunta_retrieval.respondida %}disabled{% endif %}>
+            <span class="retrieval-letra">{{ alt.letra }}</span>
+            <span>{{ alt.texto }}</span>
+          </button>
+          {% endfor %}
+        </div>
+        <div class="retrieval-feedback{% if not pergunta_retrieval.respondida %} hidden{% endif %}" aria-live="polite">
+          {% if pergunta_retrieval.respondida %}{{ pergunta_retrieval.explicacao_md }}{% endif %}
+        </div>
+        <div class="retrieval-nav{% if not pergunta_retrieval.respondida %} hidden{% endif %}">
       {% endif %}
-      <a class="btn btn-ghost" href="{% url 'trilhas:nivel' nivel.pk %}">Ver todos os tópicos</a>
+          <span class="fim-badge" aria-hidden="true">✓</span>
+          <h2 class="h2" style="margin:0">Tópico concluído</h2>
+          {% if ganhou_xp %}<p class="fim-xp">+{{ xp_topico }} XP</p>{% endif %}
+          <p class="muted" style="margin:.15rem 0 0;font-size:.9rem">{{ subtopico.titulo }} · tópico {{ passo }} de {{ total }}</p>
+          {% if proximo %}
+            <a class="btn btn-primary" href="{% url 'trilhas:topico' nivel.pk proximo.ordem %}">Próximo: {{ proximo.titulo }} →</a>
+          {% else %}
+            <a class="btn btn-primary" href="{% url 'avaliacoes:exercicios' nivel.pk %}">Concluir e praticar <svg class="ic" aria-hidden="true"><use href="#ic-sword"/></svg></a>
+          {% endif %}
+          <a class="btn btn-ghost" href="{% url 'trilhas:nivel' nivel.pk %}">Ver todos os tópicos</a>
+      {% if pergunta_retrieval %}
+        </div>
+      </div>
+      <script>
+      (function() {
+        const wrap = document.getElementById("retrieval-{{ pergunta_retrieval.pk }}");
+        if (!wrap) return;
+        const alts = wrap.querySelectorAll(".retrieval-alt");
+        const feedback = wrap.querySelector(".retrieval-feedback");
+        const nav = wrap.querySelector(".retrieval-nav");
+        const CSRF = document.querySelector('[name=csrfmiddlewaretoken]');
+        const URL = "{% url 'avaliacoes:retrieval_verificar' pergunta_retrieval.pk %}";
+        alts.forEach(btn => {
+          btn.addEventListener("click", async () => {
+            alts.forEach(b => b.disabled = true);
+            const body = new URLSearchParams({ alternativa: btn.dataset.letra });
+            const r = await fetch(URL, {
+              method: "POST",
+              headers: { "X-CSRFToken": CSRF ? CSRF.value : "", "X-Requested-With": "XMLHttpRequest" },
+              body,
+            });
+            const d = await r.json();
+            btn.classList.add("escolhida");
+            alts.forEach(b => { if (b.dataset.letra === d.gabarito) b.classList.add("correta"); });
+            if (!d.correto) btn.classList.add("errada");
+            feedback.innerHTML = d.feedback_html;
+            feedback.classList.remove("hidden");
+            nav.classList.remove("hidden");
+          });
+        });
+      })();
+      </script>
+      {% endif %}
     </div>
   </template>
 

@@ -410,6 +410,43 @@ def revisao_status(request, pk):
 
 @login_required
 @require_POST
+def retrieval_verificar(request, pk):
+    """Verifica resposta da pergunta de retrieval (JSON). Não vale nota."""
+    from .models import PerguntaRetrieval
+
+    pr = get_object_or_404(
+        PerguntaRetrieval.objects.select_related("subtopico__nivel__trilha__user"),
+        pk=pk,
+        subtopico__nivel__trilha__user=request.user,
+    )
+    if pr.respondida:
+        return JsonResponse(
+            {
+                "ja_respondido": True,
+                "correto": pr.acertou,
+                "gabarito": pr.gabarito.upper(),
+                "feedback_html": _md(pr.explicacao_md),
+            },
+            status=409,
+        )
+    escolhida = (request.POST.get("alternativa") or "").strip().upper()
+    if escolhida not in _LETRAS_ALTERNATIVAS:
+        return JsonResponse({"erro": "Alternativa inválida."}, status=400)
+    correta = (pr.gabarito or "").strip().upper()
+    pr.alternativa_escolhida = escolhida
+    pr.respondido_em = timezone.now()
+    pr.save(update_fields=["alternativa_escolhida", "respondido_em"])
+    return JsonResponse(
+        {
+            "correto": escolhida == correta,
+            "gabarito": correta,
+            "feedback_html": _md(pr.explicacao_md),
+        }
+    )
+
+
+@login_required
+@require_POST
 def questao_revisao_verificar(request, pk):
     q = get_object_or_404(QuestaoRevisao, pk=pk, revisao__user=request.user)
     if q.respondido_em is not None:

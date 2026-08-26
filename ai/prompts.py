@@ -580,6 +580,44 @@ SCHEMA_REVISAO = {
     "additionalProperties": False,
 }
 
+SYSTEM_RETRIEVAL = (
+    "Você é um tutor que cria UMA pergunta de verificação imediata após a leitura "
+    "de um subtópico. Objetivo: forçar a recuperação ativa do conceito central — "
+    "não detalhes periféricos. Use múltipla escolha com exatamente 4 alternativas "
+    "(A, B, C, D), dificuldade média, uma resposta inequivocamente correta e "
+    "distratores plausíveis. A explicação deve ser curta (2-3 linhas) e didática. "
+    "Responda em português do Brasil. "
+    "Enunciado, alternativas e explicação são renderizados como Markdown."
+    + EQUILIBRIO_ALTERNATIVAS
+)
+
+_ALT_SCHEMA = {
+    "type": "object",
+    "properties": {
+        "letra": {"type": "string", "enum": ["A", "B", "C", "D"]},
+        "texto": {"type": "string"},
+    },
+    "required": ["letra", "texto"],
+    "additionalProperties": False,
+}
+
+SCHEMA_RETRIEVAL = {
+    "type": "object",
+    "properties": {
+        "enunciado": {"type": "string"},
+        "alternativas": {
+            "type": "array",
+            "items": _ALT_SCHEMA,
+            "minItems": 4,
+            "maxItems": 4,
+        },
+        "gabarito": {"type": "string", "enum": ["A", "B", "C", "D"]},
+        "explicacao": {"type": "string"},
+    },
+    "required": ["enunciado", "alternativas", "gabarito", "explicacao"],
+    "additionalProperties": False,
+}
+
 SCHEMA_ROTEIRO = {
     "type": "object",
     "properties": {

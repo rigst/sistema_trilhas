@@ -1318,18 +1318,80 @@ def gerar_sugestoes(sessao, profile=None):
 # ---------------------------------------------------------------------------
 
 
+def gerar_pergunta_retrieval(pergunta, profile=None):
+    """Gera 1 pergunta de retrieval practice para um subtópico."""
+    from avaliacoes.models import PerguntaRetrieval
+
+    sub = pergunta.subtopico
+    conteudo = (sub.conteudo_md or "")[:5000]
+    user_msg = (
+        f'Subtópico: "{sub.titulo}"\n\n'
+        f"Conteúdo:\n{conteudo}\n\n"
+        "Crie 1 pergunta de múltipla escolha que verifica se o aluno reteve "
+        "o conceito mais importante deste subtópico."
+    )
+    data = _gerar_json(
+        prompts.SYSTEM_RETRIEVAL,
+        user_msg,
+        prompts.SCHEMA_RETRIEVAL,
+        profile,
+        model=_model_geral(),
+        effort=getattr(settings, "AI_EFFORT_GERAL", "medium"),
+    )
+    alts = data.get("alternativas", [])
+    if len(alts) != 4:
+        raise IAError("Retrieval: esperava 4 alternativas.")
+    pergunta.enunciado_md = (data.get("enunciado") or "").strip()
+    pergunta.alternativas = alts
+    pergunta.gabarito = (data.get("gabarito") or "").strip().upper()
+    pergunta.explicacao_md = (data.get("explicacao") or "").strip()
+    pergunta.status = PerguntaRetrieval.Status.PRONTA
+    pergunta.save(
+        update_fields=["enunciado_md", "alternativas", "gabarito", "explicacao_md", "status"]
+    )
+    return pergunta
+
+
 def gerar_revisao(revisao, profile=None, trilha_id=None):
     from avaliacoes.models import QuestaoRevisao
     from trilhas.models import Nivel
+
+    from django.utils import timezone as tz
+    from collections import defaultdict
 
     qs = Nivel.objects.filter(
         trilha__user=revisao.user, trilha__ativa=True, status=Nivel.Status.APROVADO
     )
     if trilha_id:
         qs = qs.filter(trilha_id=trilha_id)
-    niveis = list(qs.select_related("trilha").order_by("?")[:10])
+
+    hoje = tz.localdate()
+    # Prioriza os níveis com revisão devida (SM-2 vencida)
+    devidos = list(qs.filter(revisao_proxima__lte=hoje).select_related("trilha").order_by("?")[:10])
+    if len(devidos) < 10:
+        pks_devidos = {n.pk for n in devidos}
+        outros = list(
+            qs.exclude(pk__in=pks_devidos).select_related("trilha").order_by("?")[: 10 - len(devidos)]
+        )
+        niveis = devidos + outros
+    else:
+        niveis = devidos[:10]
+
     if not niveis:
         raise IAError("Nenhum nível concluído para revisar ainda.")
+
+    # Interleaving: alterna trilhas para nunca ter dois consecutivos da mesma
+    by_trail = defaultdict(list)
+    for n in niveis:
+        by_trail[n.trilha_id].append(n)
+    interleaved = []
+    while any(v for v in by_trail.values()):
+        for tid in list(by_trail.keys()):
+            if by_trail[tid]:
+                interleaved.append(by_trail[tid].pop(0))
+            if not by_trail[tid]:
+                del by_trail[tid]
+    niveis = interleaved
 
     blocos = []
     for i, nv in enumerate(niveis, start=1):
