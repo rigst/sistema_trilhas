@@ -108,6 +108,7 @@ def task_gerar_subtopico(self, subtopico_id):
         sub.gerado_em = timezone.now()
         sub.erro = ""
         sub.save(update_fields=["conteudo_md", "status", "gerado_em", "erro"])
+        _disparar_retrieval(sub)
     except Exception as exc:
         if _ultima_tentativa(self):
             sub.status = Subtopico.Status.ERRO
@@ -115,6 +116,18 @@ def task_gerar_subtopico(self, subtopico_id):
             sub.save(update_fields=["status", "erro"])
         raise
     return f"subtópico {subtopico_id} gerado"
+
+
+def _disparar_retrieval(sub):
+    """Cria PerguntaRetrieval e dispara task de geração se ainda não existir."""
+    from avaliacoes.models import PerguntaRetrieval
+
+    pr, created = PerguntaRetrieval.objects.get_or_create(subtopico=sub)
+    if created or pr.status == PerguntaRetrieval.Status.ERRO:
+        pr.status = PerguntaRetrieval.Status.PENDENTE
+        pr.erro = ""
+        pr.save(update_fields=["status", "erro"])
+        task_gerar_pergunta_retrieval.delay(pr.pk)
 
 
 @shared_task(**TASK_KW)
