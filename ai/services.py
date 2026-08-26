@@ -1353,11 +1353,12 @@ def gerar_pergunta_retrieval(pergunta, profile=None):
 
 
 def gerar_revisao(revisao, profile=None, trilha_id=None):
-    from avaliacoes.models import QuestaoRevisao
-    from trilhas.models import Nivel
+    from collections import defaultdict
 
     from django.utils import timezone as tz
-    from collections import defaultdict
+
+    from avaliacoes.models import QuestaoRevisao
+    from trilhas.models import Nivel
 
     qs = Nivel.objects.filter(
         trilha__user=revisao.user, trilha__ativa=True, status=Nivel.Status.APROVADO
