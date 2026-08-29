@@ -587,8 +587,7 @@ SYSTEM_RETRIEVAL = (
     "(A, B, C, D), dificuldade média, uma resposta inequivocamente correta e "
     "distratores plausíveis. A explicação deve ser curta (2-3 linhas) e didática. "
     "Responda em português do Brasil. "
-    "Enunciado, alternativas e explicação são renderizados como Markdown."
-    + EQUILIBRIO_ALTERNATIVAS
+    "Enunciado, alternativas e explicação são renderizados como Markdown." + EQUILIBRIO_ALTERNATIVAS
 )
 
 _ALT_SCHEMA = {

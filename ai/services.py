@@ -1372,7 +1372,9 @@ def gerar_revisao(revisao, profile=None, trilha_id=None):
     if len(devidos) < 10:
         pks_devidos = {n.pk for n in devidos}
         outros = list(
-            qs.exclude(pk__in=pks_devidos).select_related("trilha").order_by("?")[: 10 - len(devidos)]
+            qs.exclude(pk__in=pks_devidos)
+            .select_related("trilha")
+            .order_by("?")[: 10 - len(devidos)]
         )
         niveis = devidos + outros
     else:

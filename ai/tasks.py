@@ -223,15 +223,13 @@ def task_gerar_pergunta_retrieval(self, pergunta_id):
     from avaliacoes.models import PerguntaRetrieval
 
     try:
-        pergunta = PerguntaRetrieval.objects.select_related(
-            "subtopico__nivel__trilha__user"
-        ).get(pk=pergunta_id)
+        pergunta = PerguntaRetrieval.objects.select_related("subtopico__nivel__trilha__user").get(
+            pk=pergunta_id
+        )
     except PerguntaRetrieval.DoesNotExist:
         return "pergunta inexistente"
     try:
-        services.gerar_pergunta_retrieval(
-            pergunta, _profile(pergunta.subtopico.nivel.trilha.user)
-        )
+        services.gerar_pergunta_retrieval(pergunta, _profile(pergunta.subtopico.nivel.trilha.user))
     except Exception as exc:
         if _ultima_tentativa(self):
             pergunta.status = PerguntaRetrieval.Status.ERRO
