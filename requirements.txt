@@ -17,7 +17,7 @@ anthropic==0.121.0
 markdown==3.10.3
 Pygments==2.20.0
 # Sanitização por allowlist do HTML gerado (conteúdo vindo da IA)
-nh3==0.3.6
+nh3==0.3.7
 # Certificado em PDF (fase futura) — opcional
 weasyprint==69.0
 # Vídeo do tópico (slideshow narrado sob demanda):
