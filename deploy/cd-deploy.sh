@@ -9,13 +9,18 @@ set -euo pipefail
 APP_DIR=/var/www/sistema_trilhas
 FETCH_URL=https://github.com/rigst/sistema_trilhas.git   # HTTPS anônimo — repo público, sem credencial
 VENV=/var/www/sistema_trilhas/venv
-ENV_FILE=/var/www/sistema_trilhas/.env   # checkout direto — sem shared/
 WEB_SERVICE=trilhas.service               # reload (SIGHUP): zero downtime, socket nunca cai
 OTHER_SERVICES=(trilhas_celery.service trilhas_celery_video.service)
 HEALTH_URL="https://trilhas.stolben.com/"   # sem /healthz/ neste app; home redireciona pro login (302)
 HEALTH_HEADER=""
 BACKUP_SCRIPT=/var/www/sistema_trilhas/deploy/backup_postgres.sh
-EXTRA_ENV=""
+# manage.py aqui roda fora do systemd (que só injeta DJANGO_SETTINGS_MODULE
+# no processo do gunicorn) — sem isto, cairia no default "development" do
+# manage.py. O .env em si NÃO precisa de source: config/settings/base.py já
+# chama load_dotenv() sozinho a partir do cwd (cd "$APP_DIR" abaixo). Bom que
+# seja assim — este .env tem um valor (DEFAULT_FROM_EMAIL="Nome <e@ma.il>")
+# que é sintaxe válida pro python-dotenv e inválida pro bash.
+EXTRA_ENV="DJANGO_SETTINGS_MODULE=config.settings.production"
 LOCK_FILE=/tmp/sistema_trilhas_cd_deploy.lock
 
 main() {
@@ -44,13 +49,7 @@ main() {
     "$VENV/bin/pip" install -r requirements.txt
   fi
 
-  set -a
-  # shellcheck disable=SC1090
-  source "$ENV_FILE"
-  [[ -n "$EXTRA_ENV" ]] && eval "export $EXTRA_ENV"
-  set +a
-
-  [[ -n "${DJANGO_HEALTHZ_TOKEN:-}" ]] && HEALTH_HEADER="X-Healthz-Token: $DJANGO_HEALTHZ_TOKEN"
+  eval "export $EXTRA_ENV"
 
   "$VENV/bin/python" manage.py check --deploy --fail-level ERROR
   "$VENV/bin/python" manage.py migrate --check || "$VENV/bin/python" manage.py migrate

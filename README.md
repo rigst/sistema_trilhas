@@ -119,6 +119,12 @@ Alterações em template (ex.: `templates/partials/icons.html`) pedem só um res
 `trilhas.service`; alterações em `models`/`services`/`tasks` pedem restart também do
 `trilhas_celery*`.
 
+**Desde que o CD (`.github/workflows/deploy.yml`) foi ligado**, os 5 passos
+acima acontecem sozinhos a cada push em `main` que passar no CI — via
+`deploy/cd-deploy.sh`, disparado por SSH pelo workflow reutilizável
+`deploy-django.yml` do `rigst/ci`. Procedimento completo: RUNBOOK.md do
+`rigst/ci`, seção 7.
+
 ## Apps
 - `accounts` — `Profile` (quota de tokens, XP/diamantes/streak, visitante).
 - `trilhas` — `Trilha`, `PerguntaDirecionadora`, `Nivel`, `Subtopico`, `CardSalvo`,
