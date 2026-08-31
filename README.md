@@ -120,9 +120,11 @@ Alterações em template (ex.: `templates/partials/icons.html`) pedem só um res
 `trilhas_celery*`.
 
 **Desde que o CD (`.github/workflows/deploy.yml`) foi ligado**, os 5 passos
-acima acontecem sozinhos a cada push em `main` que passar no CI — via
+acima acontecem sozinhos a cada PR mesclado em `main` que passar no CI — via
 `deploy/cd-deploy.sh`, disparado por SSH pelo workflow reutilizável
-`deploy-django.yml` do `rigst/ci`. Procedimento completo: RUNBOOK.md do
+`deploy-django.yml` do `rigst/ci`. A branch `main` tem proteção ativa (checks
+obrigatórios, sem push direto nem pra admin); mudanças sempre entram por PR,
+sem exigir aprovação de terceiros. Procedimento completo: RUNBOOK.md do
 `rigst/ci`, seção 7.
 
 ## Apps
