@@ -66,6 +66,22 @@ jobs:
       run-sonar: ${{ github.actor != 'dependabot[bot]' }}
       sonar-project-key: rigst_sistema_trilhas
       sonar-organization: rigst
+      # `qualitygate.wait`: sem isto o job termina verde assim que envia a
+      # análise, e o gate reprovando não apareceria no CI.
+      #
+      # `**/*.js` e `**/*.html`: não existe teste de JavaScript neste projeto e
+      # nunca existiu, então contar essas linhas como 0% não informa nada — só
+      # esconde a cobertura real do Python atrás de um número ruim. Mesmo
+      # tratamento já dado ao sistema_vetorial.
+      #
+      # `**/celery.py`: o módulo é configuração de app, executado pelo worker e
+      # não pela suíte.
+      #
+      # A lista repete a do pipeline compartilhado porque propriedade repetida
+      # no scanner é substituída, não somada.
+      sonar-args: >-
+        -Dsonar.qualitygate.wait=true
+        -Dsonar.coverage.exclusions=**/migrations/**,**/tests.py,**/tests_*.py,**/test_*.py,**/tests/**,**/conftest.py,**/settings/**,**/settings.py,**/manage.py,**/wsgi.py,**/asgi.py,**/celery.py,scripts/**,deploy/**,**/*.js,**/*.html
 
       # O cadastro por e-mail responde 404 enquanto SIGNUP_ENABLED for False, e
       # é uma das telas públicas que a auditoria precisa ver. Os testes que
