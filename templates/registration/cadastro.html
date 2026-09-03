@@ -28,7 +28,7 @@
           <label for="{{ form.password1.id_for_label }}">Senha</label>
           {{ form.password1 }}
           {{ form.password1.errors }}
-          {% if form.password1.help_text %}<p class="auth-note">{{ form.password1.help_text|safe }}</p>{% endif %}
+          {% if form.password1.help_text %}<p class="auth-note">{{ form.password1.help_text }}</p>{% endif %}
         </div>
         <div class="field">
           <label for="{{ form.password2.id_for_label }}">Confirme a senha</label>
