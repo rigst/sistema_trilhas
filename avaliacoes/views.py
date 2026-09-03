@@ -3,7 +3,7 @@ from django.contrib.auth.decorators import login_required
 from django.http import JsonResponse
 from django.shortcuts import get_object_or_404, redirect, render
 from django.utils import timezone
-from django.views.decorators.http import require_POST
+from django.views.decorators.http import require_GET, require_POST
 
 from accounts.quota import bloqueio_ia
 from ai import tasks as ai_tasks
@@ -62,6 +62,7 @@ def avaliacao_iniciar(request, nivel_pk):
     return redirect("avaliacoes:detalhe", pk=avaliacao.pk)
 
 
+@require_GET
 @login_required
 def avaliacao_detalhe(request, pk):
     avaliacao = get_object_or_404(
@@ -119,6 +120,7 @@ def avaliacao_submeter(request, pk):
     return redirect("avaliacoes:detalhe", pk=avaliacao.pk)
 
 
+@require_GET
 @login_required
 def avaliacao_resultado(request, pk):
     avaliacao = get_object_or_404(
@@ -161,6 +163,7 @@ def avaliacao_resultado(request, pk):
     )
 
 
+@require_GET
 @login_required
 def avaliacao_status(request, pk):
     avaliacao = get_object_or_404(Avaliacao, pk=pk, nivel__trilha__user=request.user)
@@ -172,6 +175,7 @@ def avaliacao_status(request, pk):
 # ---------------------------------------------------------------------------
 
 
+@require_GET
 @login_required
 def exercicios(request, nivel_pk):
     nivel = get_object_or_404(
@@ -217,6 +221,7 @@ def exercicios(request, nivel_pk):
     )
 
 
+@require_GET
 @login_required
 def exercicios_status(request, pk):
     lista = get_object_or_404(ListaExercicios, pk=pk, nivel__trilha__user=request.user)
@@ -378,6 +383,7 @@ def revisar_trilha_iniciar(request, trilha_pk):
     return redirect("avaliacoes:revisao", pk=revisao.pk)
 
 
+@require_GET
 @login_required
 def revisao_detalhe(request, pk):
     revisao = get_object_or_404(
@@ -402,6 +408,7 @@ def revisao_detalhe(request, pk):
     )
 
 
+@require_GET
 @login_required
 def revisao_status(request, pk):
     revisao = get_object_or_404(Revisao, pk=pk, user=request.user)

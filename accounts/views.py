@@ -9,7 +9,7 @@ from django.template.loader import render_to_string
 from django.urls import reverse
 from django.utils.encoding import force_bytes, force_str
 from django.utils.http import urlsafe_base64_decode, urlsafe_base64_encode
-from django.views.decorators.http import require_POST
+from django.views.decorators.http import require_GET, require_POST
 
 from legal.forms import AceiteForm
 from legal.models import OrigemAceite
@@ -109,11 +109,13 @@ def cadastrar(request):
     return render(request, "registration/cadastro.html", {"form": form})
 
 
+@require_GET
 def cadastro_enviado(request):
     _cadastro_ativo()
     return render(request, "registration/cadastro_enviado.html")
 
 
+@require_GET
 def confirmar_email(request, uidb64, token):
     """Valida o link e ativa a conta, autenticando o usuário."""
     _cadastro_ativo()

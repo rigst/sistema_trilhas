@@ -10,7 +10,7 @@ from django.http import Http404, JsonResponse
 from django.shortcuts import get_object_or_404
 from django.urls import reverse
 from django.utils.text import Truncator
-from django.views.decorators.http import require_POST
+from django.views.decorators.http import require_GET, require_POST
 
 from accounts.quota import bloqueio_chat
 from ai import tasks as ai_tasks
@@ -149,6 +149,7 @@ def enviar(request):
     return JsonResponse({"pergunta": _payload(feita), "resposta": _payload(resposta)})
 
 
+@require_GET
 @login_required
 def mensagem_status(request, pk):
     """Polling de uma resposta em andamento."""
@@ -166,6 +167,7 @@ def mensagem_status(request, pk):
     return JsonResponse(dados)
 
 
+@require_GET
 @login_required
 def historico(request):
     """Falas já trocadas na conversa desta página, para reabrir o painel."""
@@ -184,6 +186,7 @@ def historico(request):
     )
 
 
+@require_GET
 @login_required
 def conversas(request):
     """Conversas salvas do aluno, para reabrir e continuar.

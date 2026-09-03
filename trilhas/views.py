@@ -7,7 +7,7 @@ from django.http import Http404, HttpResponse, JsonResponse
 from django.shortcuts import get_object_or_404, redirect, render
 from django.template.loader import render_to_string
 from django.utils import timezone
-from django.views.decorators.http import require_POST
+from django.views.decorators.http import require_GET, require_POST
 
 from accounts.quota import bloqueio_ia
 from ai import tasks as ai_tasks
@@ -83,6 +83,7 @@ def _questao_do_dia(nivel, hoje):
     return None
 
 
+@require_GET
 @login_required
 def dashboard(request):
     trilhas = list(
@@ -244,6 +245,7 @@ def trilha_nova_capa(request, pk):
     return redirect("trilhas:detalhe", pk=pk)
 
 
+@require_GET
 @login_required
 def estudar_agora(request):
     """Leva o usuário direto ao próximo tópico em andamento (trilha mais recente)."""
@@ -266,6 +268,7 @@ def estudar_agora(request):
 # ---------------------------------------------------------------------------
 
 
+@require_GET
 @login_required
 def mentor(request):
     percurso = request.user.percursos.first()
@@ -298,6 +301,7 @@ def mentor_atualizar(request):
     return redirect("trilhas:mentor")
 
 
+@require_GET
 @login_required
 def percurso_status(request, pk):
     percurso = get_object_or_404(Percurso, pk=pk, user=request.user)
@@ -326,6 +330,7 @@ def _trilhas_base_ctx(user):
     )
 
 
+@require_GET
 @login_required
 def sugestoes(request):
     """Página de Sugestões de trilhas: mostra a última rodada gerada, que fica
@@ -378,6 +383,7 @@ def sugestoes_nova(request):
     )
 
 
+@require_GET
 @login_required
 def sugestoes_status(request, pk):
     sessao = get_object_or_404(SessaoSugestao, pk=pk, user=request.user)
@@ -506,6 +512,7 @@ def perguntas(request, pk):
 # ---------------------------------------------------------------------------
 
 
+@require_GET
 @login_required
 def trilha_detalhe(request, pk):
     trilha = get_object_or_404(
@@ -559,6 +566,7 @@ def trilha_excluir(request, pk):
     return redirect("dashboard")
 
 
+@require_GET
 @login_required
 def trilha_status(request, pk):
     trilha = get_object_or_404(Trilha, pk=pk, user=request.user)
@@ -576,6 +584,7 @@ def trilha_status(request, pk):
 # ---------------------------------------------------------------------------
 
 
+@require_GET
 @login_required
 def nivel_detalhe(request, pk):
     nivel = get_object_or_404(
@@ -615,6 +624,7 @@ def nivel_detalhe(request, pk):
 # ---------------------------------------------------------------------------
 
 
+@require_GET
 @login_required
 def topico(request, nivel_pk, ordem):
     nivel = get_object_or_404(
@@ -699,6 +709,7 @@ def topico(request, nivel_pk, ordem):
     )
 
 
+@require_GET
 @login_required
 def topico_status(request, pk):
     sub = get_object_or_404(Subtopico, pk=pk, nivel__trilha__user=request.user)
@@ -759,6 +770,7 @@ def video_gerar(request, pk):
     return redirect("trilhas:nivel", pk=nivel.pk)
 
 
+@require_GET
 @login_required
 def video_status(request, pk):
     video = get_object_or_404(
@@ -784,6 +796,7 @@ def video_status(request, pk):
 # ---------------------------------------------------------------------------
 
 
+@require_GET
 @login_required
 def salvos(request):
     cards = list(request.user.cards_salvos.select_related("subtopico__nivel__trilha"))
@@ -843,6 +856,7 @@ def salvo_toggle(request):
 # ---------------------------------------------------------------------------
 
 
+@require_GET
 @login_required
 def certificado(request, pk):
     trilha = get_object_or_404(Trilha.objects.prefetch_related("titulos"), pk=pk, user=request.user)
