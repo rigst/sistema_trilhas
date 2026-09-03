@@ -79,8 +79,32 @@ jobs:
       #
       # A lista repete a do pipeline compartilhado porque propriedade repetida
       # no scanner é substituída, não somada.
+      # `issue.ignore.multicriteria`: o Web:S5247 ("autoescape desligado") tem
+      # seis ocorrências legítimas, de dois tipos, e nenhuma é conteúdo de
+      # usuário chegando cru na página.
+      #
+      # e1 e e3 — templates/legal/*.html e trilhas/salvos.html: o HTML vem de
+      # `nh3.clean` com allowlist de tags, atributos e esquemas de URL, aplicado
+      # na GRAVAÇÃO (legal/utils.py:renderizar_markdown e
+      # trilhas/mdrender.py:_sanitizar). Tirar o `|safe` aqui não protegeria
+      # nada — só mostraria a marcação como texto.
+      #
+      # e2 — templates/registration/*_email.html: são e-mails em texto puro,
+      # não HTML. `{% autoescape off %}` ali existe para o corpo não sair com
+      # `&#x27;` no lugar de aspas.
+      #
+      # As duas ocorrências que NÃO eram legítimas (o `|safe` no help_text dos
+      # campos de senha) foram removidas no mesmo PR: o Django já entrega esse
+      # texto marcado como seguro, e o render sai idêntico sem o filtro.
       sonar-args: >-
         -Dsonar.qualitygate.wait=true
+        -Dsonar.issue.ignore.multicriteria=e1,e2,e3
+        -Dsonar.issue.ignore.multicriteria.e1.ruleKey=Web:S5247
+        -Dsonar.issue.ignore.multicriteria.e1.resourceKey=**/templates/legal/*.html
+        -Dsonar.issue.ignore.multicriteria.e2.ruleKey=Web:S5247
+        -Dsonar.issue.ignore.multicriteria.e2.resourceKey=**/templates/registration/*_email.html
+        -Dsonar.issue.ignore.multicriteria.e3.ruleKey=Web:S5247
+        -Dsonar.issue.ignore.multicriteria.e3.resourceKey=**/templates/trilhas/salvos.html
         -Dsonar.coverage.exclusions=**/migrations/**,**/tests.py,**/tests_*.py,**/test_*.py,**/tests/**,**/conftest.py,**/settings/**,**/settings.py,**/manage.py,**/wsgi.py,**/asgi.py,**/celery.py,scripts/**,deploy/**,**/*.js,**/*.html
 
       # O cadastro por e-mail responde 404 enquanto SIGNUP_ENABLED for False, e
