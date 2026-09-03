@@ -6,6 +6,7 @@ from django.contrib.auth.decorators import login_required
 from django.http import Http404
 from django.shortcuts import get_object_or_404, redirect, render
 from django.urls import reverse
+from django.views.decorators.http import require_GET
 
 from .forms import AceiteForm
 from .models import AceiteLegal, DocumentoLegal, OrigemAceite, StatusDocumento, TipoDocumento
@@ -50,14 +51,17 @@ def _pagina_documento(request, tipo):
     )
 
 
+@require_GET
 def termos(request):
     return _pagina_documento(request, TipoDocumento.TERMOS)
 
 
+@require_GET
 def privacidade(request):
     return _pagina_documento(request, TipoDocumento.PRIVACIDADE)
 
 
+@require_GET
 def versao(request, tipo, versao):
     """Versão específica, inclusive arquivada — transparência sobre o histórico."""
     if tipo not in TipoDocumento.values:
@@ -79,6 +83,7 @@ def versao(request, tipo, versao):
     )
 
 
+@require_GET
 def aceite_visitante(request):
     """Tela de aceite antes de criar uma conta de visitante.
 
@@ -140,6 +145,7 @@ def reaceite(request):
     )
 
 
+@require_GET
 @login_required
 def meus_aceites(request):
     """Comprovante do próprio usuário — LGPD art. 18, direito de acesso."""
