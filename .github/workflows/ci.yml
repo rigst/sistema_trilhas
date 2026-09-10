@@ -22,7 +22,7 @@ jobs:
     # SHA e não `@v1`: a tag é um ponteiro móvel, e quem a mover passa a
     # executar código arbitrário com os segredos deste repositório. O
     # dependabot abre PR revisável quando o pipeline compartilhado avança.
-    uses: rigst/ci/.github/workflows/python-django.yml@182e57ed18875bee574ea562c8315476fc8b9bf9 # v1
+    uses: rigst/ci/.github/workflows/python-django.yml@fd462e057b87bfa5696a25060b92a584751c4199 # v1
     # Explícito em vez de `secrets: inherit`: o workflow chamado recebe só
     # estes dois, e não tudo que o repositório tiver hoje ou vier a ter.
     secrets:
@@ -68,7 +68,35 @@ jobs:
       #
       # O mypy foi o último, depois que o plugin do django-stubs entrou no
       # pipeline compartilhado (324 erros viraram 35) e os 35 foram resolvidos.
-      soft-fail: ""
+      # As etapas de qualidade entram toleradas enquanto o passivo é medido.
+      # Lista vazia significa "nada tolerado": ligá-las sem declarar aqui
+      # reprovaria no primeiro dia.
+      soft-fail: "diff,frontend,layout"
+
+      # --- qualidade (primeira rodada: medir, não bloquear) ---
+      #
+      # Procedimento da seção 8 do RUNBOOK: rodar, ler o resumo no painel do
+      # job, conferir se algum achado é falso positivo neste projeto, e só
+      # então trocar os `nenhum` por `erro` e tirar do soft-fail.
+      run-diff-quality: true
+      diff-quality-fail-on: nenhum
+
+      # frontend-paths precisa ser explícito: o glob de CSS a partir da raiz
+      # varre o venv/ inteiro e o job trava sem mensagem de erro.
+      run-frontend: true
+      frontend-paths: "static"
+      template-paths: "templates"
+      frontend-fail-on: nenhum
+
+      # As mesmas rotas públicas que o a11y já audita.
+      run-layout: true
+      layout-fail-on: nenhum
+      layout-paths: |
+        /login/
+        /accounts/cadastro/
+        /termos/
+        /privacidade/
+        /offline/
 
       run-sonar: ${{ github.actor != 'dependabot[bot]' }}
       sonar-project-key: rigst_sistema_trilhas
