@@ -68,29 +68,33 @@ jobs:
       #
       # O mypy foi o último, depois que o plugin do django-stubs entrou no
       # pipeline compartilhado (324 erros viraram 35) e os 35 foram resolvidos.
-      # As etapas de qualidade entram toleradas enquanto o passivo é medido.
-      # Lista vazia significa "nada tolerado": ligá-las sem declarar aqui
-      # reprovaria no primeiro dia.
-      soft-fail: "diff,frontend,layout"
+      # As três etapas de qualidade entraram aqui em 10/09/2026 e saíram no
+      # mesmo dia. Os bloqueantes eram dois defeitos reais, corrigidos neste
+      # PR: o contraste do summary do histórico legal e a página offline sem
+      # o wrapper `auth-head`.
+      soft-fail: ""
 
-      # --- qualidade (primeira rodada: medir, não bloquear) ---
+      # --- qualidade ---
       #
-      # Procedimento da seção 8 do RUNBOOK: rodar, ler o resumo no painel do
-      # job, conferir se algum achado é falso positivo neste projeto, e só
-      # então trocar os `nenhum` por `erro` e tirar do soft-fail.
+      # Apertado em 10/09/2026. A primeira medição acusava 20 quebras de
+      # layout e nenhuma era real: o servidor devolvia HTTP 400 em todas as
+      # rotas e as etapas mediam a página de erro do Django. Corrigido o
+      # ALLOWED_HOSTS e declarada a semeadura dos documentos legais, sobraram
+      # dois defeitos de verdade — o contraste do summary e a página offline —,
+      # ambos corrigidos neste PR. O resto é aviso.
       run-diff-quality: true
-      diff-quality-fail-on: nenhum
+      diff-quality-fail-on: erro
 
       # frontend-paths precisa ser explícito: o glob de CSS a partir da raiz
       # varre o venv/ inteiro e o job trava sem mensagem de erro.
       run-frontend: true
       frontend-paths: "static"
       template-paths: "templates"
-      frontend-fail-on: nenhum
+      frontend-fail-on: erro
 
       # As mesmas rotas públicas que o a11y já audita.
       run-layout: true
-      layout-fail-on: nenhum
+      layout-fail-on: erro
       layout-setup-command: python manage.py importar_documentos_legais --publicar
       layout-paths: |
         /login/
