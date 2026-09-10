@@ -2,8 +2,9 @@
 
 from unittest import mock
 
+from django.conf import settings
 from django.contrib.auth import get_user_model
-from django.test import TestCase
+from django.test import SimpleTestCase, TestCase
 from django.urls import reverse
 
 from ai.services import _catalogo_percurso
@@ -200,3 +201,11 @@ class AtivaFilterTests(TestCase):
         Trilha.objects.filter(user=self.user).update(ativa=False)
         resp = self.client.get(reverse("trilhas:estudar_agora"), follow=True)
         self.assertEqual(resp.redirect_chain[-1][0], reverse("dashboard"))
+
+
+class MidiaDeTesteTests(SimpleTestCase):
+    def test_a_suite_nao_grava_na_midia_de_producao(self):
+        # A suíte herda o MEDIA_ROOT do base, e BASE_DIR é a árvore de
+        # produção. Os testes que gravam mídia usam override_settings um a
+        # um; esta guarda é a rede para quem esquecer o override.
+        self.assertIn("sistema-trilhas-test-media-", str(settings.MEDIA_ROOT))

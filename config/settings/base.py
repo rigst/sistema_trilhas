@@ -4,6 +4,8 @@ Compartilhadas entre development e production.
 """
 
 import os
+import sys
+import tempfile
 from pathlib import Path
 from typing import Any
 
@@ -118,6 +120,23 @@ STATIC_ROOT = BASE_DIR / "staticfiles"
 # Media files
 MEDIA_URL = "/media/"
 MEDIA_ROOT = BASE_DIR / "media"
+
+# A suíte roda com `config.settings.development`, que herda o MEDIA_ROOT daqui
+# — e BASE_DIR é a própria árvore de produção. Hoje nada vaza porque os testes
+# que gravam mídia usam `override_settings(MEDIA_ROOT=...)` um a um (ver
+# trilhas/tests_video_avatar_render.py), mas isso depende de cada teste novo
+# lembrar do override. Esta guarda é a rede: o override continua valendo por
+# cima, e quem esquecer cai no tempdir em vez da mídia do servidor.
+# A terceira condição cobre `python -m pytest`, onde o argv[0] é o
+# `__main__.py` do pacote e o prefixo não bate.
+IS_TEST = (
+    "test" in sys.argv
+    or Path(sys.argv[0]).name.startswith(("pytest", "py.test"))
+    or "pytest" in sys.modules
+)
+
+if IS_TEST:
+    MEDIA_ROOT = Path(tempfile.mkdtemp(prefix="sistema-trilhas-test-media-"))
 
 
 # Default primary key field type
