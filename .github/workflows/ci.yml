@@ -22,7 +22,7 @@ jobs:
     # SHA e não `@v1`: a tag é um ponteiro móvel, e quem a mover passa a
     # executar código arbitrário com os segredos deste repositório. O
     # dependabot abre PR revisável quando o pipeline compartilhado avança.
-    uses: rigst/ci/.github/workflows/python-django.yml@ee6ee2999cc132c890023f5af6d9667e400fc926 # v1
+    uses: rigst/ci/.github/workflows/python-django.yml@fd462e057b87bfa5696a25060b92a584751c4199 # v1
     # Explícito em vez de `secrets: inherit`: o workflow chamado recebe só
     # estes dois, e não tudo que o repositório tiver hoje ou vier a ter.
     secrets:
