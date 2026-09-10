@@ -10,7 +10,7 @@
 # requirements.lock repete a invocação exata usada)
 # O Dependabot bump a linha daqui, mas não conhece o .lock; o job `lock` é
 # quem acusa a divergência entre os dois.
-Django==6.0.8
+Django==6.1.1
 celery==5.6.3
 redis==8.1.0
 python-dotenv==1.2.2
