@@ -91,6 +91,7 @@ jobs:
       # As mesmas rotas públicas que o a11y já audita.
       run-layout: true
       layout-fail-on: nenhum
+      layout-setup-command: python manage.py importar_documentos_legais --publicar
       layout-paths: |
         /login/
         /accounts/cadastro/
@@ -183,6 +184,11 @@ jobs:
       # deslogado. Vale o padrão `serious` como limite de reprovação: as cinco
       # páginas passam limpas hoje, então não há dívida para tolerar.
       run-a11y: true
+      # /termos/ e /privacidade/ levantam Http404 de propósito enquanto não há
+      # documento publicado, e auditar página de erro não diz nada. O comando
+      # existe no projeto desde sempre; faltava declará-lo aqui — o que só
+      # apareceu quando o pipeline passou a reprovar rota com 4xx.
+      a11y-setup-command: python manage.py importar_documentos_legais --publicar
       a11y-paths: |
         /login/
         /accounts/cadastro/
