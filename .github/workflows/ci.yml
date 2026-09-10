@@ -22,7 +22,7 @@ jobs:
     # SHA e não `@v1`: a tag é um ponteiro móvel, e quem a mover passa a
     # executar código arbitrário com os segredos deste repositório. O
     # dependabot abre PR revisável quando o pipeline compartilhado avança.
-    uses: rigst/ci/.github/workflows/python-django.yml@fd462e057b87bfa5696a25060b92a584751c4199 # v1
+    uses: rigst/ci/.github/workflows/python-django.yml@566c2d8c37ca30f390bcd4dc5f1c6e03014cbd4f # v1
     # Explícito em vez de `secrets: inherit`: o workflow chamado recebe só
     # estes dois, e não tudo que o repositório tiver hoje ou vier a ter.
     secrets:
@@ -68,29 +68,34 @@ jobs:
       #
       # O mypy foi o último, depois que o plugin do django-stubs entrou no
       # pipeline compartilhado (324 erros viraram 35) e os 35 foram resolvidos.
-      # As etapas de qualidade entram toleradas enquanto o passivo é medido.
-      # Lista vazia significa "nada tolerado": ligá-las sem declarar aqui
-      # reprovaria no primeiro dia.
-      soft-fail: "diff,frontend,layout"
+      # As três etapas de qualidade entraram aqui em 10/09/2026 e saíram no
+      # mesmo dia. Os bloqueantes eram dois defeitos reais, corrigidos neste
+      # PR: o contraste do summary do histórico legal e a página offline sem
+      # o wrapper `auth-head`.
+      soft-fail: ""
 
-      # --- qualidade (primeira rodada: medir, não bloquear) ---
+      # --- qualidade ---
       #
-      # Procedimento da seção 8 do RUNBOOK: rodar, ler o resumo no painel do
-      # job, conferir se algum achado é falso positivo neste projeto, e só
-      # então trocar os `nenhum` por `erro` e tirar do soft-fail.
+      # Apertado em 10/09/2026. A primeira medição acusava 20 quebras de
+      # layout e nenhuma era real: o servidor devolvia HTTP 400 em todas as
+      # rotas e as etapas mediam a página de erro do Django. Corrigido o
+      # ALLOWED_HOSTS e declarada a semeadura dos documentos legais, sobraram
+      # dois defeitos de verdade — o contraste do summary e a página offline —,
+      # ambos corrigidos neste PR. O resto é aviso.
       run-diff-quality: true
-      diff-quality-fail-on: nenhum
+      diff-quality-fail-on: erro
 
       # frontend-paths precisa ser explícito: o glob de CSS a partir da raiz
       # varre o venv/ inteiro e o job trava sem mensagem de erro.
       run-frontend: true
       frontend-paths: "static"
       template-paths: "templates"
-      frontend-fail-on: nenhum
+      frontend-fail-on: erro
 
       # As mesmas rotas públicas que o a11y já audita.
       run-layout: true
-      layout-fail-on: nenhum
+      layout-fail-on: erro
+      layout-setup-command: python manage.py importar_documentos_legais --publicar
       layout-paths: |
         /login/
         /accounts/cadastro/
@@ -154,7 +159,14 @@ jobs:
       # é uma das telas públicas que a auditoria precisa ver. Os testes que
       # dependem do valor usam override_settings, inclusive o do caso False,
       # então ligar aqui não muda o veredito da suíte.
+      # O ALLOWED_HOSTS de teste precisa incluir 127.0.0.1: é onde o servidor
+      # dos jobs de a11y e de layout responde. Sem isso o Django devolve
+      # DisallowedHost (HTTP 400) em todas as rotas, e as duas etapas medem a
+      # página de erro em vez do site — no axe isso é pior que uma falha, porque
+      # a tela de erro passa quase limpa e a acessibilidade fica verde sem ter
+      # auditado nada. Descoberto em 10/09/2026.
       test-env: |
+        ALLOWED_HOSTS=localhost,127.0.0.1,testserver
         SIGNUP_ENABLED=True
 
       # Inventário de licenças + SBOM: nada a configurar, o projeto passa na
@@ -176,6 +188,11 @@ jobs:
       # deslogado. Vale o padrão `serious` como limite de reprovação: as cinco
       # páginas passam limpas hoje, então não há dívida para tolerar.
       run-a11y: true
+      # /termos/ e /privacidade/ levantam Http404 de propósito enquanto não há
+      # documento publicado, e auditar página de erro não diz nada. O comando
+      # existe no projeto desde sempre; faltava declará-lo aqui — o que só
+      # apareceu quando o pipeline passou a reprovar rota com 4xx.
+      a11y-setup-command: python manage.py importar_documentos_legais --publicar
       a11y-paths: |
         /login/
         /accounts/cadastro/

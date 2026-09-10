@@ -74,7 +74,7 @@
   <div class="form-actions" style="justify-content:center;margin-top:2rem">
     <a class="btn btn-ghost" href="{% url 'trilhas:nivel' nivel.pk %}">Voltar ao nível</a>
     <form method="post" action="{% url 'avaliacoes:iniciar' nivel.pk %}">{% csrf_token %}
-      <button id="btn-aval" class="btn btn-primary" {% if not lista.concluida %}disabled{% endif %}>Fazer a avaliação <svg class="ic" aria-hidden="true"><use href="#ic-sword"/></svg></button>
+      <button id="btn-aval" type="submit" class="btn btn-primary" {% if not lista.concluida %}disabled{% endif %}>Fazer a avaliação <svg class="ic" aria-hidden="true"><use href="#ic-sword"/></svg></button>
     </form>
   </div>
 {% endif %}

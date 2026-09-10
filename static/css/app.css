@@ -1822,7 +1822,11 @@ html{overflow-x:clip} /* o full-bleed usa 100vw; nunca gera rolagem lateral */
 .legal-historico { margin-top: 1.25rem; font-size: .875rem; }
 .legal-historico summary {
   cursor: pointer;
-  color: var(--legal-t500);
+  /* --legal-t500 aponta para --dim, que dá 3.81:1 sobre este fundo e nunca
+     alcança os 4.5:1 que o WCAG pede para texto abaixo de 18px — este summary
+     tem 14px. O --legal-t700 já é --muted, que passa folgado, e usá-lo aqui
+     preserva a escala tonal em vez de repontar o token inteiro. */
+  color: var(--legal-t700);
   padding: .25rem 0;
 }
 .legal-historico ul { margin: .75rem 0 0; padding: 0; list-style: none; }
