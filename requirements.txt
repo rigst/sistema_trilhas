@@ -22,7 +22,7 @@ Pygments==2.20.0
 # Sanitização por allowlist do HTML gerado (conteúdo vindo da IA)
 nh3==0.3.6
 # Certificado em PDF (fase futura) — opcional
-weasyprint==69.0
+weasyprint==70.0
 # Vídeo do tópico (slideshow narrado sob demanda):
 #   - edge-tts: narração PT-BR (grátis, vozes neurais da Microsoft)
 #   - playwright: Chromium headless para renderizar os slides e a arte do mascote
