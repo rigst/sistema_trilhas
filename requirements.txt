@@ -18,7 +18,7 @@ python-dotenv==1.2.2
 anthropic==0.121.0
 # Renderização de Markdown do conteúdo dos níveis (+ destaque de sintaxe)
 markdown==3.10.3
-Pygments==2.20.0
+Pygments==2.21.0
 # Sanitização por allowlist do HTML gerado (conteúdo vindo da IA)
 nh3==0.3.6
 # Certificado em PDF (fase futura) — opcional
