@@ -334,12 +334,19 @@
           // nunca há rolagem lateral; diagramas encolhidos ganham o botão
           // de ampliar em tela cheia.
           nodes.forEach((n) => {
-            if (!n.querySelector("svg")) {
+            // suppressErrors impede que um diagrama quebrado derrube os demais,
+            // mas no lugar dele o Mermaid DESENHA o próprio SVG de erro (a bomba
+            // "Syntax error in text / mermaid version x.y.z") — que não é recado
+            // para aluno nenhum e, por ser um <svg> válido, passava batido pela
+            // checagem abaixo. Detectamos esse SVG pelas classes que só o
+            // renderizador de erro usa, trocamos pelo aviso discreto e deixamos o
+            // código do diagrama no console para o diagnóstico.
+            const svg = n.querySelector("svg");
+            if (!svg || svg.querySelector(".error-icon, .error-text")) {
+              console.warn("[mermaid] diagrama não renderizado:", n.dataset.src || n.textContent);
               n.innerHTML = '<span class="mermaid-err-msg">⚠ Diagrama indisponível</span>';
               return;
             }
-            const svg = n.querySelector("svg");
-            if (!svg) return;
             try {
               const b = svg.getBBox();
               if (!b.width || !b.height) return;

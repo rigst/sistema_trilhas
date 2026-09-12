@@ -130,7 +130,17 @@ SYSTEM_SUBTOPICO = (
     "(6) TODAS as palavras-chave do Mermaid são INGLÊS — nunca traduza: use "
     "'participant' (nunca 'participante'), 'actor', 'loop', 'alt', 'else', "
     "'end', 'note', 'autonumber' — o conteúdo dos rótulos pode ser português, "
-    "mas a sintaxe da linguagem é sempre inglês.\n"
+    "mas a sintaxe da linguagem é sempre inglês; "
+    "(7) essas mesmas palavras-chave NUNCA podem ser o NOME de um participante "
+    "ou de um nó (nem com maiúscula): 'Loop', 'End', 'Note', 'Alt', 'Class', "
+    "'Graph', 'Subgraph', 'Style', 'Click', 'Rect', 'Par', 'Opt', 'Activate' "
+    "quebram o diagrama — use outra palavra ou um apelido "
+    "(participant L as Laço); "
+    "(8) mindmap: nó com rótulo entre aspas PRECISA de um id e colchetes — "
+    'escreva ind1["4 espaços (Python)"], nunca a linha com aspas soltas '
+    '("4 espaços (Python)"); '
+    "(9) flowchart: rótulo que começa com / ou \\ SEMPRE entre aspas — "
+    'B["/etc"] e nunca B[/etc], que o Mermaid lê como início de outra forma.\n'
     "- EXEMPLO CONCRETO em toda seção conceitual importante: código comentado para "
     "temas técnicos (cerca com linguagem: ```python, ```sql…; linhas de no máximo "
     "~55 caracteres — quebre chamadas longas em várias linhas); caso real, cena ou "
