@@ -648,6 +648,16 @@ def topico(request, nivel_pk, ordem):
         atual.save(update_fields=["status"])
         ai_tasks.task_gerar_subtopico.delay(atual.pk)
         atual.refresh_from_db()
+    elif atual.status == Subtopico.Status.GERANDO:
+        # Se o worker travou sem atualizar o status, re-dispara após 3 min.
+        from django.utils import timezone
+        from datetime import timedelta
+
+        if timezone.now() - atual.atualizado_em > timedelta(minutes=3):
+            atual.status = Subtopico.Status.PENDENTE
+            atual.save(update_fields=["status", "atualizado_em"])
+            ai_tasks.task_gerar_subtopico.delay(atual.pk)
+            atual.refresh_from_db()
 
     # Pronto: marca como lido (XP na 1ª vez) e pré-gera o próximo em background.
     ganhou_xp = False
