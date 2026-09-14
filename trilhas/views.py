@@ -1,3 +1,4 @@
+from datetime import timedelta
 from typing import Any
 
 from django.conf import settings
@@ -650,9 +651,6 @@ def topico(request, nivel_pk, ordem):
         atual.refresh_from_db()
     elif atual.status == Subtopico.Status.GERANDO:
         # Se o worker travou sem atualizar o status, re-dispara após 3 min.
-        from django.utils import timezone
-        from datetime import timedelta
-
         if timezone.now() - atual.atualizado_em > timedelta(minutes=3):
             atual.status = Subtopico.Status.PENDENTE
             atual.save(update_fields=["status", "atualizado_em"])
