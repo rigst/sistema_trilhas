@@ -5,6 +5,7 @@ contrato das views — permissões, guardas de estado, economia de diamantes e
 o que vai para o template.
 """
 
+from datetime import timedelta
 from unittest import mock
 
 from django.contrib.auth import get_user_model
@@ -448,6 +449,51 @@ class TopicoTests(TestCase):
         sub.refresh_from_db()
         self.assertEqual(sub.status, Subtopico.Status.GERANDO)
         delay.assert_called_once_with(sub.pk)
+
+    @mock.patch("ai.tasks.task_gerar_subtopico.delay")
+    def test_topico_travado_em_gerando_e_redisparado(self, delay):
+        # Worker que morreu sem mudar o status deixava a página em loading
+        # infinito; passados 3 min a visita recomeça a geração.
+        sub = self.nivel.subtopicos.get(ordem=1)
+        Subtopico.objects.filter(pk=sub.pk).update(
+            status=Subtopico.Status.GERANDO,
+            atualizado_em=timezone.now() - timedelta(minutes=4),
+        )
+
+        self.client.get(self._url(1))
+
+        # Volta para pendente e a task assume dali — é ela que marca "gerando".
+        sub.refresh_from_db()
+        self.assertEqual(sub.status, Subtopico.Status.PENDENTE)
+        delay.assert_called_once_with(sub.pk)
+
+    @mock.patch("ai.tasks.task_gerar_subtopico.delay")
+    def test_topico_gerando_ha_pouco_nao_e_redisparado(self, delay):
+        sub = self.nivel.subtopicos.get(ordem=1)
+        Subtopico.objects.filter(pk=sub.pk).update(
+            status=Subtopico.Status.GERANDO,
+            atualizado_em=timezone.now() - timedelta(minutes=1),
+        )
+
+        self.client.get(self._url(1))
+
+        delay.assert_not_called()
+
+    def test_gravar_so_o_status_carimba_atualizado_em(self):
+        # auto_now só persiste se o campo entrar em update_fields — sem isso o
+        # timeout acima contaria a partir do instante errado.
+        sub = self.nivel.subtopicos.get(ordem=1)
+        Subtopico.objects.filter(pk=sub.pk).update(
+            atualizado_em=timezone.now() - timedelta(hours=1)
+        )
+        sub.refresh_from_db()
+        antes = sub.atualizado_em
+
+        sub.status = Subtopico.Status.GERANDO
+        sub.save(update_fields=["status"])
+
+        sub.refresh_from_db()
+        self.assertGreater(sub.atualizado_em, antes)
 
     @mock.patch("ai.tasks.task_gerar_subtopico.delay")
     def test_topico_pronto_marca_lido_da_xp_e_pre_gera_o_proximo(self, delay):

@@ -448,6 +448,9 @@ class Subtopico(models.Model):
     lido = models.BooleanField("lido", default=False)
     erro = models.TextField(blank=True)
     gerado_em = models.DateTimeField(null=True, blank=True)
+    # Toda gravação carimba aqui (ver save()). É o que permite detectar um
+    # subtópico travado em "gerando" — worker que morreu sem mudar o status.
+    atualizado_em = models.DateTimeField(auto_now=True)
 
     class Meta:
         verbose_name = "subtópico"
@@ -459,11 +462,18 @@ class Subtopico(models.Model):
 
     def save(self, *args, **kwargs):
         update_fields = kwargs.get("update_fields")
-        if update_fields is not None and "conteudo_md" in update_fields:
-            from django.utils import timezone
-
-            self.gerado_em = timezone.now()
-            kwargs["update_fields"] = [*list(update_fields), "gerado_em"]
+        if update_fields is not None:
+            update_fields = list(update_fields)
+            if "conteudo_md" in update_fields:
+                self.gerado_em = timezone.now()
+                update_fields.append("gerado_em")
+            # auto_now só chega ao banco se o campo estiver em update_fields.
+            # Sem esta linha, os save(update_fields=["status"]) — justamente os
+            # que marcam "gerando" — deixariam atualizado_em para trás, e o
+            # timeout de geração contaria a partir do instante errado.
+            if "atualizado_em" not in update_fields:
+                update_fields.append("atualizado_em")
+            kwargs["update_fields"] = update_fields
         super().save(*args, **kwargs)
 
     @property

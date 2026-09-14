@@ -406,6 +406,14 @@ a.node:not(.lock):hover .nm{color:var(--teal)}
 .opt input{margin-top:.2rem;accent-color:var(--teal)}
 .opt.correct{border-color:var(--teal);background:rgba(45,212,191,.14)}
 .opt.wrong{border-color:var(--pink);background:rgba(244,114,182,.12)}
+/* Questão de verificação do fim do tópico: o bloco não tem moldura própria
+   (era um card em volta de caixas — quadrado dentro de quadrado), e a caixa da
+   alternativa só aparece sob o cursor ou com o foco do teclado. Os estados de
+   resposta (correct/wrong/descartada) ficam fora do :not() para continuarem
+   visíveis depois de responder. */
+.retrieval-wrap .opt:not(.correct):not(.wrong):not(.descartada){border-color:transparent;background:transparent}
+.retrieval-wrap .opt:not(.correct):not(.wrong):not(.descartada):hover,
+.retrieval-wrap .opt:not(.correct):not(.wrong):not(.descartada):focus-within{border-color:var(--teal);background:rgba(45,212,191,.06)}
 .fb{margin-top:.9rem;border-radius:11px;padding:.85rem 1rem;font-size:.93rem;display:none}
 .fb.show{display:block}
 .fb.ok{background:var(--ok-bg);color:var(--ok-ink);border:1px solid var(--ok-line)}
