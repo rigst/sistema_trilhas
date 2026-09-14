@@ -1318,6 +1318,32 @@ def gerar_sugestoes(sessao, profile=None):
 # ---------------------------------------------------------------------------
 
 
+_LETRAS_ALT = ("A", "B", "C", "D")
+
+
+def _embaralhar_alternativas(alts, gabarito):
+    """Redistribui as alternativas entre A-D e devolve (alternativas, gabarito).
+
+    O modelo põe a correta em A quase sempre — 30 das 37 perguntas de retrieval
+    geradas até 12/09/2026 tinham gabarito A, 6 em B, 1 em C e nenhuma em D.
+    Não é problema de instrução (o prompt nunca pediu ordem nenhuma), então
+    embaralhar depois da geração é o que torna a posição uniforme de fato.
+    Só o texto muda de letra; a explicação nunca cita a letra, e o prompt manda
+    não citar.
+    """
+    correta = (gabarito or "").strip().upper()
+    textos = {(a.get("letra") or "").strip().upper(): a.get("texto", "") for a in alts}
+    esperadas = set(_LETRAS_ALT[: len(alts)])
+    if set(textos) != esperadas or correta not in textos:
+        # Formato fora do esperado (letra repetida, faltando ou gabarito solto):
+        # devolve como veio em vez de arriscar embaralhar para o lugar errado.
+        return alts, correta
+    ordem = list(_LETRAS_ALT[: len(alts)])
+    random.shuffle(ordem)
+    novas = [{"letra": _LETRAS_ALT[i], "texto": textos[orig]} for i, orig in enumerate(ordem)]
+    return novas, _LETRAS_ALT[ordem.index(correta)]
+
+
 def gerar_pergunta_retrieval(pergunta, profile=None):
     """Gera 1 pergunta de retrieval practice para um subtópico."""
     from avaliacoes.models import PerguntaRetrieval
@@ -1341,9 +1367,10 @@ def gerar_pergunta_retrieval(pergunta, profile=None):
     alts = data.get("alternativas", [])
     if len(alts) != 4:
         raise IAError("Retrieval: esperava 4 alternativas.")
+    alts, gabarito = _embaralhar_alternativas(alts, data.get("gabarito"))
     pergunta.enunciado_md = (data.get("enunciado") or "").strip()
     pergunta.alternativas = alts
-    pergunta.gabarito = (data.get("gabarito") or "").strip().upper()
+    pergunta.gabarito = gabarito
     pergunta.explicacao_md = (data.get("explicacao") or "").strip()
     pergunta.status = PerguntaRetrieval.Status.PRONTA
     pergunta.save(

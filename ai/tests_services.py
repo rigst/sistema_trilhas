@@ -1021,3 +1021,41 @@ class ResponderDuvidaTests(TestCase):
             services.limpar_marcador_escopo("[FORA_DE_ESCOPO]\nIsso está fora."),
             "Isso está fora.",
         )
+
+
+class EmbaralharAlternativasTest(SimpleTestCase):
+    """A correta vinha em A quase sempre; o embaralhamento é o que corrige."""
+
+    ALTS = [{"letra": letra, "texto": f"texto {letra}"} for letra in "ABCD"]
+
+    def test_letras_continuam_de_a_a_d_e_os_textos_nao_se_perdem(self):
+        novas, _ = services._embaralhar_alternativas(list(self.ALTS), "A")
+        self.assertEqual([a["letra"] for a in novas], ["A", "B", "C", "D"])
+        self.assertCountEqual(
+            [a["texto"] for a in novas], [a["texto"] for a in self.ALTS]
+        )
+
+    def test_gabarito_acompanha_o_texto_da_alternativa_correta(self):
+        for _ in range(50):
+            novas, gabarito = services._embaralhar_alternativas(list(self.ALTS), "C")
+            certo = next(a["texto"] for a in novas if a["letra"] == gabarito)
+            self.assertEqual(certo, "texto C")
+
+    def test_a_correta_cai_nas_quatro_letras(self):
+        vistas = set()
+        for _ in range(200):
+            _, gabarito = services._embaralhar_alternativas(list(self.ALTS), "A")
+            vistas.add(gabarito)
+        self.assertEqual(vistas, {"A", "B", "C", "D"})
+
+    def test_formato_inesperado_volta_intacto(self):
+        # Letra repetida, letra fora de A-D e gabarito solto: melhor devolver
+        # como veio do que embaralhar para o lugar errado.
+        repetida = [{"letra": "A", "texto": "x"}, {"letra": "A", "texto": "y"}]
+        self.assertEqual(
+            services._embaralhar_alternativas(repetida, "A"), (repetida, "A")
+        )
+        self.assertEqual(
+            services._embaralhar_alternativas(list(self.ALTS), "Z"),
+            (self.ALTS, "Z"),
+        )

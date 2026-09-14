@@ -1,5 +1,5 @@
 {% extends "base.html" %}
-{% load static %}
+{% load static md %}
 {% block title %}{{ subtopico.titulo }} · {{ nivel.titulo }}{% endblock %}
 {% block body_class %}is-reader{% endblock %}
 {# O chat lê estes dados para saber sobre o que a dúvida é. #}
@@ -89,17 +89,17 @@
       {% if pergunta_retrieval %}
       <div class="q-block retrieval-wrap" id="retrieval-{{ pergunta_retrieval.pk }}" style="text-align:left;width:100%;border-bottom:none;padding:0 0 1rem">
         <p class="muted" style="font-size:.8rem;margin:0 0 .6rem">🧠 Questão de verificação</p>
-        <div class="q-enun markdown-body">{{ pergunta_retrieval.enunciado_md }}</div>
+        <div class="q-enun markdown-body">{{ pergunta_retrieval.enunciado_md|md }}</div>
         <div class="opts" style="margin-top:.8rem">
           {% for alt in pergunta_retrieval.alternativas %}
           <label class="opt{% if pergunta_retrieval.respondida %} {% if alt.letra == pergunta_retrieval.gabarito %}correct{% elif alt.letra == pergunta_retrieval.alternativa_escolhida %}wrong{% endif %}{% endif %}">
             <input type="radio" name="retrieval_{{ pergunta_retrieval.pk }}" value="{{ alt.letra }}" {% if alt.letra == pergunta_retrieval.alternativa_escolhida %}checked{% endif %} {% if pergunta_retrieval.respondida %}disabled{% endif %} data-letra="{{ alt.letra }}">
-            <div class="opt-texto"><strong>{{ alt.letra }})</strong> {{ alt.texto }}</div>
+            <div class="opt-texto markdown-body"><strong>{{ alt.letra }})</strong> {{ alt.texto|md_inline }}</div>
           </label>
           {% endfor %}
         </div>
         <div class="fb markdown-body{% if pergunta_retrieval.respondida %} show {% if pergunta_retrieval.acertou %}ok{% else %}no{% endif %}{% endif %}" aria-live="polite">
-          {% if pergunta_retrieval.respondida %}{{ pergunta_retrieval.explicacao_md }}{% endif %}
+          {% if pergunta_retrieval.respondida %}{{ pergunta_retrieval.explicacao_md|md }}{% endif %}
         </div>
         <div class="retrieval-nav{% if not pergunta_retrieval.respondida %} hidden{% endif %}">
       {% endif %}
@@ -122,19 +122,19 @@
 
   <!-- Retrieval practice (modo Artigo) -->
   {% if pergunta_retrieval %}
-  <div class="card pad-sm" id="retrieval-artigo-{{ pergunta_retrieval.pk }}" style="margin:1.5rem 0">
+  <div class="retrieval-wrap" id="retrieval-artigo-{{ pergunta_retrieval.pk }}" style="margin:1.5rem 0">
     <p class="muted" style="font-size:.8rem;margin:0 0 .7rem">🧠 Questão de verificação</p>
-    <div class="q-enun markdown-body">{{ pergunta_retrieval.enunciado_md }}</div>
+    <div class="q-enun markdown-body">{{ pergunta_retrieval.enunciado_md|md }}</div>
     <div class="opts" style="margin-top:.8rem">
       {% for alt in pergunta_retrieval.alternativas %}
       <label class="opt{% if pergunta_retrieval.respondida %} {% if alt.letra == pergunta_retrieval.gabarito %}correct{% elif alt.letra == pergunta_retrieval.alternativa_escolhida %}wrong{% endif %}{% endif %}">
         <input type="radio" name="retrieval_artigo_{{ pergunta_retrieval.pk }}" value="{{ alt.letra }}" {% if alt.letra == pergunta_retrieval.alternativa_escolhida %}checked{% endif %} {% if pergunta_retrieval.respondida %}disabled{% endif %} data-letra="{{ alt.letra }}">
-        <div class="opt-texto"><strong>{{ alt.letra }})</strong> {{ alt.texto }}</div>
+        <div class="opt-texto markdown-body"><strong>{{ alt.letra }})</strong> {{ alt.texto|md_inline }}</div>
       </label>
       {% endfor %}
     </div>
     <div class="fb markdown-body{% if pergunta_retrieval.respondida %} show {% if pergunta_retrieval.acertou %}ok{% else %}no{% endif %}{% endif %}" aria-live="polite">
-      {% if pergunta_retrieval.respondida %}{{ pergunta_retrieval.explicacao_md }}{% endif %}
+      {% if pergunta_retrieval.respondida %}{{ pergunta_retrieval.explicacao_md|md }}{% endif %}
     </div>
   </div>
   {% endif %}
