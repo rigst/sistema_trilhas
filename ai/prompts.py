@@ -597,8 +597,8 @@ SYSTEM_RETRIEVAL = (
     "(A, B, C, D), dificuldade média, uma resposta inequivocamente correta e "
     "distratores plausíveis. A explicação deve ser curta (2-3 linhas) e didática. "
     "Responda em português do Brasil. "
-    "A explicação NUNCA deve citar a letra da alternativa (nada de \"a letra A\" "
-    "ou \"a alternativa C\"): explique pelo conteúdo, porque as alternativas são "
+    'A explicação NUNCA deve citar a letra da alternativa (nada de "a letra A" '
+    'ou "a alternativa C"): explique pelo conteúdo, porque as alternativas são '
     "reembaralhadas depois da geração e a letra muda. "
     "Enunciado, alternativas e explicação são renderizados como Markdown." + EQUILIBRIO_ALTERNATIVAS
 )
