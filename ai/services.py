@@ -22,6 +22,7 @@ import json
 import os
 import random
 import re
+import secrets
 import time
 import urllib.parse
 import urllib.request
@@ -1319,6 +1320,10 @@ def gerar_sugestoes(sessao, profile=None):
 
 
 _LETRAS_ALT = ("A", "B", "C", "D")
+# Gerador do sistema: a escolha aqui não é requisito de segurança, mas o
+# random comum é achado do Sonar (python:S2245) e o SystemRandom embaralha
+# igualmente bem — mais barato do que discutir a regra caso a caso.
+_SORTEIO = secrets.SystemRandom()
 
 
 def _embaralhar_alternativas(alts, gabarito):
@@ -1339,7 +1344,7 @@ def _embaralhar_alternativas(alts, gabarito):
         # devolve como veio em vez de arriscar embaralhar para o lugar errado.
         return alts, correta
     ordem = list(_LETRAS_ALT[: len(alts)])
-    random.shuffle(ordem)
+    _SORTEIO.shuffle(ordem)
     novas = [{"letra": _LETRAS_ALT[i], "texto": textos[orig]} for i, orig in enumerate(ordem)]
     return novas, _LETRAS_ALT[ordem.index(correta)]
 
