@@ -80,10 +80,10 @@ def ajustar(caminho, nome, dry_run):
             linhas[i] = alvo
             break
     else:
-        for i in proprios:
-            if linhas[i].strip().startswith("server_name"):
-                print(f"  ++ {caminho.name}: insere após {linhas[i].strip()}")
-                linhas.insert(i + 1, alvo)
+        for j in proprios:
+            if linhas[j].strip().startswith("server_name"):
+                print(f"  ++ {caminho.name}: insere após {linhas[j].strip()}")
+                linhas.insert(j + 1, alvo)
                 break
         else:
             print(f"  !! {caminho.name}: server_name não encontrado no bloco 443")

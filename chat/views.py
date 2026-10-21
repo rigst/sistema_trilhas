@@ -25,7 +25,9 @@ TOKENS_POR_PERGUNTA = 3000
 
 # Marcação de Markdown na prévia da lista de conversas: ali o texto é exibido
 # como texto puro, e "**Atraso** — o tempo…" fica com os asteriscos à mostra.
-_MARCACAO_MD = re.compile(r"[*_`~#>]+|\[(.*?)\]\(.*?\)")
+# Classes negadas em vez de `.*?`: com muitos "[" sem fechamento, o lazy
+# reexaminava o resto do texto a cada um (tempo quadrático).
+_MARCACAO_MD = re.compile(r"[*_`~#>]+|\[([^\]\n]*)\]\([^)\n]*\)")
 
 
 def _previa(texto):

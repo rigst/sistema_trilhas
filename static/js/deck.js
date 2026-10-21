@@ -102,7 +102,7 @@ window.TrilhasDeck = function (root, opts) {
     const apStop = apPanel.querySelector("#ap-stop");
     const apLabel = apPanel.querySelector(".ap-label");
     let delay = 8;
-    try { delay = parseInt(localStorage.getItem(opts.autoKey), 10) || 8; } catch (e) {}
+    try { delay = Number.parseInt(localStorage.getItem(opts.autoKey), 10) || 8; } catch (e) {}
     let playing = false, timer = null;
 
     const sync = () => {
@@ -160,7 +160,7 @@ window.TrilhasDeck = function (root, opts) {
   }
 
   let pos0 = 0;
-  if (opts.posKey) try { pos0 = parseInt(sessionStorage.getItem(opts.posKey), 10) || 0; } catch (e) {}
+  if (opts.posKey) try { pos0 = Number.parseInt(sessionStorage.getItem(opts.posKey), 10) || 0; } catch (e) {}
   show(Math.min(pos0, list.length - 1));
   return { show, next, prev, index: () => idx, cards: list };
 };

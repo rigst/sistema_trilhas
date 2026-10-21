@@ -142,9 +142,16 @@ jobs:
       # sorteia a distância do estilhaço e a outra o atraso. Nada ali vira
       # token, senha, id ou ordem de sorteio; trocar por `crypto` só custaria
       # entropia cara para desenhar a mesma fagulha.
+      #
+      # e5 — Web:S6845 ("tabindex só em elemento interativo") em
+      # templates/legal/*.html: o `tabindex="0"` está na caixa do texto legal,
+      # que tem rolagem própria (`.legal-corpo--rolagem`, max-height + overflow).
+      # Sem ele, quem navega só pelo teclado não consegue rolar o texto, e o
+      # axe reprova (`scrollable-region-focusable`). O `role="region"` com
+      # aria-label é o que a WAI recomenda para esse caso.
       sonar-args: >-
         -Dsonar.qualitygate.wait=true
-        -Dsonar.issue.ignore.multicriteria=e1,e2,e3,e4
+        -Dsonar.issue.ignore.multicriteria=e1,e2,e3,e4,e5
         -Dsonar.issue.ignore.multicriteria.e1.ruleKey=Web:S5247
         -Dsonar.issue.ignore.multicriteria.e1.resourceKey=**/templates/legal/*.html
         -Dsonar.issue.ignore.multicriteria.e2.ruleKey=Web:S5247
@@ -153,6 +160,8 @@ jobs:
         -Dsonar.issue.ignore.multicriteria.e3.resourceKey=**/templates/trilhas/salvos.html
         -Dsonar.issue.ignore.multicriteria.e4.ruleKey=javascript:S2245
         -Dsonar.issue.ignore.multicriteria.e4.resourceKey=**/templates/base.html
+        -Dsonar.issue.ignore.multicriteria.e5.ruleKey=Web:S6845
+        -Dsonar.issue.ignore.multicriteria.e5.resourceKey=**/templates/legal/*.html
         -Dsonar.coverage.exclusions=**/migrations/**,**/tests.py,**/tests_*.py,**/test_*.py,**/tests/**,**/conftest.py,**/settings/**,**/settings.py,**/manage.py,**/wsgi.py,**/asgi.py,**/celery.py,**/gunicorn.conf.py,scripts/**,deploy/**,**/*.js,**/*.html
 
       # O cadastro por e-mail responde 404 enquanto SIGNUP_ENABLED for False, e

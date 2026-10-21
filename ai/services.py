@@ -222,7 +222,9 @@ def buscar_capa(
 # Marcador de foto que a IA insere no conteúdo: {{foto: query em inglês | legenda}}.
 # O modelo não conhece URLs reais de banco de imagens (inventaria links quebrados);
 # ele só marca ONDE uma foto ajuda e O QUE ela deve mostrar — a busca é feita aqui.
-_FOTO_MARCADOR_RE = re.compile(r"\{\{\s*foto:\s*([^|{}]+?)\s*(?:\|\s*([^{}]*?))?\s*\}\}")
+# Os grupos trazem os espaços das pontas, e quem usa faz .strip(): `\s*` colado
+# a um grupo que também aceita espaço dava backtracking quadrático.
+_FOTO_MARCADOR_RE = re.compile(r"\{\{\s*foto:([^|{}]+)(?:\|([^{}]*))?\}\}")
 
 
 _SCHEMA_AUDITORIA_FOTOS = {
@@ -725,7 +727,9 @@ def _alternativas_normalizadas(alternativas, gabarito):
         letra = str(alternativa.get("letra", "")).strip().upper()
         texto = str(alternativa.get("texto", "")).strip()
         texto_chave = " ".join(texto.split())
-        texto_placeholder = re.sub(r"[\s.,;:!?…]+$", "", texto_chave.casefold()).strip()
+        # rstrip em vez de re.sub(r"[\s.,;:!?…]+$"): o mesmo resultado (o
+        # texto_chave já só tem " " como espaço) sem backtracking.
+        texto_placeholder = texto_chave.casefold().rstrip(" .,;:!?…").strip()
         if letra not in _LETRAS_ALTERNATIVAS or not texto:
             continue
         if letra in por_letra or texto_chave in textos:
