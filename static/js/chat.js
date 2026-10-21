@@ -343,6 +343,8 @@
         });
         if (!r.ok) throw new Error(`HTTP ${r.status}`);
       } catch (err) {
+        // O aviso no rodapé é para a pessoa; o detalhe fica no console.
+        console.warn("Falha ao apagar a conversa.", err);
         aviso("Não deu para apagar a conversa. Tente de novo.", true);
         return;
       }

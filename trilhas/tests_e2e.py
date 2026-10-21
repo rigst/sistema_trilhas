@@ -122,7 +122,9 @@ def test_apagar_conversa_so_some_depois_que_o_servidor_confirma(live_server, pag
     usuario = get_user_model().objects.create_user("apaga", password=SENHA)
     conversa = Conversa.objects.create(user=usuario)
     Mensagem.objects.create(
-        conversa=conversa, papel=Mensagem.Papel.ALUNO, texto="O que é derivada?",
+        conversa=conversa,
+        papel=Mensagem.Papel.ALUNO,
+        texto="O que é derivada?",
         status=Mensagem.Status.PRONTA,
     )
     entrar(pagina, live_server, usuario)
