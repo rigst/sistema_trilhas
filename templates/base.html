@@ -360,7 +360,7 @@
               // overflow:hidden e alinha à esquerda quando estoura, a borda
               // direita do diagrama era aparada.
               const cs = getComputedStyle(n);
-              const padX = parseFloat(cs.paddingLeft) + parseFloat(cs.paddingRight);
+              const padX = Number.parseFloat(cs.paddingLeft) + Number.parseFloat(cs.paddingRight);
               const cw = Math.max(120, (n.clientWidth || 340) - padX);
               const scale = Math.min(1, cw / w);
               svg.setAttribute("width", Math.floor(w * scale));
@@ -432,7 +432,7 @@
         const panel = document.getElementById("reader-panel");
         const MIN = 0.85, MAX = 1.6, STEP = 0.075;
         const clamp = (v) => Math.min(MAX, Math.max(MIN, v));
-        const curScale = () => parseFloat(getComputedStyle(root).getPropertyValue("--fscale")) || 1;
+        const curScale = () => Number.parseFloat(getComputedStyle(root).getPropertyValue("--fscale")) || 1;
         const setScale = (v) => {
           v = clamp(Math.round(v * 1000) / 1000);
           root.style.setProperty("--fscale", v);

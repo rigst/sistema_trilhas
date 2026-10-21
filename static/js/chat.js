@@ -66,7 +66,7 @@
     if (porLinha.size < 2) return;  // uma linha só já está encaixada
     const maior = Math.max(...[...porLinha.values()].map(([e, d]) => d - e));
     const estilo = getComputedStyle(el);
-    const bordas = parseFloat(estilo.paddingLeft) + parseFloat(estilo.paddingRight);
+    const bordas = Number.parseFloat(estilo.paddingLeft) + Number.parseFloat(estilo.paddingRight);
     el.style.width = `${Math.ceil(maior + bordas) + 1}px`;
   };
 
@@ -197,6 +197,8 @@
 
   /* ---- envio ----------------------------------------------------------- */
 
+  // enviar, carregar e carregarLista tratam as próprias falhas (try/catch com
+  // aviso ou silêncio intencional); por isso as chamadas sem espera usam `void`.
   const enviar = async (pergunta) => {
     ocupado = true;
     botao.disabled = true;
@@ -228,7 +230,7 @@
     verLista(false);
     botao.classList.add("voando");
     setTimeout(() => botao.classList.remove("voando"), 500);
-    enviar(pergunta);
+    void enviar(pergunta);
   });
 
   // Enter envia, Shift+Enter quebra linha (o esperado num chat).
@@ -265,7 +267,7 @@
     lista.toggleAttribute("hidden", !mostrar);
     fluxo.toggleAttribute("hidden", mostrar);
     btSalvas.setAttribute("aria-expanded", mostrar ? "true" : "false");
-    if (mostrar) carregarLista();
+    if (mostrar) void carregarLista();
   };
 
   const carregarLista = async () => {
@@ -314,7 +316,7 @@
     bt.addEventListener("click", () => {
       conversaId = c.id;
       verLista(false);
-      carregar();
+      void carregar();
       campo.focus();
     });
 
@@ -336,7 +338,7 @@
         body: corpo,
       });
       bt.remove();
-      if (!lista.querySelector(".chat-item")) carregarLista();
+      if (!lista.querySelector(".chat-item")) void carregarLista();
       // Apagada a conversa aberta, o painel volta para a da página.
       if (conversaId === c.id) {
         conversaId = null;
@@ -360,7 +362,7 @@
       try { localStorage.setItem("trilhas-chat-visto", "1"); } catch (e) {}
       painel.classList.remove("saindo");
       painel.removeAttribute("hidden");
-      if (!carregado) carregar();
+      if (!carregado) void carregar();
       // O mermaid só desenha nó visível: um tema trocado com o painel fechado
       // deixaria os diagramas do histórico com as cores antigas.
       else if (window.__mermaidRefresh) window.__mermaidRefresh(painel, true);
