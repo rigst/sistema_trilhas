@@ -41,7 +41,7 @@ sentry-sdk==2.68.1
 # Conformidade legal (app `legal`): sanitização das políticas (markdown e nh3
 # já constam acima).
 # Tema do admin.
-django-unfold==0.104.0
+django-unfold==0.105.0
 
 # O pip entra aqui como qualquer outra dependência, e não como ferramenta à
 # parte. Ele é o que o CD executa a cada deploy, e enquanto não estava
