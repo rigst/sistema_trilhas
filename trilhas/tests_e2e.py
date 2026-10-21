@@ -12,6 +12,7 @@ import pytest
 from django.contrib.auth import get_user_model
 from playwright.sync_api import expect, sync_playwright
 
+from chat.models import Conversa, Mensagem
 from trilhas.models import Trilha
 
 pytestmark = [pytest.mark.e2e, pytest.mark.django_db(transaction=True)]
@@ -113,3 +114,37 @@ def test_chat_de_duvidas_abre_e_fecha(live_server, pagina):
     pagina.keyboard.press("Escape")
     expect(painel).to_be_hidden()
     expect(botao).to_have_attribute("aria-expanded", "false")
+
+
+def test_apagar_conversa_so_some_depois_que_o_servidor_confirma(live_server, pagina):
+    """Antes, uma falha no POST de limpar tirava o item da tela mesmo assim, e
+    a conversa voltava na próxima abertura — exclusão que parecia ignorada."""
+    usuario = get_user_model().objects.create_user("apaga", password=SENHA)
+    conversa = Conversa.objects.create(user=usuario)
+    Mensagem.objects.create(
+        conversa=conversa,
+        papel=Mensagem.Papel.ALUNO,
+        texto="O que é derivada?",
+        status=Mensagem.Status.PRONTA,
+    )
+    entrar(pagina, live_server, usuario)
+    pagina.on("dialog", lambda d: d.accept())
+
+    pagina.click("#chat-abrir")
+    pagina.click("#chat-salvas")
+    item = pagina.locator(".chat-item")
+    expect(item).to_have_count(1)
+
+    # Servidor recusa: o item fica e o rodapé avisa.
+    pagina.route("**/limpar/", lambda rota: rota.fulfill(status=500, body="erro"))
+    pagina.click(".chat-item-apagar")
+    expect(pagina.locator("#chat-rodape")).to_contain_text("Não deu para apagar")
+    expect(item).to_have_count(1)
+    assert Conversa.objects.filter(pk=conversa.pk).exists()
+
+    # Servidor confirma: o item some e a conversa foi mesmo apagada.
+    pagina.unroute("**/limpar/")
+    pagina.click(".chat-item-apagar")
+    expect(item).to_have_count(0)
+    expect(pagina.locator("#chat-rodape")).not_to_contain_text("Não deu para apagar")
+    assert not Conversa.objects.filter(pk=conversa.pk).exists()

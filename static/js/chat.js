@@ -332,11 +332,23 @@
       e.stopPropagation();
       if (!window.confirm(`Apagar a conversa de "${c.rotulo}"?`)) return;
       const corpo = new URLSearchParams({ conversa: c.id });
-      await fetch(URLS.limpar, {
-        method: "POST",
-        headers: { "X-CSRFToken": csrf.value, "X-Requested-With": "XMLHttpRequest" },
-        body: corpo,
-      });
+      // Só some da lista o que o servidor confirmou ter apagado: antes, uma
+      // falha (rede, CSRF vencido, 500) tirava o item da tela e a conversa
+      // voltava na próxima abertura, como se a exclusão tivesse sido ignorada.
+      try {
+        const r = await fetch(URLS.limpar, {
+          method: "POST",
+          headers: { "X-CSRFToken": csrf.value, "X-Requested-With": "XMLHttpRequest" },
+          body: corpo,
+        });
+        if (!r.ok) throw new Error(`HTTP ${r.status}`);
+      } catch (err) {
+        // O aviso no rodapé é para a pessoa; o detalhe fica no console.
+        console.warn("Falha ao apagar a conversa.", err);
+        aviso("Não deu para apagar a conversa. Tente de novo.", true);
+        return;
+      }
+      aviso("");
       bt.remove();
       if (!lista.querySelector(".chat-item")) void carregarLista();
       // Apagada a conversa aberta, o painel volta para a da página.
