@@ -95,6 +95,73 @@ class AdmonitionTests(TestCase):
         self.assertIn("<h2", html)
 
 
+class QuebrasMolesNasCaixasTests(TestCase):
+    """A IA quebra o corpo das caixas por largura, e o nl2br virava cada quebra
+    num <br>: no celular a frase saía cortada no meio. Texto real de produção
+    (subtópico 1501, "Renderização de listas e condicionais")."""
+
+    QUIZ = (
+        '!!! quiz "Por que não devemos usar o índice do array como key?"\n'
+        "    Porque o índice muda de significado quando a ordem dos itens muda.\n"
+        "    O React usa a key para associar estado e elementos DOM ao item\n"
+        '    correto entre renderizações; com índice, itens podem "trocar"\n'
+        "    de identidade e causar bugs visuais ou de estado (ex: um input\n"
+        "    de texto mostrando o valor de outro item após reordenar a lista).\n"
+    )
+
+    def test_frase_quebrada_por_largura_vira_uma_linha_so(self):
+        html = render_md(self.QUIZ)
+        self.assertIn("ao item correto entre renderizações", html)
+        self.assertIn('podem "trocar" de identidade', html)
+        self.assertIn("um input de texto", html)
+
+    def test_quebra_depois_de_frase_fechada_continua(self):
+        # "...a ordem dos itens muda." encerra a frase: é a mesma linha lógica
+        # do parágrafo, mas o <br> não corta nada no meio. O que não pode é
+        # haver <br> no meio de uma frase.
+        html = render_md(self.QUIZ)
+        self.assertNotIn("ao item<br", html)
+        self.assertNotIn('"trocar"<br', html)
+        self.assertNotIn("input<br", html)
+
+    def test_lista_dentro_da_caixa_nao_e_colada(self):
+        md = '!!! dica "Passos"\n    Faça assim:\n\n    - primeiro\n    - segundo\n'
+        html = render_md(md)
+        self.assertIn("<li>primeiro</li>", html)
+        self.assertIn("<li>segundo</li>", html)
+
+    def test_item_de_lista_nunca_e_colado_na_frase(self):
+        md = '!!! dica "Passos"\n    Siga a ordem\n    - primeiro\n    - segundo\n'
+        html = render_md(md)
+        self.assertNotIn("ordem - primeiro", html)
+        self.assertNotIn("primeiro - segundo", html)
+
+    def test_linha_terminada_em_dois_pontos_mantem_a_quebra(self):
+        md = '!!! dica "Permissões"\n    Cada trio vira um número:\n    r=4, w=2, x=1.\n'
+        html = render_md(md)
+        self.assertNotIn("número: r=4", html)
+
+    def test_paragrafos_separados_continuam_separados(self):
+        md = '!!! conceito "T"\n    Primeiro parágrafo.\n\n    Segundo parágrafo.\n'
+        html = render_md(md)
+        self.assertEqual(html.count("<p>"), 2)
+
+    def test_codigo_dentro_da_caixa_nao_e_colado(self):
+        md = '!!! exemplo "Código"\n    Veja\n\n    ```python\n    a = 1\n    b = 2\n    ```\n'
+        html = render_md(md)
+        self.assertIn("codehilite", html)
+        self.assertNotIn("a = 1 b = 2", html)
+
+    def test_negrito_que_abre_topico_nao_e_colado(self):
+        md = '!!! resumo "R"\n    Vantagem: rápido\n    **Desvantagem:** caro\n'
+        html = render_md(md)
+        self.assertNotIn("rápido <strong>", html)
+
+    def test_fora_das_caixas_nada_muda(self):
+        html = render_md("linha um\nlinha dois")
+        self.assertIn("<br", html)
+
+
 class MdInlineTests(TestCase):
     def test_paragrafo_unico_sai_sem_p(self):
         self.assertEqual(md_inline("apenas **texto**"), "apenas <strong>texto</strong>")

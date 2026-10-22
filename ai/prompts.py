@@ -162,6 +162,9 @@ SYSTEM_SUBTOPICO = (
     "indentado com EXATAMENTE 4 espaços (nunca 8). Exemplo literal:\n"
     '!!! conceito "Título curto"\n'
     "    Definição ou ideia central, indentada com 4 espaços.\n"
+    "O corpo de cada parágrafo da caixa vai numa LINHA SÓ, por mais longa que "
+    "fique: não quebre a frase por largura, cada quebra vira uma linha cortada "
+    "na tela do celular. Quebre linha só entre parágrafos ou itens de lista.\n"
     "Tipos: `conceito`, `exemplo`, `dica`, `atencao`, `resumo`.\n"
     '- A cada 4-6 seções, uma caixa `!!! quiz "Pergunta direta sobre o que acabou '
     'de ser explicado?"` cujo corpo é a resposta com breve explicação (a interface '

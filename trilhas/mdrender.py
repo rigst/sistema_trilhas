@@ -25,6 +25,47 @@ _MERMAID_RE = re.compile(r"```mermaid[ \t]*\n(.*?)```", re.S)
 _ADM_RE = re.compile(r"^\s*(!!!\s+\S.*)$")
 _MARCADOR_BLOCO = ("!!!", "---", "#", "```", "===")
 
+# Começo de linha que é estrutura, e não continuação de frase: item de lista,
+# tabela, citação, título, cerca, imagem, HTML, linha em negrito que abre um
+# tópico ("**Desvantagem:** ..."). Uma linha assim nunca é colada na anterior.
+_ESTRUTURA_RE = re.compile(r"([-*+]\s|\d+[.)]\s|\||>|#|```|:::|!!!|!\[|<|\*\*|---|===)")
+
+
+def _prosa(linha):
+    texto = linha.strip()
+    return bool(texto) and not _ESTRUTURA_RE.match(texto)
+
+
+def _juntar_quebras_moles(corpo):
+    """Cola as quebras de linha "de digitação" do corpo de uma caixa `!!!`.
+
+    A IA quebra o corpo das caixas por largura, como num editor de texto
+    ("...ao item\\n    correto entre renderizações..."). Com a extensão nl2br
+    cada uma dessas quebras vira um <br>, e no celular a frase sai cortada em
+    pedaços no meio da tela. Fora das caixas a IA escreve parágrafos inteiros,
+    então o problema é daqui.
+
+    Junta só prosa com prosa no mesmo recuo. Fica a quebra quando a linha de
+    cima termina em ":" (o que vem é uma enumeração), quando termina com dois
+    espaços (quebra dura do Markdown) e quando qualquer das duas linhas é
+    estrutura: lista, tabela, código, título.
+    """
+    saida: list[tuple[str, int | None]] = []
+    for linha, ind in corpo:
+        if saida and ind is not None and ind >= 0:
+            anterior, ind_anterior = saida[-1]
+            if (
+                ind_anterior == ind
+                and _prosa(anterior)
+                and _prosa(linha)
+                and not anterior.rstrip().endswith(":")
+                and not anterior.endswith("  ")
+            ):
+                saida[-1] = (anterior.rstrip() + " " + linha.strip(), ind_anterior)
+                continue
+        saida.append((linha, ind))
+    return saida
+
 
 def _normalizar_admonitions(texto):
     """Torna as caixas `!!!` tolerantes à indentação que a IA gerar.
@@ -104,6 +145,7 @@ def _normalizar_admonitions(texto):
                 else:
                     corpo.append((atual, len(atual) - len(atual.lstrip())))
                 i += 1
+        corpo = _juntar_quebras_moles(corpo)
         indents = [ind for _, ind in corpo if ind is not None and ind >= 0]
         base = min(indents) if indents else 0
         for linha, ind in corpo:
@@ -230,6 +272,10 @@ def render_md(texto):
 # TTL longo: o conteúdo do subtópico é imutável depois de gerado; a chave inclui
 # gerado_em, então uma eventual regeração invalida naturalmente o cache.
 _CACHE_RENDER_TTL = 60 * 60 * 24 * 30
+# Versão do renderizador na chave: mudar a forma de renderizar (como a junção
+# das quebras moles nas caixas) não muda o gerado_em, e sem isto o HTML antigo
+# seguiria saindo do cache por até 30 dias.
+_RENDER_VERSAO = 2
 
 
 def render_subtopico(subtopico):
@@ -241,7 +287,7 @@ def render_subtopico(subtopico):
     if not subtopico.conteudo_md:
         return ""
     carimbo = subtopico.gerado_em.isoformat() if subtopico.gerado_em else "sem"
-    chave = f"md:sub:{subtopico.pk}:{carimbo}"
+    chave = f"md:v{_RENDER_VERSAO}:sub:{subtopico.pk}:{carimbo}"
     cached = cache.get(chave)
     if cached is not None:
         return mark_safe(cached)
