@@ -991,6 +991,13 @@ a.node:not(.lock):hover .nm{color:var(--teal)}
     border:none;border-radius:0;
     padding-bottom:env(safe-area-inset-bottom);
     animation:chat-sobe .28s cubic-bezier(.2,.7,.3,1) both}
+  /* Teclado aberto: o chat.js mede o visualViewport e prende o painel na área
+     que sobra acima do teclado. O 100dvh não serve para isso: no Chrome do
+     Android o teclado não encolhe o viewport de layout, então o painel seguia
+     com a altura da tela inteira e o campo de escrita ficava embaixo do
+     teclado. Sem o safe-area: quem fica embaixo agora é o teclado. */
+  .chat-panel.com-teclado{top:var(--chat-topo,0px);bottom:auto;
+    height:var(--chat-altura,100dvh);padding-bottom:0;animation:none}
   .chat-panel.saindo{animation:chat-desce .2s ease both}
   @keyframes chat-sobe{from{opacity:0;transform:translateY(100%)}to{opacity:1;transform:none}}
   @keyframes chat-desce{from{opacity:1;transform:none}to{opacity:0;transform:translateY(100%)}}
