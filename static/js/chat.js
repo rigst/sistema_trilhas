@@ -367,6 +367,44 @@
 
   /* ---- abrir e fechar -------------------------------------------------- */
 
+  /* Teclado do celular. O teclado só encolhe o visualViewport; o painel, que é
+     position:fixed sobre o viewport de layout, ficava com a altura da tela
+     inteira e o campo de escrita escondido embaixo das teclas. Aqui o painel
+     passa a ocupar exatamente a área visível — campo colado no teclado, fim
+     da conversa logo acima dele. No desktop o painel é flutuante e nada muda. */
+  const vv = window.visualViewport;
+  const telaCheia = window.matchMedia("(max-width: 40rem)");
+  let tecladoAberto = false;
+  const encaixarNoTeclado = () => {
+    if (!vv || painel.hasAttribute("hidden") || !telaCheia.matches) {
+      painel.classList.remove("com-teclado");
+      tecladoAberto = false;
+      return;
+    }
+    // Abaixo de ~120px de diferença é a barra do navegador piscando, não teclado.
+    const teclado = window.innerHeight - vv.height > 120;
+    const acabouDeAbrir = teclado && !tecladoAberto;
+    tecladoAberto = teclado;
+    painel.classList.toggle("com-teclado", teclado);
+    if (!teclado) return;
+    const estavaNoFim = fluxo.scrollHeight - fluxo.scrollTop - fluxo.clientHeight < 40;
+    painel.style.setProperty("--chat-topo", `${vv.offsetTop}px`);
+    painel.style.setProperty("--chat-altura", `${vv.height}px`);
+    // O teclado subindo leva a conversa para o fim, logo acima do campo. Depois
+    // disso, quem rolou para cima para reler uma resposta não é arrastado de volta.
+    if (acabouDeAbrir || estavaNoFim) aoFim();
+  };
+  if (vv) {
+    vv.addEventListener("resize", encaixarNoTeclado);
+    // O Chrome rola o visualViewport para mostrar o campo focado: sem
+    // acompanhar o scroll o painel sairia do lugar.
+    vv.addEventListener("scroll", encaixarNoTeclado);
+  }
+  campo.addEventListener("focus", () => {
+    // O teclado ainda está subindo quando o foco chega; mede de novo depois.
+    setTimeout(encaixarNoTeclado, 300);
+  });
+
   const alternar = (mostrar) => {
     abrir.setAttribute("aria-expanded", mostrar ? "true" : "false");
     if (mostrar) {
@@ -379,6 +417,7 @@
       // deixaria os diagramas do histórico com as cores antigas.
       else if (window.__mermaidRefresh) window.__mermaidRefresh(painel, true);
       campo.focus();
+      encaixarNoTeclado();
       return;
     }
     // `hidden` é display:none e cortaria a animação de saída pela metade: só

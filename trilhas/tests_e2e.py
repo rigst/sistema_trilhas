@@ -19,6 +19,29 @@ pytestmark = [pytest.mark.e2e, pytest.mark.django_db(transaction=True)]
 
 SENHA = "senha-de-teste-bem-longa-123"
 
+# O Playwright não abre teclado virtual. Este script, injetado antes da página,
+# troca o window.visualViewport por um que o teste encolhe à mão, do mesmo
+# jeito que o Chrome do Android faz quando o teclado sobe: o visualViewport
+# diminui e o innerHeight (viewport de layout) continua o mesmo.
+TECLADO_FALSO = """
+(() => {
+  const alvo = new EventTarget();
+  let altura = window.innerHeight;
+  const vv = {
+    get height() { return altura; },
+    get width() { return window.innerWidth; },
+    offsetTop: 0, offsetLeft: 0, pageTop: 0, pageLeft: 0, scale: 1,
+    addEventListener: (...a) => alvo.addEventListener(...a),
+    removeEventListener: (...a) => alvo.removeEventListener(...a),
+  };
+  Object.defineProperty(window, "visualViewport", { get: () => vv });
+  window.__teclado = (px) => {
+    altura = window.innerHeight - px;
+    alvo.dispatchEvent(new Event("resize"));
+  };
+})();
+"""
+
 
 @pytest.fixture(scope="module")
 def navegador():
@@ -31,6 +54,17 @@ def navegador():
 @pytest.fixture
 def pagina(navegador):
     contexto = navegador.new_context()
+    pagina = contexto.new_page()
+    yield pagina
+    contexto.close()
+
+
+@pytest.fixture
+def celular(navegador):
+    contexto = navegador.new_context(
+        viewport={"width": 390, "height": 844}, is_mobile=True, has_touch=True
+    )
+    contexto.add_init_script(TECLADO_FALSO)
     pagina = contexto.new_page()
     yield pagina
     contexto.close()
@@ -114,6 +148,45 @@ def test_chat_de_duvidas_abre_e_fecha(live_server, pagina):
     pagina.keyboard.press("Escape")
     expect(painel).to_be_hidden()
     expect(botao).to_have_attribute("aria-expanded", "false")
+
+
+def test_no_celular_o_campo_do_chat_fica_acima_do_teclado(live_server, celular):
+    """No Chrome do Android o teclado não encolhe o viewport de layout, e o
+    painel de tela cheia (100dvh) deixava o campo de escrita embaixo das
+    teclas. Com o teclado aberto, o campo tem de ficar inteiro na área visível
+    e o fim da conversa logo acima dele."""
+    usuario = get_user_model().objects.create_user("celular", password=SENHA)
+    conversa = Conversa.objects.create(user=usuario)
+    for i in range(30):
+        Mensagem.objects.create(
+            conversa=conversa,
+            papel=Mensagem.Papel.ALUNO if i % 2 == 0 else Mensagem.Papel.IA,
+            texto=f"Mensagem número {i} da conversa, para encher o painel.",
+            status=Mensagem.Status.PRONTA,
+        )
+    entrar(celular, live_server, usuario)
+    celular.click("#chat-abrir")
+    expect(celular.locator(".chat-bolha")).to_have_count(30)
+
+    teclado = 340
+    celular.evaluate(f"window.__teclado({teclado})")
+    visivel = 844 - teclado
+
+    form = celular.locator("#chat-form").bounding_box()
+    # O campo inteiro acima do teclado, não atrás dele.
+    assert form["y"] + form["height"] <= visivel + 1, form
+    assert form["y"] >= 0
+
+    # A última mensagem fica à vista, logo acima do campo.
+    ultima = celular.locator(".chat-bolha").last.bounding_box()
+    assert ultima["y"] + ultima["height"] <= form["y"] + 1, (ultima, form)
+    assert ultima["y"] >= 0
+
+    # Teclado fecha: o painel volta a ocupar a tela toda.
+    celular.evaluate("window.__teclado(0)")
+    painel = celular.locator("#chat-painel")
+    assert not painel.evaluate("el => el.classList.contains('com-teclado')")
+    assert painel.bounding_box()["height"] > visivel
 
 
 def test_apagar_conversa_so_some_depois_que_o_servidor_confirma(live_server, pagina):
