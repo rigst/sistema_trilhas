@@ -7,10 +7,13 @@ from django.contrib.auth import views as auth_views
 from django.urls import include, path
 from django.views.generic import TemplateView
 
+from config.healthz import healthz
 from legal import views as legal_views
 from trilhas import views as trilhas_views
 
 urlpatterns = [
+    # Sonda do smoke-test do CD: banco, cache e broker, 200 ou 503.
+    path("healthz/", healthz, name="healthz"),
     path("admin/", admin.site.urls),
     # Service worker servido da raiz para ter escopo "/" (PWA).
     path(
