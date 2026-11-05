@@ -33,11 +33,14 @@ jobs:
       django-settings-module: config.settings.production
       source-paths: "accounts ai avaliacoes chat config legal trilhas"
 
-      # Os testes rodam em development (SQLite, Celery eager), como já era com
-      # `manage.py test`. Em production o SECURE_SSL_REDIRECT faria todo request
-      # do test client virar 301.
-      test-settings-module: config.settings.development
-      postgres: false
+      # Os testes rodam em config.settings.test: os de development (Celery
+      # eager, sessões em banco) com o banco trocado por PostgreSQL, o mesmo
+      # de produção — SQLite aceita coisas que o Postgres recusa. O Postgres é
+      # o descartável do job (`postgres: true`, padrão do pipeline), e as DB_*
+      # do django-env abaixo apontam para ele. Em production o
+      # SECURE_SSL_REDIRECT faria todo request do test client virar 301.
+      test-settings-module: config.settings.test
+      postgres: true
 
       # Valores fictícios, só para os settings de produção carregarem no CI.
       # Nenhum segredo real entra aqui — os de verdade ficam em Secrets.

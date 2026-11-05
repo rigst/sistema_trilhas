@@ -9,6 +9,7 @@ import os
 import re
 import shutil
 import tempfile
+import threading
 import uuid
 
 from django.conf import settings
@@ -30,13 +31,20 @@ def _ia_em_paralelo(fn, itens, progresso=None):
     Cada thread abre conexão própria com o banco (o débito de tokens grava
     uso); fechá-la evita deixar conexões penduradas no Postgres depois que o
     pool morre.
+
+    Só fecha nas threads do pool. Com um item só, o `em_paralelo` roda na
+    thread de quem chamou, e fechar ali derrubava a conexão da própria task (e
+    a transação em curso, se houver). O SQLite em memória dos testes ignora o
+    `close()`, então isso só apareceu com a suíte em PostgreSQL.
     """
+    chamador = threading.get_ident()
 
     def _um(item):
         try:
             return fn(item)
         finally:
-            connection.close()
+            if threading.get_ident() != chamador:
+                connection.close()
 
     return video_utils.em_paralelo(_um, itens, IA_CONCORRENCIA, progresso)
 
