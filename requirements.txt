@@ -10,17 +10,17 @@
 # requirements.lock repete a invocação exata usada)
 # O Dependabot bump a linha daqui, mas não conhece o .lock; o job `lock` é
 # quem acusa a divergência entre os dois.
-Django==6.0.8
+Django==6.1.2
 celery==5.6.3
 redis==8.1.0
-python-dotenv==1.2.2
+python-dotenv==1.2.4
 # IA (Anthropic / Claude)
-anthropic==0.121.0
+anthropic==2.4.0
 # Renderização de Markdown do conteúdo dos níveis (+ destaque de sintaxe)
-markdown==3.10.3
-Pygments==2.20.0
+markdown==3.11.2
+Pygments==2.21.0
 # Sanitização por allowlist do HTML gerado (conteúdo vindo da IA)
-nh3==0.3.6
+nh3==0.3.7
 # Certificado em PDF (fase futura) — opcional
 weasyprint==70.0
 # transitiva de weasyprint (fonttools[woff]): CVE GHSA-9v8h-qqgm-4m35 (PYSEC-2026-4322)
@@ -31,20 +31,20 @@ brotli==1.2.1
 #   - playwright: Chromium headless para renderizar os slides e a arte do mascote
 #   - Pillow: compõe os quadros do mascote apresentador (trilhas/video_avatar.py)
 # Requer também o ffmpeg no sistema e `playwright install chromium` no venv.
-edge-tts==7.2.8
-playwright==1.62.0
+edge-tts==7.3.1
+playwright==1.64.1
 Pillow==13.0.0
 # Produção
 gunicorn==26.2.0
-psycopg2-binary==2.9.12
-django-redis==6.0.0
+psycopg2-binary==2.9.13
+django-redis==7.0.0
 # Monitoramento de erros (ativo só com SENTRY_DSN definido)
-sentry-sdk==2.68.1
+sentry-sdk==2.73.0
 
 # Conformidade legal (app `legal`): sanitização das políticas (markdown e nh3
 # já constam acima).
 # Tema do admin.
-django-unfold==0.104.0
+django-unfold==0.110.1
 
 # O pip entra aqui como qualquer outra dependência, e não como ferramenta à
 # parte. Ele é o que o CD executa a cada deploy, e enquanto não estava
@@ -56,4 +56,4 @@ django-unfold==0.104.0
 #
 # Não use `pip install --upgrade pip` no deploy: isso instalaria versão não
 # fixada, que é o que o pin e o `--require-hashes` existem para evitar.
-pip==26.2.1
+pip==26.3
