@@ -16,7 +16,9 @@ pytest.ini).
 
 import os
 
-from .development import *
+# Import com `*` de propósito: é assim que um módulo de settings herda outro
+# (o Django lê os nomes do módulo), como em development.py e production.py.
+from .development import *  # NOSONAR
 
 DATABASES = {
     "default": {
