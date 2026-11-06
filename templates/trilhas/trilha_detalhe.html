@@ -151,17 +151,17 @@
         <form method="post" action="{% url 'trilhas:renomear' trilha.pk %}" id="form-renomear-{{ trilha.pk }}">
           {% csrf_token %}
           <input type="hidden" name="titulo" id="inp-renomear-{{ trilha.pk }}">
-          <button type="button" class="tad-btn" onclick="var n=prompt('Novo nome da trilha:','{{ trilha.titulo|escapejs }}');if(n&&n.trim()){document.getElementById('inp-renomear-{{ trilha.pk }}').value=n.trim();document.getElementById('form-renomear-{{ trilha.pk }}').submit();}">Renomear trilha</button>
+          <button type="button" class="tad-btn" data-renomear="{{ trilha.titulo }}">Renomear trilha</button>
         </form>
         <span class="tad-sep">•</span>
         <form method="post" action="{% url 'trilhas:alternar_ativa' trilha.pk %}"
-              {% if trilha.ativa %}onsubmit="return confirm('Desativar esta trilha?')"{% endif %}>
+              {% if trilha.ativa %}data-confirmar="Desativar esta trilha?"{% endif %}>
           {% csrf_token %}
           {% if trilha.ativa %}<button type="submit" class="tad-btn">Desativar trilha</button>
           {% else %}<button type="submit" class="tad-btn tad-btn--ok">Reativar trilha</button>{% endif %}
         </form>
         <span class="tad-sep">•</span>
-        <form method="post" action="{% url 'trilhas:excluir' trilha.pk %}" onsubmit="return confirm('Excluir esta trilha e todo o progresso? Esta ação não pode ser desfeita.');">
+        <form method="post" action="{% url 'trilhas:excluir' trilha.pk %}" data-confirmar="Excluir esta trilha e todo o progresso? Esta ação não pode ser desfeita.">
           {% csrf_token %}<button type="submit" class="tad-btn tad-btn--danger">Excluir trilha</button>
         </form>
       </div>
