@@ -86,7 +86,7 @@
   {% url 'avaliacoes:revisao_status' revisao.pk as poll_url %}
   {% include 'partials/poll.html' with poll_url=poll_url poll_status='gerando' %}
 {% elif revisao.status == 'pronta' %}
-<script>
+<script nonce="{{ request.csp_nonce }}">
 (() => {
   const showXpToast = (xp) => {
     if (!xp) return;

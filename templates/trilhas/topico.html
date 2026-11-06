@@ -160,7 +160,7 @@
   {% include 'partials/poll.html' with poll_url=poll_url poll_status=subtopico.status %}
 {% elif subtopico.status == 'pronto' %}
 <script src="{% static 'js/deck.js' %}"></script>
-<script>
+<script nonce="{{ request.csp_nonce }}">
 (() => {
   const root = document.getElementById("topico-root");
   const src = document.getElementById("md-source");
