@@ -1,6 +1,11 @@
 from django.conf import settings
+from django.core.exceptions import ValidationError
 from django.db import models
 
+from avaliacoes.validacao import (
+    alternativas_sao_placeholder,
+    enunciado_e_placeholder,
+)
 from trilhas.models import FAIXA_TIER, Nivel, Trilha
 
 
@@ -59,6 +64,23 @@ class Questao(models.Model):
 
     def __str__(self):
         return f"{self.get_tipo_display()} {self.ordem}"
+
+    def clean(self):
+        """Barra questão-placeholder (enunciado de rascunho ou alternativas
+        degeneradas como w/x/y/z). Cobre o admin inline e o shell — caminhos
+        que não passam pela validação da geração por IA."""
+        super().clean()
+        erros = {}
+        if enunciado_e_placeholder(self.enunciado_md):
+            erros["enunciado_md"] = (
+                "Enunciado parece um placeholder/rascunho; escreva a questão completa."
+            )
+        if alternativas_sao_placeholder(self.alternativas):
+            erros["alternativas"] = (
+                "Alternativas parecem placeholders (ex.: w/x/y/z); preencha com texto real."
+            )
+        if erros:
+            raise ValidationError(erros)
 
 
 class Resposta(models.Model):
