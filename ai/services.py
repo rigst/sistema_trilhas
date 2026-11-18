@@ -34,6 +34,8 @@ from django.conf import settings
 from django.core.cache import cache
 from django.utils import timezone
 
+from avaliacoes.validacao import questao_e_placeholder
+
 from . import prompts
 
 
@@ -761,7 +763,7 @@ def _questoes_validas(items):
         enunciado = (q.get("enunciado") or "").strip()
         gabarito = (q.get("gabarito") or "").strip().upper()
         alts = _alternativas_normalizadas(q.get("alternativas"), gabarito)
-        if enunciado and alts:
+        if enunciado and alts and not questao_e_placeholder(enunciado, alts):
             validas.append({**q, "alternativas": alts, "gabarito": gabarito})
     return validas
 
@@ -775,7 +777,7 @@ def _exercicios_validos(items):
         explicacao = (item.get("explicacao") or "").strip()
         gabarito = (item.get("gabarito") or "").strip().upper()
         alts = _alternativas_normalizadas(item.get("alternativas"), gabarito)
-        if enunciado and explicacao and alts:
+        if enunciado and explicacao and alts and not questao_e_placeholder(enunciado, alts):
             validos.append({**item, "alternativas": alts, "gabarito": gabarito})
     return validos
 
@@ -789,7 +791,7 @@ def _questoes_revisao_validas(items, quantidade):
         explicacao = (item.get("explicacao") or "").strip()
         gabarito = (item.get("gabarito") or "").strip().upper()
         alts = _alternativas_normalizadas(item.get("alternativas"), gabarito)
-        if enunciado and explicacao and alts:
+        if enunciado and explicacao and alts and not questao_e_placeholder(enunciado, alts):
             validas.append({**item, "alternativas": alts, "gabarito": gabarito})
     return validas if len(validas) >= quantidade else []
 
