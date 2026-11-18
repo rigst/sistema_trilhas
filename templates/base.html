@@ -5,7 +5,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta name="color-scheme" content="dark light">
-    <script>
+    <script nonce="{{ request.csp_nonce }}">
       /* Aplica tema e tamanho de fonte salvos antes da 1ª pintura (sem flash). */
       (function(){try{
         var t = localStorage.getItem('trilhas-theme') || 'escuro';
@@ -23,6 +23,7 @@
     <link rel="stylesheet" href="{% static 'fonts/fonts.css' %}">
     <link rel="stylesheet" href="{% static 'css/app.css' %}">
     <link rel="stylesheet" href="{% static 'css/pygments.css' %}">
+    <script src="{% static 'js/acoes.js' %}" defer></script>
 </head>
 <body class="{% block body_class %}{% endblock %}"{% block body_attrs %}{% endblock %}>
     {% include 'partials/icons.html' %}
@@ -58,7 +59,7 @@
       <span class="rotulo">+{{ diamantes_ganhos }} diamante{{ diamantes_ganhos|pluralize }}!</span>
       <span class="toque">toque para continuar</span>
     </div>
-    <script>
+    <script nonce="{{ request.csp_nonce }}">
     (() => {
       const fx = document.getElementById('diamante-fx');
       if (!fx) return;
@@ -181,7 +182,7 @@
         </div>
     </footer>
 
-    <script>
+    <script nonce="{{ request.csp_nonce }}">
     (() => {
       // Botão "copiar" nos blocos de código. Exposto porque conteúdo injetado
       // depois do load (respostas do chat) precisa do mesmo tratamento — e aí o

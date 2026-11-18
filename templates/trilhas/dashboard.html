@@ -218,7 +218,7 @@
 {% endblock %}
 
 {% block scripts %}
-<script>
+<script nonce="{{ request.csp_nonce }}">
 // Saudação personalizada no cabeçalho da dashboard.
 (() => {
   const h = new Date().getHours();

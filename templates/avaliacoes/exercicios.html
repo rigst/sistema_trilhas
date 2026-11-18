@@ -86,7 +86,7 @@
   {% url 'avaliacoes:exercicios_status' lista.pk as poll_url %}
   {% include 'partials/poll.html' with poll_url=poll_url poll_status='gerando' %}
 {% elif lista.status == 'pronta' %}
-<script>
+<script nonce="{{ request.csp_nonce }}">
 (() => {
   const showXpToast = (xp) => {
     if (!xp) return;

@@ -130,7 +130,7 @@
 
 {% block scripts %}
 {% if video and video.status == 'gerando' %}
-<script>
+<script nonce="{{ request.csp_nonce }}">
 /* Progresso do vídeo: barra, etapa e estimativa; recarrega quando termina. */
 (() => {
   const box = document.getElementById("video-box");

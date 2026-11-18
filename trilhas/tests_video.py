@@ -414,6 +414,24 @@ class VideoNivelTests(TestCase):
 
 
 @override_settings(VIDEO_ENABLED=True)
+class IaEmParaleloConexaoTests(SimpleTestCase):
+    """`_ia_em_paralelo` fecha a conexão só nas threads do pool."""
+
+    def test_item_unico_nao_fecha_a_conexao_de_quem_chamou(self):
+        # Com um item o trabalho roda na thread da task: fechar ali derrubava
+        # a conexão dela no meio da geração (InterfaceError no PostgreSQL).
+        with mock.patch("trilhas.video_pipeline.connection") as conexao:
+            self.assertEqual(video_pipeline._ia_em_paralelo(lambda x: x * 2, [3]), [6])
+        conexao.close.assert_not_called()
+
+    def test_threads_do_pool_fecham_a_propria_conexao(self):
+        with mock.patch("trilhas.video_pipeline.connection") as conexao:
+            saida = video_pipeline._ia_em_paralelo(lambda x: x * 2, [1, 2, 3])
+        self.assertEqual(saida, [2, 4, 6])
+        # Proxy trocado por mock: as threads do pool não tocam no banco real.
+        self.assertEqual(conexao.close.call_count, 3)
+
+
 class VideoConteudoFaltanteTests(TestCase):
     """Gerar o vídeo do nível escreve antes o que faltar de conteúdo."""
 

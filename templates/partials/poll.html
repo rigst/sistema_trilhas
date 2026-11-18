@@ -1,4 +1,4 @@
-<script>
+<script nonce="{{ request.csp_nonce }}">
 (() => {
   const url = "{{ poll_url }}", initial = "{{ poll_status }}";
   const tick = async () => {

@@ -160,6 +160,7 @@ h1,h2,h3,h4{font-family:var(--disp);letter-spacing:-.01em;line-height:1.15}
 .btn-danger{background:transparent;border-color:var(--line-2);color:var(--muted)}
 .btn-danger:hover{border-color:var(--red);color:var(--red)}
 .btn-block{width:100%}
+.offline-recarregar{margin-top:1rem}
 .btn:disabled{opacity:.55;cursor:not-allowed;transform:none;filter:none}
 
 /* ---- avisos (toasts) --------------------------------------------------- */

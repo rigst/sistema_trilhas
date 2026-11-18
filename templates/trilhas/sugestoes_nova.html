@@ -51,7 +51,7 @@
 {% endblock %}
 
 {% block scripts %}
-<script>
+<script nonce="{{ request.csp_nonce }}">
 (() => {
   const btn = document.querySelector(".js-toggle-all");
   if (!btn) return;

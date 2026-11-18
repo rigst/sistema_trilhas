@@ -44,7 +44,7 @@
 
 {% block scripts %}
 {% if total %}
-<script>
+<script nonce="{{ request.csp_nonce }}">
 (() => {
   const csrf = document.querySelector("[name=csrfmiddlewaretoken]").value;
   document.querySelectorAll(".js-remover").forEach((btn) => btn.addEventListener("click", async () => {

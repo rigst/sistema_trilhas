@@ -56,6 +56,10 @@ INSTALLED_APPS = [
 
 MIDDLEWARE = [
     "django.middleware.security.SecurityMiddleware",
+    # Permissions-Policy e CSP (o SecurityMiddleware não emite nenhum dos dois).
+    # Logo no começo para valer também nas respostas que os middlewares
+    # seguintes devolvem sozinhos (redirect do aceite legal, da expiração).
+    "config.security_headers.CabecalhosSegurancaMiddleware",
     "django.contrib.sessions.middleware.SessionMiddleware",
     "django.middleware.common.CommonMiddleware",
     "django.middleware.csrf.CsrfViewMiddleware",
@@ -375,3 +379,50 @@ LEGAL_VISITOR_EXTRA: dict[str, Any] = {}
 # Rotas do PWA que o middleware de re-aceite não pode interceptar: um 302 para
 # a tela de aceite seria cacheado pelo service worker.
 LEGAL_ALLOWLIST_EXTRA = ("/sw.js", "/offline/")
+
+
+# ==============================================================================
+# Cabeçalhos de segurança (config/security_headers.py)
+# ==============================================================================
+
+# Mesmo valor da frota. Nenhuma tela usa câmera ou microfone: o vídeo do tópico
+# é gerado no servidor e só tocado num <video>, que não pede permissão.
+PERMISSIONS_POLICY = os.getenv(
+    "PERMISSIONS_POLICY",
+    "camera=(), microphone=(), geolocation=(), payment=(), usb=(), interest-cohort=()",
+)
+
+# Desligável por env só para diagnóstico: o padrão, inclusive em produção, é ligada.
+ENABLE_CSP = os.getenv("ENABLE_CSP", "True").lower() in ("true", "1", "yes")
+
+# Política do app. O que cada fonte cobre:
+# - script-src: só arquivos do próprio domínio (inclui o mermaid.min.js, que
+#   não usa eval) e os <script> inline com o nonce da requisição;
+# - img-src https://images.pexels.com: capas antigas (antes do download para
+#   /media/) e fotos embutidas no Markdown dos tópicos ainda apontam para lá;
+#   data: para imagens embutidas (Mermaid, ícones);
+# - media-src 'self': o vídeo do tópico é servido de /media/videos/;
+# - style-src 'unsafe-inline': atributos style= dos templates e o <style> que o
+#   Mermaid injeta em cada diagrama;
+# - frame-src 'none': nenhuma tela incorpora iframe (YouTube etc.).
+CONTENT_SECURITY_POLICY = os.getenv(
+    "CONTENT_SECURITY_POLICY",
+    "default-src 'self'; script-src 'self' 'nonce-{nonce}'; "
+    "style-src 'self' 'unsafe-inline'; img-src 'self' data: https://images.pexels.com; "
+    "media-src 'self'; font-src 'self' data:; connect-src 'self'; frame-src 'none'; "
+    "object-src 'none'; frame-ancestors 'none'; base-uri 'self'; form-action 'self'",
+)
+
+ADMIN_PATH_PREFIX = "/admin/"
+
+# Política exclusiva do admin. O 'unsafe-eval' é exigido pelo Alpine.js que o
+# django-unfold usa: ele compila as expressões de `x-data`/`x-init` com
+# `new Function()`. Sem isso o painel carrega sem menu, abas nem tema. A
+# concessão fica presa ao /admin/, que só `is_staff` alcança.
+CONTENT_SECURITY_POLICY_ADMIN = os.getenv(
+    "CONTENT_SECURITY_POLICY_ADMIN",
+    "default-src 'self'; script-src 'self' 'unsafe-eval' 'nonce-{nonce}'; "
+    "style-src 'self' 'unsafe-inline'; img-src 'self' data: https://images.pexels.com; "
+    "font-src 'self' data:; connect-src 'self'; object-src 'none'; "
+    "frame-ancestors 'none'; base-uri 'self'; form-action 'self'",
+)
